@@ -1,0 +1,226 @@
+.cbWrap{
+  background: #FFF;
+  margin-top: 150px;
+  height: 950px;
+}
+
+.cbWrap h1{
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 70px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+
+.cbWrap h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbWrap > h2{
+  margin-top: 170px;
+}
+
+.cbWrap > h2 a{
+  color: #770422;
+  font-size: 2.3rem;
+}
+
+.cbWrap > h2 a:hover{
+  color: #AECEAB;
+}
+
+.cbWrap section{
+  min-height: 450px;
+}
+
+.cbWrap section:nth-child(2), .cbWrap section:nth-child(3){
+  background: #AECEAB;
+  color: #FFF;
+}
+
+.cbWrap section:nth-child(2) h1{
+  position: relative;
+  top: auto;
+}
+
+/* .cbWrap .cbList{
+  margin-top: 170px;
+} */
+
+.cbWrap .cbList .wrapper{
+  background: #AECEAB;
+  border-radius: 15px;
+	font-family: "Lato", Arial, sans-serif;
+	font-size: 1.1rem;
+  height: auto;
+	margin: 0 auto 5%;
+  min-height: inherit;
+	padding: 40px 3%;
+  position: relative;
+	width: 80%;
+}
+
+.cbWrap .cbList .wrapper article{
+  align-items: center;
+  background: #770422;
+  border-radius: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  padding: 20px 5% 3px;
+  /* padding: 20px 0 3px 5%; */
+}
+
+.cbWrap .cbList .wrapper article section{
+  min-height: inherit;
+  padding-top: 0;
+}
+
+.cbWrap .cbList .wrapper article section p.loadMessage{
+  color: #FFF;
+  font-size: 4rem;
+  padding: 3% 0;
+  text-align: center;
+  width: 100%;
+}
+
+.cbWrap .cbList .wrapper article section figure{
+  display: inline-block;
+  margin: 0 auto 20px;
+  width: 100%;
+  text-align: center;
+}
+
+.cbWrap .cbList .wrapper article section figure img{
+  background-color: #FFF;
+  border: solid 3px #AECEAB;
+  border-radius: 50%;
+  width: 150px;
+}
+
+.cbWrap .cbList .wrapper article section p{
+  padding: 0 1% 3rem;
+  text-align: center;
+}
+
+.cbWrap .cbList .wrapper article section p a{
+  font-size: 1.5rem;
+  color: #AECEAB;
+  margin: 0;
+}
+
+.cbWrap .cbList .wrapper article section p a:nth-child(1){
+  color: #FFF;
+}
+
+.cbWrap .cbList .wrapper article section p a:hover{
+  color: #AECEAB;
+}
+
+.cbWrap .cbList .wrapper article section p a:hover::after{
+  background: #AECEAB;
+  width: 30%;
+}
+
+.cbWrap .cbList .wrapper > h2{
+  margin-top: 5px;
+}
+
+.cbWrap .cbList .wrapper > h3{
+  font-size: 2rem;
+  margin-bottom: 20px;
+	text-align: center;
+  text-transform: capitalize;
+}
+
+.cbWrap .cbList .wrapper form{
+  background: #D0D2D3;
+	border: 1px solid #000;
+  display: block;
+	margin: 0 auto 3%;
+	padding: 2.2rem 2rem .5rem;
+  position: relative;
+  top: auto;
+	text-align: left;
+	width: 80%;
+}
+
+.cbWrap .cbList .wrapper form > fieldset label{
+  color: #2B2B2B;
+  float: none;
+  font-size: 2rem;
+  margin-bottom: 25px;
+}
+
+.cbWrap .cbList .wrapper form fieldset label:nth-child(1), .cbWrap .cbList .wrapper form fieldset label:nth-child(3){
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.cbWrap .cbList .wrapper form fieldset input{
+  background: rgba(236, 236, 236, .5);
+  font-size: 1.5rem;
+  padding: .4rem;
+  width: 100%;
+  margin-bottom: .5% 0 2%;
+  color: #404041;
+  border-radius: 8px;
+  border: 1px solid #000;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out;
+}
+
+.cbWrap .cbList .wrapper form fieldset input[type='radio']{
+  height: auto;
+  margin-right: 15px;
+  width: auto;
+}
+
+.cbWrap .cbList .wrapper form fieldset label.labelRadio{
+  font-size: 1.5rem;
+  margin-right: 15px;
+  width: auto;
+}
+
+/* .cbWrap .cbList .wrapper form input.submit{
+  font-size: 1.5rem;
+	padding: 5px 4%;
+	border-radius: 4px;
+	background: #404041;
+	color: #FFF;
+	width: auto;
+	border: 1px solid #D0D2D3;
+	cursor: pointer;
+	display: inline-block;
+  text-align: center;
+} */
+
+.cbWrap .cbList .wrapper article p button{
+  background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.5rem;
+  margin: 10px 0 0;
+  padding: 5px 0;
+  text-align: center;
+  width: 100px;
+}
+
+.cbWrap .cbList .wrapper article p button:hover{
+  color: #770422;
+}
+
+@media (max-width: 500px){
+  .cbWrap h1{
+    font-size: 3.5rem;
+  }
+}

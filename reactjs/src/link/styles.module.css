@@ -1,0 +1,7 @@
+.link {
+  composes: link from '../css/main.css';
+}
+
+.linkSecondary {
+  composes: linkSecondary from '../css/main.css';
+}

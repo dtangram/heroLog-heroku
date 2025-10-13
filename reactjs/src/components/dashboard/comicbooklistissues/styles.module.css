@@ -1,0 +1,204 @@
+.cbWrap{
+  background: #FFF;
+  margin-top: 150px;
+  /* height: 950px; */
+  min-height: 950px;
+  display: inline-block;
+  margin-bottom: 150px;
+  width: 100%;
+}
+
+.cbWrap h1{
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 50px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+
+.cbWrap h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbWrap > h2{
+  line-height: normal;
+}
+
+.cbWrap > h2 a{
+  color: #2B2B2B;
+}
+
+.cbWrap > h2 a:hover{
+  color: #770422;
+}
+
+.cbWrap section{
+  min-height: 450px;
+}
+
+.cbWrap section:nth-child(2), .cbWrap section:nth-child(3){
+  background: #AECEAB;
+  color: #FFF;
+}
+
+.cbWrap section:nth-child(2) h1{
+  position: relative;
+  top: auto;
+}
+
+.cbWrap .cbList .wrapper{
+  background: #AECEAB;
+  border-radius: 15px;
+	font-family: "Lato", Arial, sans-serif;
+	font-size: 1.1rem;
+  height: auto;
+	margin: 0 auto 50px;
+  min-height: inherit;
+	padding: 10px 3% 40px;
+  position: relative;
+	width: 80%;
+}
+
+.backLink{
+  color: #333;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.backLink:hover, .link:hover{
+  color: #770422;
+}
+
+.backLink::after, .link::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 0px;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.backLink:hover::after, .link:hover::after{
+  background: #770422;
+}
+
+.backLink:hover::after{
+  width: 50%;
+}
+
+.link:hover::after{
+  width: 10%;
+}
+
+.cbWrap .cbList .wrapper article{
+  align-items: center;
+  background: #770422;
+  border-radius: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  margin: auto;
+  padding: 20px 5% 3px;
+}
+
+.cbWrap .cbList .wrapper article p.loadMessage{
+  color: #FFF;
+  font-size: 4rem;
+  padding: 3% 0;
+  text-align: center;
+  width: 100%;
+}
+
+.cbWrap .cbList article .comicSec{
+  background: transparent;
+  margin-bottom: 0;
+  min-height: auto;
+  padding: 0;
+  width: 200px;
+}
+
+.cbWrap .cbList article .comicSec .comicWrap{
+  padding-bottom: 0;
+  width: auto;
+}
+
+.cbWrap .cbList article .comicSec .comicWrap .comicImgWrap{
+  height: 230px;
+  min-height: auto;
+  padding: 0;
+  width: 90%;
+}
+
+.cbWrap .cbList article .comicSec .comicWrap .comicImgWrap img{
+  width: 100%;
+}
+
+.cbWrap .cbList article .comicSec .comicWrap p{
+  line-height: 40px;
+  margin-bottom: 30px;
+  padding: 0 1%;
+  text-align: center;
+}
+
+.cbWrap .cbList article .comicSec .comicWrap p a{
+  font-size: 1.5rem;
+  color: #AECEAB;
+  margin: 0;
+}
+
+.cbWrap .cbList article .comicSec .comicWrap p a:nth-child(1){
+  color: #000;
+}
+
+.cbWrap .cbList article .comicSec .comicWrap p a:hover{
+  color: #AECEAB;
+}
+
+.cbWrap .cbList .wrapper article p a:hover::after{
+  background: #AECEAB;
+  width: 30%;
+}
+
+.cbWrap .cbList .wrapper > h2{
+  margin-top: 5px;
+}
+
+.cbWrap .cbList .wrapper > h3{
+  font-size: 2rem;
+  margin-bottom: 20px;
+	text-align: center;
+  text-transform: capitalize;
+}
+
+.cbWrap .cbList .wrapper article p button{
+  background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.5rem;
+  margin: 10px 0 0;
+  padding: 5px 0;
+  text-align: center;
+  width: 100px;
+}
+
+.cbWrap .cbList .wrapper article p button:hover{
+  color: #770422;
+}
+
+@media (max-width: 500px){
+  .cbWrap h1{
+    font-size: 3.5rem;
+  }
+}

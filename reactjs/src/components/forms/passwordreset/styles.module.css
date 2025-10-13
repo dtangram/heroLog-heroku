@@ -1,0 +1,186 @@
+.nav{
+  float: right;
+  margin-right: 0;
+}
+
+.link{
+  color: #FFF !important;
+  font-size: .9em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.active{
+  background-color: transparent;
+  color: #AECEAB !important;
+}
+
+.link:hover{
+  color: #AECEAB !important;
+}
+
+.link.active::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 80%;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.link{
+  display: inline-block;
+  position: relative;
+  /* height: 1px; */
+}
+
+.link::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 0px;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.link:hover::after{
+  background: #770422;
+  width: 80%;
+}
+
+.signupMain{
+  height: 950px;
+  padding-top: 110px;
+  padding-bottom: 50px;
+}
+
+.signupMain h1{
+  /* left: 0; */
+  font-size: 5rem;
+  line-height: 105px;
+  margin: 0 auto 40px;
+  /* position: absolute; */
+  /* right: 0; */
+  text-align: center;
+  width: 100%;
+  top: 0;
+  /* z-index: 5; */
+}
+
+.signupMain h1 .graphic{
+  background: #770422;
+  height: 10px;
+  margin: 0 auto;
+  width: 70px;
+}
+
+.wrapper{
+  /* margin-bottom: 50px; */
+  padding: 0 0 5px;
+  position: relative;
+  width: auto;
+}
+
+.wrapper form{
+  margin: 0 auto;
+  display: block;
+  position: relative;
+  top: 0;
+}
+
+.wrapper form div:nth-child(1) p{
+  background: #770422;
+  color: #FFF;
+}
+
+.wrapper form > fieldset label{
+  color: #770422;
+  display: block;
+  float: none;
+  font-size: 1.3rem;
+  /* margin-bottom: 25px; */
+}
+
+.wrapper form > fieldset > label > input{
+  font-size: 1.5rem;
+  padding: .4rem;
+  width: 100%;
+  margin-bottom: .5% 0 2%;
+  color: #2B2B2B;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid #770422;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out;
+}
+
+.wrapper form > fieldset > label > input.inputBorder:focus{
+  border: 2px solid #770422;
+}
+
+.wrapper form > fieldset label.labelRadio{
+  font-size: 1.5rem;
+}
+
+.wrapper form input.submit{
+  flex: inherit;
+  font-size: 1.5rem;
+  margin: 0 auto;
+  margin-bottom: 20px;
+  padding: 5px 4%;
+  border-radius: 4px;
+  background: #AECEAB;
+  color: #770422;
+  width: 100%;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+}
+
+.wrapper form input:focus{
+  border: 2px solid #AECEAB;
+}
+
+.wrapper form p, .wrapper form p a{
+  color: #770422;
+}
+
+.wrapper form div{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  /* justify-content: space-around; */
+}
+
+.wrapper form div p{
+  line-height: 20px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.wrapper form p a{
+  font-size: 1.3rem;
+}
+
+.signBCK{
+  background: url(../../../img/comicsHeader.jpg) no-repeat 0 0 / cover;
+  height: inherit;
+  margin: 0;
+  /* min-height: 1080px; */
+  padding: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: -1;
+}

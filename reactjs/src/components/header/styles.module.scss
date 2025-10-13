@@ -1,0 +1,84 @@
+.nav{
+  float: right;
+  margin-right: 0;
+}
+
+.link{
+  color: #FFF !important;
+  font-size: .9em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.active{
+  background-color: transparent;
+  color: #AECEAB !important;
+}
+
+.link:hover{
+  color: #AECEAB !important;
+}
+
+.link.active::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 80%;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.link{
+  display: inline-block;
+  position: relative;
+  /* height: 1px; */
+}
+
+.link::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 0px;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.link:hover::after{
+  background: #770422;
+  width: 80%;
+}
+
+header nav > figure{
+  width: 85px;
+}
+
+header nav > figure img{
+  background-color: #FFF;
+  border: solid 1px #AECEAB;
+  border-radius: 50%;
+  cursor: default;
+  display: block;
+  width: 100%;
+}
+
+@media (max-width: 991px){
+  header nav > figure{
+    margin: 12px 0 0 18px;
+    width: 70px;
+  }
+}
+
+@media (min-width: 992px){
+  header nav ul {
+    gap: 12px;
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "development": {
+    "username": "douglast.angram",
+    "password": null,
+    "database": "herolog_development",
+    "host": "127.0.0.1",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectionUnauthorized": false
+      }
+    }
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectionUnauthorized": false
+      }
+    }
+  },
+  "staging": {
+    "use_env_variable": "DATABASE_URL",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectionUnauthorized": false
+      }
+    }
+  }
+}

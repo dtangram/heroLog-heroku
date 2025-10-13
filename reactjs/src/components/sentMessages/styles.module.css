@@ -1,0 +1,93 @@
+body{
+  background: #FFF;
+}
+
+.cbList{
+  margin-top: 150px;
+  min-height: 950px;
+  display: inline-block;
+  margin-bottom: 150px;
+  width: 100%;
+}
+
+.cbModalH2{
+  color: #2B2B2B;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0 auto 10px;
+}
+
+div.cbList > .cbModalH2{
+  margin: 100px auto 5px;
+}
+
+.viewMess a{
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  margin: 0 auto 50px;
+  text-align: center;
+  width: 250px;
+}
+
+.viewMess a figure, .viewMess a p{
+  margin: 0;
+  padding: 0;
+}
+
+.viewMess a figure :nth-child(1){
+  color: #770422;
+  font-size: 2.5rem;
+}
+
+.viewMess a p{
+  color: #2B2B2B;
+}
+
+.viewMess a p:hover{
+  color: #770422;
+}
+
+.messageSent{
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  margin: 0 auto 40px;
+  overflow-x: scroll;
+  width: 50%;
+}
+
+.messageSent p{
+  color: #2B2B2B;
+  font-size: 1.7rem;
+  margin-right: 5%;
+}
+
+.cbList .wrapper{
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-family: "Lato", Arial, sans-serif;
+  height: auto;
+  margin: 0 auto;
+  background: #770422;
+  width: 700px;
+  padding: 10px 1%;
+  position: relative;
+}
+
+/* .viewMessage p{
+  color: #2B2B2B;
+} */
+
+@media (max-width: 800px){
+  .cbList .wrapper{
+    width: 90%;
+  }
+}
+
+@media (max-width: 500px){
+  .cbWrap h1{
+    font-size: 3.5rem;
+  }
+}

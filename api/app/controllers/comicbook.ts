@@ -1,0 +1,638 @@
+import { Request, Response } from 'express';
+import { WhereOptions } from 'sequelize';
+
+// Comic book type literal
+type ComicBookType = 'regular' | 'variant';
+
+// Properly typed model interface
+interface ComicBookModel {
+  findAll: (options: { 
+    where?: WhereOptions<ComicBookAttributes>;
+    order?: Array<[string, string]>;
+  }) => Promise<ComicBookInstance[]>;
+  findByPk: (id: string) => Promise<ComicBookInstance | null>;
+  create: (data: ComicBookCreationAttributes) => Promise<ComicBookInstance>;
+  update: (
+    data: Partial<ComicBookAttributes>, 
+    options: { where: WhereOptions<ComicBookAttributes>; returning: boolean }
+  ) => Promise<[number, ComicBookInstance[]]>;
+  destroy: (options: { where: WhereOptions<ComicBookAttributes> }) => Promise<number>;
+}
+
+// Model instance interface
+interface ComicBookInstance {
+  id: string;
+  title: string;
+  comicIssue: string | null;
+  author: string | null;
+  penciler: string | null;
+  coverartist: string | null;
+  inker: string | null;
+  volume: string | null;
+  year: number | null;
+  comicBookCover: string | null;
+  type: ComicBookType;
+  comicbooktitlerelId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  toJSON: () => ComicBookAttributes;
+}
+
+// Fixed interface to match actual model structure (UUIDs, not numbers)
+interface ComicBookAttributes {
+  id: string;  // UUID string
+  title: string;
+  comicIssue: string | null;
+  author: string | null;
+  penciler: string | null;
+  coverartist: string | null;
+  inker: string | null;
+  volume: string | null;
+  year: number | null;
+  comicBookCover: string | null;
+  type: ComicBookType;
+  comicbooktitlerelId: string;  // UUID string
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Creation interface
+interface ComicBookCreationAttributes {
+  title: string;
+  comicIssue: string;
+  author?: string | null;
+  penciler?: string | null;
+  coverartist?: string | null;
+  inker?: string | null;
+  volume?: string | null;
+  year?: number | null;
+  comicBookCover?: string | null;
+  type: ComicBookType;
+  comicbooktitlerelId: string;
+}
+
+// API response interface
+interface ApiResponse<T = ComicBookAttributes | ComicBookAttributes[]> {
+  success: boolean;
+  data?: T;
+  count?: number;
+  message?: string;
+  error?: string;
+  errors?: string[];
+}
+
+// Validation result interface
+interface ValidationResult {
+  isValid: boolean;
+  message?: string;
+}
+
+// Sequelize error interface
+interface SequelizeError {
+  errors: Array<{ message: string }>;
+}
+
+// Import models with proper typing
+const models = require('../models') as {
+  ComicBooks: ComicBookModel;
+};
+
+const { ComicBooks } = models;
+
+// Type guard for Sequelize errors
+const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
+  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
+};
+
+// UUID validation
+const isValidUUID = (value: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(value);
+};
+
+// Year validation
+const isValidYear = (year: number): boolean => {
+  const currentYear = new Date().getFullYear();
+  return year >= 1900 && year <= currentYear + 1;
+};
+
+// Comic book type validation
+const isValidComicBookType = (type: string): type is ComicBookType => {
+  return type === 'regular' || type === 'variant';
+};
+
+// Centralized error handler
+const handleError = (
+  res: Response,
+  error: Error | SequelizeError,
+  statusCode: number = 500,
+  context: string = ''
+): Response<ApiResponse<never>> => {
+  console.error(`Error in ${context}:`, error);
+  
+  let errors: string[];
+  
+  if (isSequelizeError(error)) {
+    errors = error.errors.map(err => err.message);
+  } else {
+    errors = [error.message];
+  }
+  
+  return res.status(statusCode).json({ 
+    success: false,
+    errors 
+  });
+};
+
+// Parameter validation
+const validateParams = (
+  params: Record<string, string>,
+  requiredFields: string[]
+): ValidationResult => {
+  const missing = requiredFields.filter(field => !params[field]);
+  
+  if (missing.length > 0) {
+    return {
+      isValid: false,
+      message: `Missing required fields: ${missing.join(', ')}`
+    };
+  }
+  
+  return { isValid: true };
+};
+
+// String validation
+const validateString = (value: string, fieldName: string): ValidationResult => {
+  if (typeof value !== 'string') {
+    return {
+      isValid: false,
+      message: `${fieldName} must be a string`
+    };
+  }
+  
+  if (value.trim().length === 0) {
+    return {
+      isValid: false,
+      message: `${fieldName} cannot be empty`
+    };
+  }
+  
+  return { isValid: true };
+};
+
+// UUID validation
+const validateUUID = (value: string, fieldName: string): ValidationResult => {
+  if (!isValidUUID(value)) {
+    return {
+      isValid: false,
+      message: `${fieldName} must be a valid UUID`
+    };
+  }
+  
+  return { isValid: true };
+};
+
+// Get all comic books for a specific title
+export const getComicBooks = async (
+  req: Request<{ coboTitleId: string }>,
+  res: Response<ApiResponse<ComicBookAttributes[]>>
+): Promise<Response> => {
+  const { coboTitleId } = req.params;
+  
+  // Validate required parameters
+  const validation = validateParams(req.params, ['coboTitleId']);
+  if (!validation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: validation.message 
+    });
+  }
+  
+  // Validate UUID format
+  const uuidValidation = validateUUID(coboTitleId, 'Comic book title ID');
+  if (!uuidValidation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: uuidValidation.message 
+    });
+  }
+  
+  try {
+    const comicbookIssues = await ComicBooks.findAll({
+      where: { comicbooktitlerelId: coboTitleId },  // No parseInt for UUID
+      order: [['comicIssue', 'ASC']]
+    });
+    
+    const data = comicbookIssues.map(comic => comic.toJSON());
+    
+    return res.status(200).json({
+      success: true,
+      data,
+      count: data.length
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 500, 'getComicBooks');
+  }
+};
+
+// Get all regular comic books
+export const getComicBookRegular = async (
+  _req: Request,
+  res: Response<ApiResponse<ComicBookAttributes[]>>
+): Promise<Response> => {
+  try {
+    const regularComicBooks = await ComicBooks.findAll({ 
+      where: { type: 'regular' },
+      order: [['title', 'ASC'], ['comicIssue', 'ASC']]
+    });
+    
+    const data = regularComicBooks.map(comic => comic.toJSON());
+    
+    return res.status(200).json({
+      success: true,
+      data,
+      count: data.length
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 500, 'getComicBookRegular');
+  }
+};
+
+// Get all variant comic books
+export const getComicBookVariant = async (
+  _req: Request,
+  res: Response<ApiResponse<ComicBookAttributes[]>>
+): Promise<Response> => {
+  try {
+    const variantComicBooks = await ComicBooks.findAll({ 
+      where: { type: 'variant' },
+      order: [['title', 'ASC'], ['comicIssue', 'ASC']]
+    });
+    
+    const data = variantComicBooks.map(comic => comic.toJSON());
+    
+    return res.status(200).json({
+      success: true,
+      data,
+      count: data.length
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 500, 'getComicBookVariant');
+  }
+};
+
+// Get one comic book by ID
+export const getOneById = async (
+  req: Request<{ id: string }>,
+  res: Response<ApiResponse<ComicBookAttributes>>
+): Promise<Response> => {
+  const { id } = req.params;
+  
+  // Validate required parameters
+  const validation = validateParams(req.params, ['id']);
+  if (!validation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: validation.message 
+    });
+  }
+  
+  // Validate UUID format
+  const uuidValidation = validateUUID(id, 'Comic book ID');
+  if (!uuidValidation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: uuidValidation.message 
+    });
+  }
+  
+  try {
+    const comicbook = await ComicBooks.findByPk(id);  // No parseInt for UUID
+    
+    if (!comicbook) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Comic book not found' 
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: comicbook.toJSON()
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 500, 'getOneById');
+  }
+};
+
+// Create a new comic book
+export const createComicBook = async (
+  req: Request<{}, {}, Partial<ComicBookCreationAttributes>>,
+  res: Response<ApiResponse<Pick<ComicBookAttributes, 'id'>>>
+): Promise<Response> => {
+  const {
+    title,
+    comicIssue,
+    author,
+    penciler,
+    coverartist,
+    inker,
+    volume,
+    year,
+    comicBookCover,
+    type,
+    comicbooktitlerelId,
+  } = req.body;
+  
+  // Validate required fields
+  const validation = validateParams(req.body as Record<string, string>, ['title', 'comicIssue', 'type', 'comicbooktitlerelId']);
+  if (!validation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: validation.message 
+    });
+  }
+  
+  // Validate title
+  if (!title) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Title is required' 
+    });
+  }
+  
+  const titleValidation = validateString(title, 'Title');
+  if (!titleValidation.isValid) {
+    return res.status(400).json({ 
+      success: false,
+      error: titleValidation.message 
+    });
+  }
+  
+  // Validate comicIssue
+  if (!comicIssue) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Comic issue is required' 
+    });
+  }
+  
+  const issueValidation = validateString(comicIssue, 'Comic issue');
+  if (!issueValidation.isValid) {
+    return res.status(400).json({ 
+      success: false,
+      error: issueValidation.message 
+    });
+  }
+  
+  // Validate type
+  if (!type || !isValidComicBookType(type)) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Type must be either "regular" or "variant"'
+    });
+  }
+  
+  // Validate comicbooktitlerelId
+  if (!comicbooktitlerelId) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Comic book title relation ID is required' 
+    });
+  }
+  
+  const titleIdValidation = validateUUID(comicbooktitlerelId, 'Comic book title relation ID');
+  if (!titleIdValidation.isValid) {
+    return res.status(400).json({ 
+      success: false,
+      error: titleIdValidation.message 
+    });
+  }
+  
+  // Validate year if provided
+  if (year !== undefined && (typeof year !== 'number' || !isValidYear(year))) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Year must be a valid number between 1900 and current year + 1'
+    });
+  }
+  
+  // Validate optional string fields
+  const optionalStringFields: Array<{ field: string | unknown; name: string }> = [
+    { field: author, name: 'Author' },
+    { field: penciler, name: 'Penciler' },
+    { field: coverartist, name: 'Cover artist' },
+    { field: inker, name: 'Inker' },
+    { field: volume, name: 'Volume' },
+    { field: comicBookCover, name: 'Comic book cover' }
+  ];
+  
+  for (const { field, name } of optionalStringFields) {
+    if (field !== undefined) {
+      const fieldValidation = validateString(field as string, name);
+      if (!fieldValidation.isValid) {
+        return res.status(400).json({ 
+          success: false,
+          error: fieldValidation.message 
+        });
+      }
+    }
+  }
+  
+  try {
+    const newComicBook = await ComicBooks.create({
+      title: title.trim(),
+      comicIssue: comicIssue.trim(),
+      author: author?.trim() || null,
+      penciler: penciler?.trim() || null,
+      coverartist: coverartist?.trim() || null,
+      inker: inker?.trim() || null,
+      volume: volume?.trim() || null,
+      year: year || null,
+      comicBookCover: comicBookCover?.trim() || null,
+      type,
+      comicbooktitlerelId,
+    });
+    
+    return res.status(201).json({ 
+      success: true,
+      data: { id: newComicBook.id },
+      message: 'Comic book created successfully'
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 400, 'createComicBook');
+  }
+};
+
+// Update an existing comic book
+export const updateComicBook = async (
+  req: Request<{ id: string }, {}, Partial<ComicBookAttributes>>,
+  res: Response<ApiResponse<ComicBookAttributes>>
+): Promise<Response> => {
+  const { id } = req.params;
+  
+  // Validate required parameters
+  const validation = validateParams(req.params, ['id']);
+  if (!validation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: validation.message 
+    });
+  }
+  
+  // Validate UUID format
+  const uuidValidation = validateUUID(id, 'Comic book ID');
+  if (!uuidValidation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: uuidValidation.message 
+    });
+  }
+  
+  // Validate request body is not empty
+  if (!req.body || Object.keys(req.body).length === 0) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Request body cannot be empty' 
+    });
+  }
+  
+  // Validate type if provided
+  if (req.body.type && !isValidComicBookType(req.body.type)) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Type must be either "regular" or "variant"'
+    });
+  }
+  
+  // Validate year if provided
+  if (req.body.year !== undefined && req.body.year !== null && 
+      (typeof req.body.year !== 'number' || !isValidYear(req.body.year))) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Year must be a valid number between 1900 and current year + 1'
+    });
+  }
+  
+  // Validate comicbooktitlerelId if provided
+  if (req.body.comicbooktitlerelId) {
+    const titleIdValidation = validateUUID(req.body.comicbooktitlerelId, 'Comic book title relation ID');
+    if (!titleIdValidation.isValid) {
+      return res.status(400).json({ 
+        success: false,
+        error: titleIdValidation.message 
+      });
+    }
+  }
+  
+  // Sanitize string fields
+  const updateData: Partial<ComicBookAttributes> = { ...req.body };
+  const stringFields: Array<keyof ComicBookAttributes> = [
+    'title', 'comicIssue', 'author', 'penciler', 'coverartist', 'inker', 'volume', 'comicBookCover'
+  ];
+  
+  stringFields.forEach(field => {
+    const value = updateData[field];
+    if (value && typeof value === 'string') {
+      const trimmed = value.trim();
+      (updateData as Record<string, string | null>)[field] = trimmed.length > 0 ? trimmed : null;
+    }
+  });
+  
+  try {
+    const [rowsUpdated, updatedRecords] = await ComicBooks.update(
+      updateData,
+      {
+        where: { id },  // No parseInt for UUID
+        returning: true,
+      }
+    );
+    
+    if (rowsUpdated === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Comic book not found or no changes made' 
+      });
+    }
+    
+    // Handle different database dialects
+    let updatedComicBook: ComicBookAttributes;
+    
+    if (updatedRecords && updatedRecords.length > 0) {
+      updatedComicBook = updatedRecords[0].toJSON();
+    } else {
+      const record = await ComicBooks.findByPk(id);
+      if (!record) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Comic book not found after update' 
+        });
+      }
+      updatedComicBook = record.toJSON();
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: updatedComicBook,
+      message: 'Comic book updated successfully'
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 400, 'updateComicBook');
+  }
+};
+
+// Delete a comic book
+export const removeComicBook = async (
+  req: Request<{ id: string }>,
+  res: Response<ApiResponse<never>>
+): Promise<Response> => {
+  const { id } = req.params;
+  
+  // Validate required parameters
+  const validation = validateParams(req.params, ['id']);
+  if (!validation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: validation.message 
+    });
+  }
+  
+  // Validate UUID format
+  const uuidValidation = validateUUID(id, 'Comic book ID');
+  if (!uuidValidation.isValid) {
+    return res.status(400).json({ 
+      success: false, 
+      error: uuidValidation.message 
+    });
+  }
+  
+  try {
+    // Check if record exists
+    const existingRecord = await ComicBooks.findByPk(id);
+    
+    if (!existingRecord) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Comic book not found' 
+      });
+    }
+    
+    const rowsDeleted = await ComicBooks.destroy({ 
+      where: { id }  // No parseInt for UUID
+    });
+    
+    if (rowsDeleted === 0) {
+      return res.status(500).json({ 
+        success: false,
+        error: 'Failed to delete comic book' 
+      });
+    }
+    
+    return res.status(200).json({ 
+      success: true,
+      message: 'Comic book deleted successfully' 
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 500, 'removeComicBook');
+  }
+};

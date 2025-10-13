@@ -1,0 +1,171 @@
+.cbWrapper{
+  background: #FFF;
+  margin-top: 150px;
+  /* height: 950px; */
+  min-height: 950px;
+  display: inline-block;
+  margin-bottom: 150px;
+  width: 100%;
+}
+
+.cbWrapper h1{
+  color: #2B2B2B;
+  /* left: 0; */
+  font-size: 5rem;
+  margin-bottom: 70px;
+  /* position: absolute; */
+  /* right: 0; */
+  text-align: center;
+  width: 100%;
+  top: 30px;
+  /* z-index: 5; */
+}
+
+.cbWrapper h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbList .wrapper{
+  background: #770422;
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-family: "Lato", Arial, sans-serif;
+  height: auto;
+  margin: 0 auto;
+  padding: 10px 1%;
+  position: relative;
+  width: 280px;
+}
+
+.wrapper h2{
+  margin-top: 5px;
+}
+
+.wrapper h3{
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.wrapper form{
+  background: #FFF;
+  /* border: 1px solid #2B2B2B; */
+  display: block;
+  margin: 0 auto;
+  padding: 2.2rem 2rem 2rem;
+  position: relative;
+  top: auto;
+  text-align: left;
+  width: 100%;
+}
+
+.wrapper form div:nth-child(1) p{
+  background: #770422;
+  color: #FFF;
+}
+
+.wrapper form > fieldset label{
+  color: #770422;
+  float: none;
+  font-size: 1.5rem;
+  margin-bottom: 25px;
+}
+
+.wrapper form > fieldset label:nth-child(1), .wrapper form  fieldset label:nth-child(3){
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.wrapper form > fieldset label input{
+  background: transparent;
+  font-size: 1.5rem;
+  padding: .4rem;
+  width: 100%;
+  margin: .5% 0 2%;
+  color: #2B2B2B;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #770422;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out;
+}
+
+.wrapper form > article > fieldset > label input.inputBorder:focus{
+  border: 2px solid #AECEAB;
+}
+
+.wrapper form > fieldset input[type='radio']{
+  height: auto;
+  margin-right: 15px;
+  width: auto;
+}
+
+.wrapper form fieldset label.labelRadio{
+  font-size: 1.5rem;
+  margin-right: 15px;
+  width: auto;
+}
+
+.wrapper form p, .wrapper form article p, .wrapper form article p a{
+  color: #770422;
+}
+
+.wrapper form p{
+  font-size: 1.7rem;
+}
+
+.wrapper form p{
+  line-height: 20px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.wrapper form p a{
+  font-size: 1.3rem;
+}
+
+.wrapper form article{
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.wrapper form article p{
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
+
+.wrapper form article p a{
+  font-size: 1.5rem;
+  margin: 0;
+  width: auto;
+}
+
+.wrapper form article p a .fa-eye{
+  display: none;
+}
+
+.wrapper form article p a span{
+  width: auto;
+}
+
+.wrapper form article input.submit{
+  display: inline-block;
+  font-size: 1.5rem;
+  padding: 5px 0;
+  border-radius: 4px;
+  background: #AECEAB;
+  color: #770422;
+  margin: 0;
+  cursor: pointer;
+  text-align: center;
+  width: 100px;
+}

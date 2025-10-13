@@ -1,0 +1,1937 @@
+.graphic, .logo_graphic, button, form, #main, #root > section:nth-child(2) h1 .graphic, section:nth-child(3) .container .row .card button, .cbWrapper .cbList > .wrapper form, #cbDash > .wrapper form, #cbComicForm .cbList > .wrapper form {
+  margin: 0 auto;
+}
+
+* {
+  border: 0;
+  margin: 0;
+  outline: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 62.5%;
+}
+
+body {
+  background: #CCC;
+  color: #FFF;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: normal;
+  position: relative;
+}
+
+.loader {
+  background: #2B2B2B;
+  height: 3000px;
+  padding-top: 400px;
+  position: fixed;
+  text-align: center;
+  top: 0;
+  width: 100%;
+  z-index: 6000;
+}
+@media (max-width: 1440px) {
+  .loader {
+    padding-top: 300px;
+  }
+}
+
+.loader > section {
+  display: inline-block;
+  height: 100px;
+  margin: 0 0 2px;
+  padding: 0;
+  width: 100px;
+}
+
+.loader > section img {
+  opacity: 0.2;
+}
+
+.loader p {
+  color: #FFF;
+  padding: 0;
+  margin: 0;
+}
+
+/* .loader img{
+  opacity: 0;
+} */
+/* .fadeIn{
+  opacity: 1;
+  -webkit-transition: opacity 6s ease-in-out;
+} */
+.fadeOut {
+  opacity: 0;
+  -webkit-transition: opacity 0.5s ease-in-out;
+}
+
+/* TYPOGRAPHY ================================== */
+h1, h2 {
+  font-weight: bold;
+  line-height: 70px;
+  text-transform: capitalize;
+}
+
+h1 {
+  color: #FFF;
+  font-family: "Source Sans Pro", Arial, sans-serif;
+  font-weight: bold;
+}
+@media (max-width: 500px) {
+  h1 {
+    padding-left: 1%;
+    padding-right: 1%;
+  }
+}
+
+h2 {
+  font-size: 3rem;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.currentLink a {
+  color: #AECEAB;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+a {
+  color: #FFF;
+}
+a:hover {
+  color: #AECEAB;
+  text-decoration: none;
+}
+
+p {
+  color: #FFF;
+  font-size: 2rem;
+}
+
+.graphic {
+  background: #770422;
+  height: 10px;
+  margin-bottom: 50px;
+  width: 70px;
+}
+
+.logo_graphic {
+  height: 70px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: -36px;
+  width: 70px;
+}
+.logo_graphic img {
+  height: 100%;
+  width: 100%;
+}
+
+button {
+  background: #AECEAB;
+  bottom: 30px;
+  color: #FFF;
+  cursor: pointer;
+  min-height: 40px;
+  padding: 10px 0;
+  width: 54%;
+}
+
+form {
+  background: #FFF;
+  border-radius: 15px;
+  display: inline-block;
+  left: 0;
+  padding: 30px 18px;
+  position: absolute;
+  right: 0;
+  top: 120px;
+  width: 350px;
+}
+form p {
+  font-size: 1em;
+  margin-bottom: 7px;
+}
+
+input {
+  border-radius: 8px;
+  height: 35px;
+  margin-bottom: 25px;
+  padding: 10px 1%;
+  width: 100%;
+}
+
+figure {
+  margin: 0;
+}
+
+.link::after {
+  content: "";
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 0px;
+  background-color: #770422;
+  -webkit-transition: width 0.5s ease, background-color 0.5s ease;
+  -moz-transition: width 0.5s ease, background-color 0.5s ease;
+  -o-transition: width 0.5s ease, background-color 0.5s ease;
+  transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+.link:hover::after {
+  background: #770422;
+  width: 80%;
+}
+
+/* BASE STRUCTURE =============================== */
+#main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  padding: 0;
+  position: relative;
+  width: 100%;
+}
+@media (max-width: 500px) {
+  #main {
+    padding-bottom: 80px;
+  }
+}
+@media (max-width: 1199px) {
+  #main {
+    width: 100%;
+  }
+}
+
+/* HEADER ================================== */
+header {
+  align-items: center;
+  background: #2B2B2B;
+  display: flex;
+  flex-direction: row;
+  padding: 5px 9%;
+  position: fixed;
+  justify-content: space-between;
+  width: 100%;
+  z-index: 999;
+}
+@media (max-width: 500px) {
+  header {
+    padding: 12px 5%;
+    width: 100%;
+  }
+}
+@media (max-width: 800px) {
+  header {
+    background-position: center;
+    margin-bottom: 20px;
+    width: 100%;
+  }
+}
+header {
+  /*LOGO*/
+}
+header .logoWrap {
+  display: inline-block;
+}
+@media (max-width: 800px) {
+  header .logoWrap {
+    display: block;
+  }
+}
+header .logoWrap a:hover {
+  text-decoration: none;
+}
+header .logoWrap a > .logo {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+}
+@media (max-width: 500px) {
+  header .logoWrap a > .logo {
+    display: block;
+    flex-direction: column;
+    justify-content: center;
+    margin-top: 0;
+    text-align: center;
+  }
+}
+header .logoWrap a .logo figure {
+  height: 100%;
+  margin-right: 1.5%;
+  width: 20%;
+}
+@media (max-width: 500px) {
+  header .logoWrap a .logo figure {
+    margin: 0 auto;
+  }
+}
+header .logoWrap a .logo figure img {
+  width: 100%;
+}
+header .logoWrap a .logo h1 {
+  color: #AECEAB;
+  font-size: 1.8em;
+  font-weight: bold;
+}
+@media (max-width: 500px) {
+  header .logoWrap a .logo h1 {
+    font-size: 1.3em;
+    line-height: normal;
+    margin-bottom: 0;
+  }
+}
+header .logoWrap a .logo h1 span {
+  font-weight: bold;
+}
+header {
+  /*NAVIGATION*/
+}
+header nav {
+  float: right;
+  margin-right: 0;
+}
+@media (max-width: 1199px) {
+  header nav.navbar {
+    padding-top: 3px;
+  }
+}
+@media (max-width: 500px) {
+  header nav {
+    right: 26px !important;
+  }
+}
+@media (max-width: 800px) {
+  header nav {
+    position: absolute;
+    margin-right: 0;
+    z-index: 99;
+    width: auto;
+  }
+}
+header nav img {
+  cursor: pointer;
+  display: none;
+  width: 30px;
+}
+@media (max-width: 800px) {
+  header nav img:nth-child(1) {
+    display: block;
+    float: right;
+  }
+}
+@media (max-width: 800px) {
+  header nav img:nth-child(2) {
+    float: right;
+  }
+}
+@media (max-width: 800px) {
+  header nav div.container ul {
+    background: #2B2B2B;
+    margin-top: 38px;
+  }
+}
+@media (max-width: 800px) {
+  header nav div.container ul {
+    display: flex;
+    flex-direction: column;
+  }
+}
+header nav div.container ul li {
+  text-align: center;
+}
+@media (max-width: 800px) {
+  header nav div.container ul li {
+    font-size: 0.9em;
+    margin-bottom: 20px;
+    text-align: left;
+    width: 65px;
+  }
+}
+header nav div.container ul li a {
+  font-size: 0.9em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+header .bckColor {
+  background: #2B2B2B;
+  height: 100px;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  z-index: -1;
+}
+
+section {
+  padding-top: 40px;
+  position: relative;
+  width: 100%;
+}
+
+#root > section:nth-child(3), #root > section:nth-child(4), .comicSaleWrapper {
+  /* height: 950px; */
+  min-height: 950px;
+  display: inline-block;
+  width: 100%;
+}
+
+#root > section:nth-child(2) {
+  background: rgba(0, 0, 0, 0.8);
+  height: 950px;
+}
+@media (max-width: 991px) {
+  #root > section:nth-child(2) {
+    height: 600px;
+    min-height: 600px;
+  }
+}
+#root > section:nth-child(2) h1 {
+  font-size: 5em;
+  left: 50%;
+  line-height: 105px;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+@media (max-width: 1440px) {
+  #root > section:nth-child(2) h1 {
+    top: 40%;
+  }
+}
+@media (max-width: 1199px) {
+  #root > section:nth-child(2) h1 {
+    font-size: 3.5em;
+    line-height: 80px;
+  }
+}
+@media (max-width: 991px) {
+  #root > section:nth-child(2) h1 {
+    top: 50%;
+  }
+}
+@media (max-width: 800px) {
+  #root > section:nth-child(2) h1 {
+    font-size: 2.5em;
+    line-height: 50px;
+  }
+}
+@media (max-width: 500px) {
+  #root > section:nth-child(2) h1 {
+    font-size: 2em;
+  }
+}
+#root > section:nth-child(2) h1 .graphic {
+  left: 0;
+  margin-top: 20px;
+  position: fixed;
+  right: 0;
+}
+
+#bck {
+  background: url(../img/comicsHeader.jpg) fixed no-repeat 0 0/cover;
+  height: 950px;
+  min-height: 950px;
+  top: 0;
+  width: 100%;
+}
+@media (max-width: 991px) {
+  #bck {
+    background-attachment: scroll;
+    background-size: auto;
+    height: 600px;
+    min-height: 600px;
+  }
+}
+
+section:nth-child(3) {
+  background: #FFF;
+}
+section:nth-child(3) h2 {
+  color: #2B2B2B;
+}
+section:nth-child(3) .graphic {
+  margin-bottom: 90px;
+}
+section:nth-child(3) .container .row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin: 0;
+}
+section:nth-child(3) .container .row .cardWrap {
+  margin: 0 auto 80px;
+  text-align: center;
+}
+@media (max-width: 991px) {
+  section:nth-child(3) .container .row .cardWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+section:nth-child(3) .container .row .card {
+  background: #770422;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+  height: 450px;
+  margin-bottom: 10px;
+  margin-right: 0.5%;
+  padding-left: 2%;
+  padding-right: 2%;
+  position: relative;
+}
+@media (max-width: 991px) {
+  section:nth-child(3) .container .row .card {
+    max-width: 400px;
+  }
+}
+section:nth-child(3) .container .row .card h3 {
+  margin-bottom: 40px;
+  margin-top: 40px;
+  font-size: 1.3em;
+  font-weight: bold;
+  line-height: 30px;
+}
+@media (max-width: 500px) {
+  section:nth-child(3) .container .row .card h3 {
+    margin-top: 60px;
+    text-align: center;
+  }
+}
+@media (max-width: 1199px) {
+  section:nth-child(3) .container .row .card h3 {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    margin-top: 20px;
+  }
+}
+section:nth-child(3) .container .row .card h4 {
+  margin-bottom: 40px;
+  font-size: 1.7em;
+  font-weight: normal;
+}
+@media (max-width: 500px) {
+  section:nth-child(3) .container .row .card h4 {
+    text-align: center;
+  }
+}
+@media (max-width: 1199px) {
+  section:nth-child(3) .container .row .card h4 {
+    font-size: 1.3em;
+    margin-bottom: 20px;
+  }
+}
+section:nth-child(3) .container .row .card p {
+  font-size: 1.7rem;
+  margin-bottom: 20px;
+  line-height: 30px;
+}
+@media (max-width: 500px) {
+  section:nth-child(3) .container .row .card p {
+    text-align: center;
+  }
+}
+@media (max-width: 1199px) {
+  section:nth-child(3) .container .row .card p {
+    margin-bottom: 12px;
+  }
+}
+section:nth-child(3) .container .row .card button {
+  background: #AECEAB;
+  bottom: 30px;
+  color: #770422;
+  font-size: 1.7rem;
+  font-weight: bold;
+  left: 0;
+  padding: 10px 0;
+  position: absolute;
+  right: 0;
+  text-transform: uppercase;
+  width: 90%;
+}
+
+section:nth-child(4) {
+  background: url(../img/neven-krcmarek-Tm6RYZmBsH8-unsplash.jpg) no-repeat 0 0/cover;
+  padding-top: 70px;
+}
+section:nth-child(4) article {
+  max-width: 100%;
+}
+section:nth-child(4) article .row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  margin: 0;
+}
+section:nth-child(4) article .row .cardWrap {
+  margin: 0 auto 80px;
+  text-align: center;
+}
+@media (max-width: 991px) {
+  section:nth-child(4) article .row .cardWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+section:nth-child(4) article .row .cardWrap section {
+  background: #FFF;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+  padding: 5px 1% 40px;
+  position: relative;
+}
+@media (max-width: 991px) {
+  section:nth-child(4) article .row .cardWrap section {
+    max-width: 400px;
+    padding: 5px 1% 0;
+  }
+}
+section:nth-child(4) article .row .cardWrap section p {
+  color: #2B2B2B;
+  font-size: 1.8rem;
+  font-weight: bold;
+  left: 50%;
+  margin: 0;
+  padding: 12px 0 0;
+  text-align: center;
+  top: 310px;
+  width: 100%;
+}
+@media (max-width: 991px) {
+  section:nth-child(4) article .row .cardWrap section p {
+    padding: 30px 0;
+  }
+}
+section:nth-child(4) article .row .cardWrap:nth-child(1) figure {
+  background: url(../img/img1.jpg) no-repeat 0 0/cover;
+  height: 300px;
+  width: 100%;
+}
+section:nth-child(4) article .row .cardWrap:nth-child(2) figure {
+  background: url(../img/img2.jpg) no-repeat 0 0/cover;
+  height: 300px;
+  width: 100%;
+}
+section:nth-child(4) article .row .cardWrap:nth-child(3) figure {
+  background: url(../img/img3.jpg) no-repeat 0 0/cover;
+  height: 300px;
+  width: 100%;
+}
+
+section.comicSaleWrapper {
+  background: #FFF;
+  margin-bottom: 150px;
+  padding-top: 1%;
+}
+section.comicSaleWrapper h2 {
+  color: #2B2B2B;
+  margin-top: 5%;
+}
+section.comicSaleWrapper article {
+  max-width: 100%;
+}
+@media (max-width: 991px) {
+  section.comicSaleWrapper article {
+    max-width: 540px;
+  }
+}
+section.comicSaleWrapper article p {
+  color: #2B2B2B;
+  font-size: 1.1em;
+  line-height: 30px;
+  margin-bottom: 40px;
+}
+section.comicSaleWrapper article .row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  margin-left: 0;
+}
+section.comicSaleWrapper article .row .cardWrap {
+  margin: 0 auto 80px;
+  text-align: center;
+}
+@media (max-width: 991px) {
+  section.comicSaleWrapper article .row .cardWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+section.comicSaleWrapper article .row .card {
+  border: 0;
+  height: 493px;
+}
+@media (max-width: 991px) {
+  section.comicSaleWrapper article .row .card {
+    height: 550px;
+  }
+}
+section.comicSaleWrapper article .row .cardWrap:nth-child(1) .card {
+  background: url(../img/item1.jpg) no-repeat 0 0/contain;
+}
+@media (max-width: 991px) {
+  section.comicSaleWrapper article .row .cardWrap:nth-child(1) .card {
+    background-position: 50% 0;
+  }
+}
+section.comicSaleWrapper article .row .cardWrap:nth-child(2) .card {
+  background: url(../img/item2.jpg) no-repeat 0 0/contain;
+}
+@media (max-width: 991px) {
+  section.comicSaleWrapper article .row .cardWrap:nth-child(2) .card {
+    background-position: 50% 0;
+  }
+}
+section.comicSaleWrapper article .row .cardWrap:nth-child(3) .card {
+  background: url(../img/item3.jpg) no-repeat 0 0/contain;
+}
+@media (max-width: 991px) {
+  section.comicSaleWrapper article .row .cardWrap:nth-child(3) .card {
+    background-position: 50% 0;
+  }
+}
+section.comicSaleWrapper article .row .cardWrap:nth-child(4) .card {
+  background: url(../img/item4.jpg) no-repeat 0 0/contain;
+}
+@media (max-width: 991px) {
+  section.comicSaleWrapper article .row .cardWrap:nth-child(4) .card {
+    background-position: 50% 0;
+  }
+}
+section.comicSaleWrapper article .row :last-child {
+  margin-right: 0;
+}
+
+.cbWrap {
+  background: #FFF;
+  margin-top: 0;
+  padding: 120px 0;
+}
+.cbWrap h1 {
+  color: #2B2B2B;
+  left: 0;
+  font-size: 5rem;
+  margin-bottom: 10px;
+  position: absolute;
+  right: 0;
+  text-align: center;
+  width: 100%;
+  top: 15%;
+  z-index: 5;
+}
+@media (max-width: 800px) {
+  .cbWrap h1 {
+    font-size: 3.5em;
+  }
+}
+.cbWrap .graphic {
+  margin-top: 15px;
+}
+.cbWrap > h2 {
+  margin-top: 0;
+}
+.cbWrap section {
+  height: auto;
+  min-height: 450px;
+}
+.cbWrap section:nth-child(2), .cbWrap section:nth-child(3) {
+  background: #AECEAB;
+  color: #FFF;
+}
+.cbWrap section:nth-child(2) h1 {
+  position: relative;
+  top: auto;
+}
+.cbWrap .wrapperOne {
+  padding: 0;
+}
+.cbWrap > .cbList .wrapper {
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-family: "Lato", Arial, sans-serif;
+  margin: 12% auto 0;
+  background: #AECEAB;
+  width: 50%;
+  padding: 10px 3%;
+  position: relative;
+}
+.cbWrap > .cbList .wrapper article {
+  background: #770422;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  height: 300px;
+  left: 50%;
+  padding-top: 20px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+}
+.cbWrap > .cbList .wrapper article p {
+  padding: 0 1%;
+}
+.cbWrap > .cbList .wrapper article p a {
+  font-size: 1.5rem;
+  color: #AECEAB;
+  margin: 0;
+}
+.cbWrap > .cbList .wrapper > h2 {
+  margin-top: 5px;
+}
+.cbWrap > .cbList .wrapper > h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: capitalize;
+}
+.cbWrap > .cbList .wrapper form {
+  background: #D0D2D3;
+  border: 1px solid #000;
+  display: block;
+  margin: 0 auto 3%;
+  padding: 2.2rem 2rem 0.5rem;
+  position: relative;
+  top: auto;
+  text-align: left;
+  width: 80%;
+}
+.cbWrap > .cbList .wrapper form > fieldset label {
+  color: #2B2B2B;
+  float: none;
+  font-size: 2rem;
+  margin-bottom: 25px;
+}
+.cbWrap > .cbList .wrapper form > fieldset label:nth-child(1), .cbWrap > .cbList .wrapper form fieldset label:nth-child(3) {
+  margin-bottom: 15px;
+  width: 100%;
+}
+.cbWrap > .cbList .wrapper form > fieldset input {
+  background: rgba(236, 236, 236, 0.5);
+  font-size: 1.5rem;
+  padding: 0.4rem;
+  width: 100%;
+  margin-bottom: 0.5% 0 2%;
+  color: #404041;
+  border-radius: 8px;
+  border: 1px solid #000;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  -ms-transition: all 0.3s ease-in-out;
+  -o-transition: all 0.3s ease-in-out;
+}
+.cbWrap > .cbList .wrapper form > fieldset input[type=radio] {
+  height: auto;
+  margin-right: 15px;
+  width: auto;
+}
+.cbWrap > .cbList .wrapper form fieldset label.labelRadio {
+  font-size: 1.5rem;
+  margin-right: 15px;
+  width: auto;
+}
+.cbWrap > .cbList .wrapper form input.submit {
+  font-size: 1.5rem;
+  padding: 5px 4%;
+  border-radius: 4px;
+  background: #404041;
+  color: #FFF;
+  width: auto;
+  border: 1px solid #D0D2D3;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+}
+.cbWrap > .cbList .wrapper form div:nth-child(5) {
+  text-align: center;
+}
+.cbWrap > .cbList .wrapper p {
+  text-align: center;
+}
+.cbWrap > .cbList .wrapper p a {
+  margin-right: 50px;
+}
+
+.cbList {
+  min-height: 610px;
+}
+
+.cbWrapper {
+  background: #FFF;
+  margin-top: 0;
+  padding: 120px 0;
+}
+.cbWrapper h1 {
+  color: #2B2B2B;
+  left: 0;
+  font-size: 5rem;
+  margin-bottom: 10px;
+  position: absolute;
+  right: 0;
+  text-align: center;
+  width: 100%;
+  top: 15%;
+  z-index: 5;
+}
+@media (max-width: 800px) {
+  .cbWrapper h1 {
+    font-size: 3.5em;
+  }
+}
+.cbWrapper h1 .graphic {
+  margin-top: 15px;
+}
+.cbWrapper > h2 {
+  margin-top: 0;
+}
+.cbWrapper section {
+  height: auto;
+}
+.cbWrapper section:nth-child(2), .cbWrapper section:nth-child(3) {
+  background: #770422;
+  color: #FFF;
+}
+.cbWrapper section:nth-child(2) h1 {
+  position: relative;
+  top: auto;
+}
+.cbWrapper .cbList .wrapperOne {
+  padding: 0;
+}
+.cbWrapper .cbList > .wrapper {
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-family: "Lato", Arial, sans-serif;
+  margin: 12% auto 0;
+  background: #770422;
+  width: 40%;
+  padding: 10px 1%;
+  position: relative;
+}
+.cbWrapper .cbList > .wrapper > article {
+  background: #770422;
+  border-radius: 15px;
+  height: 250px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+}
+.cbWrapper .cbList > .wrapper > h2 {
+  margin-top: 5px;
+}
+.cbWrapper .cbList > .wrapper > h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: capitalize;
+}
+.cbWrapper .cbList > .wrapper form {
+  background: #FFF;
+  display: block;
+  padding: 2.2rem 2rem 2rem;
+  position: relative;
+  top: auto;
+  text-align: left;
+  width: auto;
+}
+.cbWrapper .cbList > .wrapper form > fieldset label {
+  color: #770422;
+  float: none;
+  font-size: 2rem;
+  margin-bottom: 25px;
+}
+.cbWrapper .cbList > .wrapper form > fieldset label:nth-child(1), .cbWrapper .cbList > .wrapper form fieldset label:nth-child(3) {
+  margin-bottom: 15px;
+  width: 100%;
+}
+.cbWrapper .cbList > .wrapper form > fieldset label input {
+  background: transparent;
+  font-size: 1.5rem;
+  padding: 0.4rem;
+  width: 100%;
+  margin: 0.5% 0 2%;
+  color: #2B2B2B;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #770422;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  -ms-transition: all 0.3s ease-in-out;
+  -o-transition: all 0.3s ease-in-out;
+}
+.cbWrapper .cbList > .wrapper form > fieldset input[type=radio] {
+  height: auto;
+  margin-right: 15px;
+  width: auto;
+}
+.cbWrapper .cbList > .wrapper form fieldset label.labelRadio {
+  font-size: 1.5rem;
+  margin-right: 15px;
+  width: auto;
+}
+.cbWrapper .cbList > .wrapper form article {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+.cbWrapper .cbList > .wrapper form article p {
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
+.cbWrapper .cbList > .wrapper form article p a {
+  color: #770422;
+  font-size: 1.5rem;
+  margin: 0;
+  width: auto;
+}
+.cbWrapper .cbList > .wrapper form article p a .fa-eye {
+  display: none;
+}
+.cbWrapper .cbList > .wrapper form article p a span {
+  width: auto;
+}
+.cbWrapper .cbList > .wrapper form article input.submit {
+  font-size: 1.5rem;
+  padding: 5px 10%;
+  border-radius: 4px;
+  background: #AECEAB;
+  color: #770422;
+  border: 1px solid #D0D2D3;
+  margin: 0;
+  cursor: pointer;
+  text-align: center;
+  width: auto;
+}
+.cbWrapper .cbList > .wrapper form div:nth-child(5) {
+  text-align: center;
+}
+.cbWrapper .cbList > .wrapper p {
+  text-align: center;
+}
+.cbWrapper .cbList > .wrapper p a {
+  margin-right: 50px;
+}
+
+#cbDash .wrapperOne {
+  padding: 0;
+}
+#cbDash > .wrapper {
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-family: "Lato", Arial, sans-serif;
+  margin: 12% auto 0;
+  background: #770422;
+  width: 40%;
+  padding: 10px 1%;
+  position: relative;
+}
+#cbDash > .wrapper article {
+  background: #FFF;
+  border-radius: 8px;
+  height: 250px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+}
+#cbDash > .wrapper > h2 {
+  margin-top: 5px;
+}
+#cbDash > .wrapper > h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: capitalize;
+}
+#cbDash > .wrapper form {
+  background: #FFF;
+  border: 1px solid #2B2B2B;
+  display: block;
+  padding: 2.2rem 2rem 0.5rem;
+  position: relative;
+  top: auto;
+  text-align: left;
+  width: auto;
+}
+#cbDash > .wrapper form > fieldset label {
+  color: #770422;
+  float: none;
+  font-size: 2rem;
+  margin-bottom: 25px;
+}
+#cbDash > .wrapper form > fieldset label:nth-child(1), #cbDash > .wrapper form fieldset label:nth-child(3) {
+  margin-bottom: 15px;
+  width: 100%;
+}
+#cbDash > .wrapper form > fieldset input {
+  background: transparent;
+  font-size: 1.5rem;
+  padding: 0.4rem;
+  width: 100%;
+  margin-bottom: 0.5% 0 2%;
+  color: #2B2B2B;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #770422;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  -ms-transition: all 0.3s ease-in-out;
+  -o-transition: all 0.3s ease-in-out;
+}
+#cbDash > .wrapper form > fieldset input[type=radio] {
+  height: auto;
+  margin-right: 15px;
+  width: auto;
+}
+#cbDash > .wrapper form fieldset label.labelRadio {
+  font-size: 1.5rem;
+  margin-right: 15px;
+  width: auto;
+}
+#cbDash > .wrapper form input.submit {
+  font-size: 1.5rem;
+  padding: 5px 4%;
+  border-radius: 4px;
+  background: #AECEAB;
+  color: #770422;
+  width: 100%;
+  border: 1px solid #D0D2D3;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+}
+#cbDash > .wrapper form div:nth-child(5) {
+  text-align: center;
+}
+#cbDash > .wrapper p {
+  text-align: center;
+}
+#cbDash > .wrapper p a {
+  margin-right: 50px;
+}
+
+#cbComicForm .cbList > .wrapper {
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-family: "Lato", Arial, sans-serif;
+  margin: 12% auto 0;
+  background: #770422;
+  width: 40%;
+  padding: 10px 1%;
+  position: relative;
+}
+#cbComicForm .cbList > .wrapper > h2 {
+  margin-top: 5px;
+}
+#cbComicForm .cbList > .wrapper > h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: capitalize;
+}
+#cbComicForm .cbList > .wrapper form {
+  background: #FFF;
+  display: block;
+  padding: 2.2rem 2rem 2rem;
+  position: relative;
+  top: auto;
+  text-align: left;
+  width: auto;
+}
+#cbComicForm .cbList > .wrapper form > article > fieldset {
+  padding: 0 5%;
+}
+#cbComicForm .cbList > .wrapper form > article > fieldset > label {
+  color: #770422;
+  float: none;
+  font-size: 1.5rem;
+  margin-bottom: 25px;
+}
+#cbComicForm .cbList > .wrapper form > article > fieldset > label:nth-child(1), #cbComicForm .cbList > .wrapper form > article > fieldset > label:nth-child(3) {
+  margin-bottom: 15px;
+  width: 100%;
+}
+#cbComicForm .cbList > .wrapper form > article > fieldset > label input {
+  background: transparent;
+  font-size: 1.5rem;
+  padding: 0.4rem;
+  width: 100%;
+  margin: 0.5% 0 2%;
+  color: #2B2B2B;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #770422;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  -ms-transition: all 0.3s ease-in-out;
+  -o-transition: all 0.3s ease-in-out;
+}
+#cbComicForm .cbList > .wrapper form > article label.labelRadio {
+  color: #770422;
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  width: auto;
+}
+#cbComicForm .cbList > .wrapper form > article label.labelRadio input[type=radio] {
+  height: auto;
+  margin-left: 15px;
+  width: auto;
+}
+#cbComicForm .cbList > .wrapper form article {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+#cbComicForm .cbList > .wrapper form article p {
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
+#cbComicForm .cbList > .wrapper form article p a {
+  color: #770422;
+  font-size: 1.5rem;
+  margin: 0;
+  width: auto;
+}
+#cbComicForm .cbList > .wrapper form article p a .fa-eye {
+  display: none;
+}
+#cbComicForm .cbList > .wrapper form article p a span {
+  width: auto;
+}
+#cbComicForm .cbList > .wrapper form article input.submit {
+  font-size: 1.5rem;
+  padding: 5px 10%;
+  border-radius: 4px;
+  background: #AECEAB;
+  color: #770422;
+  border: 1px solid #D0D2D3;
+  margin: 0;
+  cursor: pointer;
+  text-align: center;
+  width: auto;
+}
+#cbComicForm .cbList > .wrapper form div:nth-child(5) {
+  text-align: center;
+}
+#cbComicForm .cbList > .wrapper p {
+  text-align: center;
+}
+#cbComicForm .cbList > .wrapper p a {
+  margin-right: 50px;
+}
+
+#cbComicForm .cbList h2 {
+  margin-top: 170px;
+}
+#cbComicForm .cbList h2 a {
+  color: #770422;
+  font-size: 2.3rem;
+}
+#cbComicForm .cbList h2 a:hover {
+  color: #AECEAB;
+}
+#cbComicForm .cbList .container .row div .figure img {
+  height: 493px;
+}
+@media (max-width: 991px) {
+  #cbComicForm .cbList .container .row div .figure img {
+    margin: 0 auto 50px;
+  }
+}
+
+/* Removed from CSS Module and added here for responsive behavior because style wouldn't respond to screen sizes
+while in CSS Module */
+#cbComBookListIssues, #cbSale, #cbWishList, #cbVeiwMessage {
+  background: #FFF;
+  margin-top: 150px;
+  min-height: 950px;
+  display: inline-block;
+  margin-bottom: 150px;
+  width: 100%;
+}
+@media (max-width: 320px) {
+  #cbComBookListIssues, #cbSale, #cbWishList, #cbVeiwMessage {
+    margin-top: 80px;
+  }
+}
+#cbComBookListIssues h1, #cbSale h1, #cbWishList h1, #cbVeiwMessage h1 {
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 50px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues h1, #cbSale h1, #cbWishList h1, #cbVeiwMessage h1 {
+    font-size: 3.5rem;
+    top: 0;
+  }
+}
+#cbComBookListIssues h1 .graphic, #cbSale h1 .graphic, #cbWishList h1 .graphic, #cbVeiwMessage h1 .graphic {
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+#cbComBookListIssues > h2, #cbSale > h2, #cbWishList > h2, #cbVeiwMessage > h2 {
+  line-height: normal;
+  margin-top: 0;
+}
+#cbComBookListIssues > h2 > section, #cbSale > h2 > section, #cbWishList > h2 > section, #cbVeiwMessage > h2 > section {
+  display: inline-block;
+  min-height: auto;
+  padding: 0;
+  width: auto;
+}
+#cbComBookListIssues > h2 > section a, #cbSale > h2 > section a, #cbWishList > h2 > section a, #cbVeiwMessage > h2 > section a {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+#cbComBookListIssues > h2 > section a:hover, #cbSale > h2 > section a:hover, #cbWishList > h2 > section a:hover, #cbVeiwMessage > h2 > section a:hover {
+  color: #770422;
+}
+#cbComBookListIssues > h2 > section a figure :nth-child(1), #cbSale > h2 > section a figure :nth-child(1), #cbWishList > h2 > section a figure :nth-child(1), #cbVeiwMessage > h2 > section a figure :nth-child(1) {
+  color: #770422;
+  font-size: 2.5rem;
+}
+#cbComBookListIssues > h2 > section a p, #cbSale > h2 > section a p, #cbWishList > h2 > section a p, #cbVeiwMessage > h2 > section a p {
+  color: #2B2B2B;
+  font-size: 3rem;
+  margin: 0;
+  padding: 0;
+}
+#cbComBookListIssues > h2 > section a p:hover, #cbSale > h2 > section a p:hover, #cbWishList > h2 > section a p:hover, #cbVeiwMessage > h2 > section a p:hover {
+  color: #770422;
+}
+#cbComBookListIssues > h2 section a figure, #cbComBookListIssues .comicWrap .paraWrap > section .editStyle figure,
+#cbComBookListIssues .comicWrap .paraWrap > section .deleteStyle figure, #cbSale > h2 section a figure, #cbSale .comicWrap .paraWrap > section .editStyle figure,
+#cbSale .comicWrap .paraWrap > section .deleteStyle figure, #cbWishList > h2 section a figure, #cbWishList .comicWrap .paraWrap > section .editStyle figure,
+#cbWishList .comicWrap .paraWrap > section .deleteStyle figure, #cbVeiwMessage > h2 section a figure, #cbVeiwMessage .comicWrap .paraWrap > section .editStyle figure,
+#cbVeiwMessage .comicWrap .paraWrap > section .deleteStyle figure {
+  margin: 0 10px 0 0;
+  padding: 0;
+}
+#cbComBookListIssues section:nth-child(4), #cbSale section:nth-child(4), #cbWishList section:nth-child(4), #cbVeiwMessage section:nth-child(4) {
+  background: transparent;
+}
+#cbComBookListIssues .cbList > h3, #cbSale .cbList > h3, #cbWishList .cbList > h3, #cbVeiwMessage .cbList > h3 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: capitalize;
+}
+#cbComBookListIssues .cbList section, #cbSale .cbList section, #cbWishList .cbList section, #cbVeiwMessage .cbList section {
+  color: #000;
+  display: inline-block;
+  height: auto;
+  margin-bottom: 50px;
+  padding-top: 0;
+  text-align: center;
+}
+#cbComBookListIssues .cbList section h2, #cbSale .cbList section h2, #cbWishList .cbList section h2, #cbVeiwMessage .cbList section h2 {
+  display: inline-block;
+  line-height: normal;
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section h2, #cbSale .cbList section h2, #cbWishList .cbList section h2, #cbVeiwMessage .cbList section h2 {
+    font-size: 2.7rem;
+    padding-left: 2%;
+    padding-right: 2%;
+  }
+}
+#cbComBookListIssues .cbList section h2 a, #cbSale .cbList section h2 a, #cbWishList .cbList section h2 a, #cbVeiwMessage .cbList section h2 a {
+  color: #000;
+}
+#cbComBookListIssues .cbList section h2 a:hover, #cbSale .cbList section h2 a:hover, #cbWishList .cbList section h2 a:hover, #cbVeiwMessage .cbList section h2 a:hover {
+  color: #770422;
+}
+#cbComBookListIssues .cbList section > article, #cbSale .cbList section > article, #cbWishList .cbList section > article, #cbVeiwMessage .cbList section > article {
+  align-items: center;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  height: auto;
+  justify-content: space-evenly;
+  margin: auto;
+  padding: 20px 2%;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article, #cbSale .cbList section > article, #cbWishList .cbList section > article, #cbVeiwMessage .cbList section > article {
+    padding: 20px 1%;
+    width: 100%;
+  }
+}
+#cbComBookListIssues .cbList section > article .loadMessageWrap, #cbSale .cbList section > article .loadMessageWrap, #cbWishList .cbList section > article .loadMessageWrap, #cbVeiwMessage .cbList section > article .loadMessageWrap {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .loadMessageWrap, #cbSale .cbList section > article .loadMessageWrap, #cbWishList .cbList section > article .loadMessageWrap, #cbVeiwMessage .cbList section > article .loadMessageWrap {
+    margin-top: 100px;
+  }
+}
+#cbComBookListIssues .cbList section > article .loadMessageWrap > section, #cbSale .cbList section > article .loadMessageWrap > section, #cbWishList .cbList section > article .loadMessageWrap > section, #cbVeiwMessage .cbList section > article .loadMessageWrap > section {
+  width: 200px;
+}
+#cbComBookListIssues .cbList section > article .loadMessageWrap > section img, #cbSale .cbList section > article .loadMessageWrap > section img, #cbWishList .cbList section > article .loadMessageWrap > section img, #cbVeiwMessage .cbList section > article .loadMessageWrap > section img {
+  opacity: 0.2;
+  width: 100%;
+}
+#cbComBookListIssues .cbList section > article .loadMessageWrap > .loadWrap, #cbSale .cbList section > article .loadMessageWrap > .loadWrap, #cbWishList .cbList section > article .loadMessageWrap > .loadWrap, #cbVeiwMessage .cbList section > article .loadMessageWrap > .loadWrap {
+  align-items: baseline;
+  display: flex;
+  flex-direction: row;
+}
+#cbComBookListIssues .cbList section > article .loadMessageWrap p.loadMessage, #cbSale .cbList section > article .loadMessageWrap p.loadMessage, #cbWishList .cbList section > article .loadMessageWrap p.loadMessage, #cbVeiwMessage .cbList section > article .loadMessageWrap p.loadMessage {
+  color: #2B2B2B;
+  font-size: 4rem;
+  padding: 3% 0;
+}
+#cbComBookListIssues .cbList section > article .comicSec, #cbSale .cbList section > article .comicSec, #cbWishList .cbList section > article .comicSec, #cbVeiwMessage .cbList section > article .comicSec {
+  background: transparent;
+  margin-bottom: 30px;
+  width: 500px;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec, #cbSale .cbList section > article .comicSec, #cbWishList .cbList section > article .comicSec, #cbVeiwMessage .cbList section > article .comicSec {
+    width: 100%;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap, #cbSale .cbList section > article .comicSec .comicWrap, #cbWishList .cbList section > article .comicSec .comicWrap, #cbVeiwMessage .cbList section > article .comicSec .comicWrap {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  padding: 0 2%;
+  position: relative;
+  width: auto;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap, #cbSale .cbList section > article .comicSec .comicWrap, #cbWishList .cbList section > article .comicSec .comicWrap, #cbVeiwMessage .cbList section > article .comicSec .comicWrap {
+    padding: 0 1%;
+    width: 100%;
+  }
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap, #cbSale .cbList section > article .comicSec .comicWrap, #cbWishList .cbList section > article .comicSec .comicWrap, #cbVeiwMessage .cbList section > article .comicSec .comicWrap {
+    display: flex;
+    flex-direction: column;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .comicImgWrap, #cbSale .cbList section > article .comicSec .comicWrap .comicImgWrap, #cbWishList .cbList section > article .comicSec .comicWrap .comicImgWrap, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .comicImgWrap {
+  background: #AECEAB;
+  border-radius: 15px;
+  display: flex;
+  height: 340px;
+  left: 5%;
+  margin-bottom: 0;
+  padding: 23px;
+  position: absolute;
+  top: -27px;
+  width: 230px;
+  z-index: 10;
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .comicImgWrap, #cbSale .cbList section > article .comicSec .comicWrap .comicImgWrap, #cbWishList .cbList section > article .comicSec .comicWrap .comicImgWrap, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .comicImgWrap {
+    left: 0;
+    margin-bottom: 15px;
+    position: relative;
+    top: 0;
+    z-index: 1;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .comicImgWrap img, #cbSale .cbList section > article .comicSec .comicWrap .comicImgWrap img, #cbWishList .cbList section > article .comicSec .comicWrap .comicImgWrap img, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .comicImgWrap img {
+  margin: auto;
+  width: 100%;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap {
+  background: #770422;
+  border-radius: 15px;
+  display: inline-block;
+  font-size: 1.6rem;
+  height: 290px;
+  line-height: 40px;
+  margin-bottom: 30px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 1% 16px 55%;
+  text-align: left;
+  width: 100%;
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap {
+    height: auto;
+    overflow: visible;
+    padding: 16px 5%;
+    text-align: center;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-track, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-track, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-track, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #F5F5F5;
+  border-radius: 10px;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar {
+  width: 10px;
+  background-color: #025d88;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-thumb, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-thumb, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-thumb, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0.44, #3E1142), color-stop(0.72, #3E1142), color-stop(0.86, #3E1142));
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p {
+  font-size: 1.6rem;
+  line-height: initial;
+  margin-bottom: 1.2rem;
+  padding-right: 2%;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p {
+    font-size: 1.5rem;
+  }
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p {
+    font-size: 1.6rem;
+    padding-left: 2%;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > :last-child {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 0;
+  margin-top: 16px;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > :last-child {
+    font-size: 1.5rem;
+    justify-content: normal;
+    margin-top: 25px;
+  }
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > :last-child, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > :last-child {
+    font-size: 1.6rem;
+    justify-content: space-evenly;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p > span {
+  font-size: 1.7rem;
+  font-weight: bold;
+  margin-right: 2%;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p > span {
+    font-size: 1.5rem;
+  }
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p > span, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p > span {
+    font-size: 1.6rem;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p a, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p a, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p a, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p a {
+  color: #AECEAB;
+  font-size: 2rem;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover::after, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover::after, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover::after, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover::after {
+  background: #AECEAB;
+  width: 80%;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p a span, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p a span, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p a span, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p a span {
+    padding-right: 30px;
+  }
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p a span, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p a span, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p a span, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p a span {
+    padding-right: 0;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > p a:hover {
+  color: #AECEAB;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap section, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap section, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap section, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap section {
+  margin-bottom: 0;
+  padding-right: 3%;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle, #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p {
+  margin: 0;
+  padding: 0;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1),
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure :nth-child(1), #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1),
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure :nth-child(1), #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1),
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure :nth-child(1), #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1),
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure :nth-child(1) {
+  font-size: 1.7rem;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure,
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure, #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure,
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle figure, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p {
+  line-height: normal;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle {
+  align-items: center;
+  background: transparent;
+  min-height: auto;
+  padding-top: 0;
+  width: auto;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle a:hover::after, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle a:hover::after, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle a:hover::after, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle a:hover::after {
+  background: #AECEAB;
+  width: 80%;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1), #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1), #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1), #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle figure :nth-child(1), #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .editStyle span {
+  color: #AECEAB;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle {
+  background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+  font-size: 1.5rem;
+  justify-content: center;
+  margin: 0;
+  padding: 5px 0;
+  text-align: center;
+  width: 100px;
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle {
+    font-size: 1.6rem;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover, #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover p {
+  color: #AECEAB;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle:hover {
+  background: #2B2B2B;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p, #cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section .deleteStyle p {
+  color: #770422;
+}
+
+@media (max-width: 500px) {
+  #cbComBookListIssues {
+    margin-top: 125px;
+  }
+}
+@media (max-width: 320px) {
+  #cbComBookListIssues {
+    margin-top: 110px;
+  }
+}
+#cbComBookListIssues > button {
+  margin-left: 7%;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues > button {
+    margin-left: 3%;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec {
+  width: 600px;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec {
+    width: 100%;
+  }
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .comicImgWrap {
+  height: 417px;
+  width: 281px;
+}
+#cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap {
+  height: 370px;
+}
+@media (max-width: 800px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap {
+    padding-left: 65%;
+  }
+}
+@media (max-width: 500px) {
+  #cbComBookListIssues .cbList section > article .comicSec .comicWrap .paraWrap {
+    padding: 16px 5%;
+  }
+}
+
+#cbVeiwMessage > .cbList > section {
+  display: inline-block;
+}
+#cbVeiwMessage .cbList .viewMessage {
+  align-items: center;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  /* height: auto; */
+  justify-content: space-evenly;
+  margin: auto;
+  padding: 20px 2%;
+  text-align: left;
+  /* width: 80%; */
+}
+#cbVeiwMessage .cbList .viewMessage article {
+  background: #770422;
+  border-radius: 15px;
+  color: #2B2B2B;
+  display: block;
+  margin-bottom: 30px;
+  padding: 16px 1%;
+}
+#cbVeiwMessage .cbList .viewMessage article p {
+  color: #FFF;
+  font-size: 1.8rem;
+  line-height: 23px;
+  margin-bottom: 20px;
+}
+#cbVeiwMessage .cbList .viewMessage article p span {
+  font-size: 2rem;
+  font-weight: bold;
+}
+#cbVeiwMessage .cbList .viewMessage article > p:nth-child(5) {
+  background: #FFF;
+  color: #2B2B2B;
+  font-size: 1.8rem;
+  height: 200px;
+  margin-bottom: 30px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 3% 2%;
+  white-space: pre-line;
+  width: 350px;
+}
+#cbVeiwMessage .cbList .viewMessage article > p:nth-child(5)::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #F5F5F5;
+  border-radius: 10px;
+}
+#cbVeiwMessage .cbList .viewMessage article > p:nth-child(5)::-webkit-scrollbar {
+  width: 10px;
+  background-color: #025d88;
+}
+#cbVeiwMessage .cbList .viewMessage article > p:nth-child(5)::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0.44, #3E1142), color-stop(0.72, #3E1142), color-stop(0.86, #3E1142));
+}
+#cbVeiwMessage .cbList .viewMessage article > section {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 0;
+  text-align: left;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle, #cbVeiwMessage .cbList .viewMessage article > section button {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle p, #cbVeiwMessage .cbList .viewMessage article > section .replyStyle span, #cbVeiwMessage .cbList .viewMessage article > section .deleteStyle p {
+  margin: 0;
+  padding: 0;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle p, #cbVeiwMessage .cbList .viewMessage article > section .replyStyle span, #cbVeiwMessage .cbList .viewMessage article > section .deleteStyle p, #cbVeiwMessage .cbList .viewMessage article > section .replyStyle figure :nth-child(1),
+#cbVeiwMessage .cbList .viewMessage article > section .deleteStyle figure :nth-child(1) {
+  font-size: 1.7rem;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle p, #cbVeiwMessage .cbList .viewMessage article > section .replyStyle figure, #cbVeiwMessage .cbList .viewMessage article > section .deleteStyle figure, #cbVeiwMessage .cbList .viewMessage article > section .deleteStyle p {
+  line-height: normal;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle {
+  align-items: center;
+  background: transparent;
+  margin-bottom: 0;
+  min-height: auto;
+  padding-top: 0;
+  width: auto;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle figure {
+  margin: 0 10px 0 0;
+  padding: 0;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle a:hover::after {
+  background: #AECEAB;
+  width: 80%;
+}
+#cbVeiwMessage .cbList .viewMessage article > section .replyStyle figure :nth-child(1), #cbVeiwMessage .cbList .viewMessage article > section .replyStyle span {
+  color: #AECEAB;
+}
+#cbVeiwMessage .cbList .viewMessage article > section button {
+  background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+  float: right;
+  font-size: 1.5rem;
+  justify-content: center;
+  margin: 0;
+  padding: 5px 0;
+  width: 100px;
+}
+@media (max-width: 500px) {
+  #cbVeiwMessage .cbList .viewMessage article > section button {
+    font-size: 1.6rem;
+  }
+}
+#cbVeiwMessage .cbList .viewMessage article > section button:hover, #cbVeiwMessage .cbList .viewMessage article > section button:hover p {
+  color: #AECEAB;
+}
+#cbVeiwMessage .cbList .viewMessage article > section button:hover {
+  background: #2B2B2B;
+}
+#cbVeiwMessage .cbList .viewMessage article > section button figure, #cbVeiwMessage .cbList .viewMessage article > section button p {
+  line-height: normal;
+}
+#cbVeiwMessage .cbList .viewMessage article > section button figure {
+  margin: 0 10px 0 0;
+  padding: 0;
+}
+#cbVeiwMessage .cbList .viewMessage article > section button p {
+  color: #770422;
+  margin: 0;
+  padding: 0;
+}
+
+/* FOOTER =============================== */
+footer {
+  padding: 30px 2%;
+  background: #2B2B2B;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+@media (max-width: 800px) {
+  footer {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+  }
+}
+@media (max-width: 991px) {
+  footer {
+    position: relative;
+  }
+}
+footer > article {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  width: 500px;
+}
+@media (max-width: 800px) {
+  footer > article {
+    align-items: center;
+    flex-direction: column;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+}
+@media (max-width: 500px) {
+  footer > article {
+    width: 100%;
+  }
+}
+footer > article p {
+  color: #FFF;
+  font-size: 0.9em;
+  margin-bottom: 0;
+  width: 100%;
+}
+@media (max-width: 800px) {
+  footer > article p {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+}
+footer > article section {
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+}
+@media (max-width: 800px) {
+  footer > article section {
+    justify-content: center;
+  }
+}
+footer > article section figure {
+  cursor: pointer;
+  margin-right: 2%;
+}
+footer > article section figure:nth-child(4) {
+  margin-right: 0;
+}
+footer ul {
+  display: flex;
+  flex-direction: row;
+  width: 220px;
+}
+footer ul li, footer ul p {
+  margin-right: 3%;
+}
+footer ul li {
+  cursor: pointer;
+  font-size: 0.8em;
+}
+footer ul li:hover {
+  color: #AECEAB;
+}
+@media (max-width: 800px) {
+  footer ul {
+    justify-content: center;
+  }
+}
+
+/*# sourceMappingURL=mainMock.css.map */
