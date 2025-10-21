@@ -42,20 +42,34 @@ interface LoginFormData {
   password: string;
 }
 
-// Extend Window interface for Google Identity Services
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement | null, config: any) => void;
-          prompt: () => void;
-        };
-      };
-    };
-  }
+// Google Identity Services types (alternative to declare global)
+interface GoogleAccounts {
+  id: {
+    initialize: (config: GoogleInitConfig) => void;
+    renderButton: (element: HTMLElement | null, config: GoogleButtonConfig) => void;
+    prompt: () => void;
+  };
 }
+
+interface GoogleInitConfig {
+  client_id: string;
+  callback: (response: any) => void;
+}
+
+interface GoogleButtonConfig {
+  type?: 'standard' | 'icon';
+  theme?: 'outline' | 'filled_blue' | 'filled_black';
+  size?: 'large' | 'medium' | 'small';
+  text?: 'signin_with' | 'signup_with' | 'continue_with' | 'signin';
+  shape?: 'rectangular' | 'pill' | 'circle' | 'square';
+  logo_alignment?: 'left' | 'center';
+  width?: number;
+}
+
+// Helper to safely access Google API
+const getGoogleAccounts = (): GoogleAccounts | null => {
+  return (window as any).google?.accounts || null;
+};
 
 const Signin: React.FC<SigninProps> = ({ 
   users, 
@@ -129,9 +143,8 @@ const Signin: React.FC<SigninProps> = ({
     [navigate, formatResponseData]
   );
 
-  // Initialize Google Identity Services
+  // Load Google Identity Services script
   useEffect(() => {
-    // Load Google Identity Services script
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -142,43 +155,45 @@ const Signin: React.FC<SigninProps> = ({
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup script on unmount
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
   // Initialize and render Google button
   useEffect(() => {
-    if (isGoogleLoaded && window.google) {
-      const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-      
-      if (!googleClientId) {
-        console.error('REACT_APP_GOOGLE_CLIENT_ID is not set');
-        return;
-      }
+    const googleAccounts = getGoogleAccounts();
+    
+    if (!isGoogleLoaded || !googleAccounts) {
+      return;
+    }
 
-      // Initialize Google Identity Services
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleCredentialResponse,
+    const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    
+    if (!googleClientId) {
+      console.error('REACT_APP_GOOGLE_CLIENT_ID is not set');
+      return;
+    }
+
+    // Initialize Google Identity Services
+    googleAccounts.id.initialize({
+      client_id: googleClientId,
+      callback: handleCredentialResponse,
+    });
+
+    // Render the button with custom styling
+    const buttonDiv = document.getElementById('googleSignInButton');
+    if (buttonDiv) {
+      googleAccounts.id.renderButton(buttonDiv, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        logo_alignment: 'left',
+        width: buttonDiv.offsetWidth || 300,
       });
-
-      // Render the button with custom styling
-      const buttonDiv = document.getElementById('googleSignInButton');
-      if (buttonDiv) {
-        window.google.accounts.id.renderButton(
-          buttonDiv,
-          {
-            type: 'standard',
-            theme: 'outline',
-            size: 'large',
-            text: 'signin_with',
-            shape: 'rectangular',
-            logo_alignment: 'left',
-            width: buttonDiv.offsetWidth || 300,
-          }
-        );
-      }
     }
   }, [isGoogleLoaded, handleCredentialResponse]);
 
@@ -186,6 +201,8 @@ const Signin: React.FC<SigninProps> = ({
   useEffect(() => {
     window.scrollTo({ top: 0 });
     fetchUserProfile();
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('API URL:', process.env.REACT_APP_API_URL);
   }, [fetchUserProfile]);
 
   // Handle URL parameter
@@ -204,11 +221,6 @@ const Signin: React.FC<SigninProps> = ({
       });
     }
   }, [users]);
-
-  useEffect(() => {
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('API URL:', process.env.REACT_APP_API_URL);
-}, []);
 
   // Validate form fields
   const validateFields = useCallback((): boolean => {
@@ -281,13 +293,6 @@ const Signin: React.FC<SigninProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  
-
-  useEffect(() => {
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('API URL:', process.env.REACT_APP_API_URL);
-}, []);
-
   return (
     <main id="signin" className={styles.signupMain}>
       <section className={styles.wrapper}>
@@ -304,8 +309,7 @@ const Signin: React.FC<SigninProps> = ({
 
           <fieldset>
             <div className={styles.googleBTN}>
-              {/* Google Sign-In Button will be rendered here */}
-              <div id="googleSignInButton" style={{ width: '100%' }}></div>
+              <div id="googleSignInButton" style={{ width: '100%' }} />
             </div>
 
             <section className={styles.orSec}>
