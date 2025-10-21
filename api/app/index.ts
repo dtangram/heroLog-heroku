@@ -3,6 +3,7 @@ import cors from 'cors';
 import debug from 'debug';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 // Import routers
 import collectionpublisherRouter from './routes/collectionpublishers';
@@ -124,13 +125,45 @@ app.use('/s3', s3Router);
 // ============================================================================
 
 if (ENV.nodeEnv === 'production') {
-  // Serve static files from React build
-  app.use(express.static(path.join(__dirname, '../../reactjs/build')));
+  const reactBuildPath = path.join(__dirname, '../build');
   
-  // Catch-all route to serve React's index.html
-  app.get('*', (_req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../../reactjs/build', 'index.html'));
-  });
+  // Check if build folder exists
+  if (fs.existsSync(reactBuildPath)) {
+    console.log('✅ Serving React build from:', reactBuildPath);
+    
+    // Serve static files from React build
+    app.use(express.static(reactBuildPath));
+    
+    // Catch-all route to serve React's index.html
+    app.get('*', (_req: Request, res: Response) => {
+      res.sendFile(path.join(reactBuildPath, 'index.html'));
+    });
+  } else {
+    console.error('❌ React build folder not found at:', reactBuildPath);
+    console.log('📁 Current directory:', __dirname);
+    
+    try {
+      const parentDir = path.join(__dirname, '..');
+      console.log('📂 Available directories in parent:', fs.readdirSync(parentDir));
+      
+      // Check if build exists in reactjs folder
+      const reactjsBuildPath = path.join(__dirname, '../../reactjs/build');
+      if (fs.existsSync(reactjsBuildPath)) {
+        console.log('⚠️  Found build at alternative location:', reactjsBuildPath);
+      }
+    } catch (err) {
+      console.error('Error reading directories:', err);
+    }
+    
+    // Fallback 404 for root
+    app.get('*', (_req: Request, res: Response) => {
+      res.status(500).json({
+        error: 'Configuration Error',
+        message: 'React build not found. Please check deployment configuration.',
+        timestamp: new Date().toISOString()
+      });
+    });
+  }
 }
 
 // ============================================================================
