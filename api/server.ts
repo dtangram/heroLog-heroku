@@ -9,17 +9,6 @@ dotenv.config();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Serve static files from React app in production
-if (NODE_ENV === 'production') {
-  const express = require('express');
-  app.use(express.static(path.join(__dirname, '../../reactjs/build')));
-  
-  // Handle React routing - return all requests to React app
-  app.get('*', (_req: any, res: any) => {
-    res.sendFile(path.join(__dirname, '../../reactjs/build', 'index.html'));
-  });
-}
-
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);

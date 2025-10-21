@@ -2,6 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import debug from 'debug';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Import routers
 import collectionpublisherRouter from './routes/collectionpublishers';
@@ -119,17 +120,33 @@ app.use('/emailpasswordreset', emailPasswordResetRouter);
 app.use('/s3', s3Router);
 
 // ============================================================================
-// ERROR HANDLING
+// SERVE REACT APP (Production only)
 // ============================================================================
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Cannot ${req.method} ${req.url}`,
-    timestamp: new Date().toISOString()
+if (ENV.nodeEnv === 'production') {
+  // Serve static files from React build
+  app.use(express.static(path.join(__dirname, '../../reactjs/build')));
+  
+  // Catch-all route to serve React's index.html
+  app.get('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, '../../reactjs/build', 'index.html'));
   });
-});
+}
+
+// ============================================================================
+// ERROR HANDLING (Development only - production uses React catch-all)
+// ============================================================================
+
+if (ENV.nodeEnv !== 'production') {
+  // 404 handler (only for development)
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `Cannot ${req.method} ${req.url}`,
+      timestamp: new Date().toISOString()
+    });
+  });
+}
 
 // Global error handler
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
