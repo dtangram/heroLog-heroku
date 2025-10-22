@@ -16,11 +16,11 @@ const getBaseURL = (): string => {
   // Production environment
   if (nodeEnv === 'production') {
     // Check if we're on production domain
-    if (hostname.includes('your-production-domain.com')) {
-      return 'https://hero-log-production.herokuapp.com';
+    if (hostname.includes('https://herolog-00c48dc89148.herokuapp.com')) {
+      return 'https://herolog-00c48dc89148.herokuapp.com';
     }
     // Default to staging for other production builds
-    return 'https://hero-log.herokuapp.com';
+    return 'https://herolog-00c48dc89148.herokuapp.com';
   }
 
   // Development environment (default to localhost)
