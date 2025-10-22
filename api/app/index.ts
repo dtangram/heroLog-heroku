@@ -125,42 +125,53 @@ app.use('/s3', s3Router);
 // ============================================================================
 
 if (ENV.nodeEnv === 'production') {
-  const reactBuildPath = path.join(__dirname, '../build');
+  // Try multiple possible build locations
+  const possibleBuildPaths = [
+    path.join(__dirname, '../build'),            // api/dist/build (expected location)
+    path.join(__dirname, '../../reactjs/build'), // reactjs/build (fallback)
+    path.join(__dirname, 'build'),               // api/dist/app/build (alternative)
+  ];
   
-  // Check if build folder exists
-  if (fs.existsSync(reactBuildPath)) {
+  console.log('🔍 Searching for React build...');
+  console.log('📁 Current directory (__dirname):', __dirname);
+  console.log('🔎 Checking paths:', possibleBuildPaths);
+  
+  const reactBuildPath = possibleBuildPaths.find(buildPath => {
+    const exists = fs.existsSync(buildPath);
+    console.log(`  ${exists ? '✅' : '❌'} ${buildPath}`);
+    return exists;
+  });
+  
+  if (reactBuildPath) {
     console.log('✅ Serving React build from:', reactBuildPath);
     
     // Serve static files from React build
     app.use(express.static(reactBuildPath));
     
-    // Catch-all route to serve React's index.html
+    // Catch-all route to serve React's index.html for client-side routing
     app.get('*', (_req: Request, res: Response) => {
       res.sendFile(path.join(reactBuildPath, 'index.html'));
     });
   } else {
-    console.error('❌ React build folder not found at:', reactBuildPath);
-    console.log('📁 Current directory:', __dirname);
+    console.error('❌ React build folder not found!');
+    console.error('📂 Tried the following locations:');
+    possibleBuildPaths.forEach(p => console.error(`   - ${p}`));
     
+    // Try to list what's actually available
     try {
-      const parentDir = path.join(__dirname, '..');
-      console.log('📂 Available directories in parent:', fs.readdirSync(parentDir));
-      
-      // Check if build exists in reactjs folder
-      const reactjsBuildPath = path.join(__dirname, '../../reactjs/build');
-      if (fs.existsSync(reactjsBuildPath)) {
-        console.log('⚠️  Found build at alternative location:', reactjsBuildPath);
-      }
+      const distContents = fs.readdirSync(path.join(__dirname, '..'));
+      console.log('📂 Contents of dist folder:', distContents);
     } catch (err) {
-      console.error('Error reading directories:', err);
+      console.error('❌ Could not read dist folder:', err);
     }
     
-    // Fallback 404 for root
+    // Fallback error page
     app.get('*', (_req: Request, res: Response) => {
       res.status(500).json({
         error: 'Configuration Error',
         message: 'React build not found. Please check deployment configuration.',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        checkedPaths: possibleBuildPaths
       });
     });
   }
