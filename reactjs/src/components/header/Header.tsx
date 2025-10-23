@@ -99,6 +99,36 @@ const Header = ({
                 </NavItem>
 
                 <NavItem className={styles.slideUnder}>
+                <NavLink
+                  className={getNavLinkClass}
+                  to={`/dashboard/${userId}`}
+                  onClick={toggleMenuItem}
+                >
+                  DASHBOARD
+                </NavLink>
+              </NavItem>
+
+              <NavItem className={styles.slideUnder}>
+                <NavLink
+                  className={getNavLinkClass}
+                  to={`/forms/createpublisher/new/${userId}`}
+                  onClick={toggleMenuItem}
+                >
+                  CREATE
+                </NavLink>
+              </NavItem>
+
+              <NavItem className={styles.slideUnder}>
+                <NavLink
+                  className={getNavLinkClass}
+                  to={`/wishlist/${userId}`}
+                  onClick={toggleMenuItem}
+                >
+                  WISH
+                </NavLink>
+              </NavItem>
+
+                <NavItem className={styles.slideUnder}>
                   <NavLink
                     className={getNavLinkClass}
                     to="/signup"
