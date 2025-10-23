@@ -97,7 +97,8 @@ export const fetchPublishers = (): APIAction => {
       REQ_PUBLISHERS_SUCCESS,
       REQ_PUBLISHERS_ERROR,
     ],
-    callAPI: () => API.get(`/collectpub/signups/${userId}`),
+    callAPI: () => API.get('/collectpub'),
+    // callAPI: () => API.get(`/collectpub/signups/${userId}`),
     shouldCallAPI: (state: RootState) => shouldFetchUserPublishers(state, userId),
     payload: { userId },
   };
