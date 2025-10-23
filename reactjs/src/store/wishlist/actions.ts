@@ -119,7 +119,7 @@ export const fetchWishlists = (): APIAction => {
       REQ_WISHLIST_COMICS_SUCCESS,
       REQ_WISHLIST_COMICS_ERROR,
     ],
-    callAPI: () => API.get(`/wishlist/signups/${userId}`),
+    callAPI: () => API.get(`/wishlist/${userId}`),
     shouldCallAPI: (state) => shouldFetchUserWishlists(state, userId),
     payload: { userId },
   };

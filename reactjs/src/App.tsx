@@ -49,7 +49,17 @@ const App = () => {
 
             {/* Private Routes */}
             <Route path="/" element={<PrivateRouteHandler><Home /></PrivateRouteHandler>} />
-            <Route path="/dashboard/:userId" element={<PrivateRouteHandler><Dashboard /></PrivateRouteHandler>} />
+            <Route path="/dashboard">
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route 
+                path=":userId" 
+                element={
+                  <PrivateRouteHandler>
+                    <Dashboard />
+                  </PrivateRouteHandler>
+                } 
+              />
+            </Route>
             <Route 
               path="/forms/messaging/:userId/:comicBookTitle/:comicIssue/:userSent/:username/:userEmail" 
               element={<PrivateRouteHandler><ModalMessage /></PrivateRouteHandler>} 
@@ -60,38 +70,92 @@ const App = () => {
             />
             <Route path="/viewMessages/:userId" element={<PrivateRouteHandler><ViewMessages /></PrivateRouteHandler>} />
             <Route path="/sentMessages/:userId" element={<PrivateRouteHandler><SentMessages /></PrivateRouteHandler>} />
-            <Route 
-              path="/forms/createpublisher/new/:userId" 
-              element={<PrivateRouteHandler><CreatePublisher /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/forms/createpublisher/edit/:id" 
-              element={<PrivateRouteHandler><CreatePublisher /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/dashboard/:pubId/:publisherName/comicbooklist" 
-              element={<PrivateRouteHandler><ComicBookList /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/forms/:pubId/comicbooklisttitle/new" 
-              element={<PrivateRouteHandler><ComicBookListTitle /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/forms/:pubId/comicbooklisttitle/edit/:id" 
-              element={<PrivateRouteHandler><ComicBookListTitle /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/dashboard/:coboTitleId/:cbTitle/comicbooklistissues" 
-              element={<PrivateRouteHandler><ComicBookListIssues /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/forms/:coboTitleId/comicbook/new" 
-              element={<PrivateRouteHandler><ComicBook /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/forms/:coboTitleId/comicbook/edit/:id" 
-              element={<PrivateRouteHandler><ComicBook /></PrivateRouteHandler>} 
-            />
+            <Route path="/forms/createpublisher/new">
+              <Route 
+                path="/forms/createpublisher/new" 
+                element={<CreatePublisher />} 
+              />
+              <Route 
+                path=":userId" 
+                element={<PrivateRouteHandler><CreatePublisher /></PrivateRouteHandler>}
+              />
+            </Route>
+            <Route path="/forms/createpublisher/edit/:id">
+              <Route 
+                path="/forms/createpublisher/edit/:id" 
+                element={<CreatePublisher />} 
+              />
+              <Route 
+                path="/forms/createpublisher/edit/:id" 
+                element={<PrivateRouteHandler><CreatePublisher /></PrivateRouteHandler>}
+              />
+            </Route>
+
+            <Route path="/dashboard/:pubId/:publisherName/comicbooklist">
+              <Route path="/dashboard/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
+              <Route 
+                path="/dashboard/:pubId/:publisherName/comicbooklist" 
+                element={
+                  <PrivateRouteHandler>
+                    <ComicBookList />
+                  </PrivateRouteHandler>
+                } 
+              />
+            </Route>
+            
+
+            <Route path="/forms/:pubId/comicbooklisttitle/new">
+              <Route 
+                path="/forms/:pubId/comicbooklisttitle/new" 
+                element={<ComicBookListTitle />} 
+              />
+              <Route 
+                path="/forms/:pubId/comicbooklisttitle/new" 
+                element={<PrivateRouteHandler><ComicBookListTitle /></PrivateRouteHandler>}
+              />
+            </Route>
+            
+            <Route path="/forms/:pubId/comicbooklisttitle/edit/:id">
+              <Route 
+                path="/forms/:pubId/comicbooklisttitle/edit/:id" 
+                element={<ComicBookListTitle />} 
+              />
+              <Route 
+                path="/forms/:pubId/comicbooklisttitle/edit/:id" 
+                element={<PrivateRouteHandler><ComicBookListTitle /></PrivateRouteHandler>}
+              />
+            </Route>
+
+            <Route path="/dashboard/:coboTitleId/:cbTitle/comicbooklistissues">
+              <Route 
+                path="/dashboard/:coboTitleId/:cbTitle/comicbooklistissues" 
+                element={<ComicBookListIssues />} 
+              />
+              <Route 
+                path="/dashboard/:coboTitleId/:cbTitle/comicbooklistissues" 
+                element={<PrivateRouteHandler><ComicBookListIssues /></PrivateRouteHandler>}
+              />
+            </Route>
+            <Route path="/forms/:coboTitleId/comicbook/new">
+              <Route 
+                path="/forms/:coboTitleId/comicbook/new" 
+                element={<ComicBook />} 
+              />
+              <Route 
+                path="/forms/:coboTitleId/comicbook/new" 
+                element={<PrivateRouteHandler><ComicBook /></PrivateRouteHandler>}
+              />
+            </Route>
+            <Route path="/forms/:coboTitleId/comicbook/edit/:id">
+              <Route 
+                path="/forms/:coboTitleId/comicbook/edit/:id" 
+                element={<ComicBook />} 
+              />
+              <Route 
+                path="/forms/:coboTitleId/comicbook/edit/:id" 
+                element={<PrivateRouteHandler><ComicBook /></PrivateRouteHandler>}
+              />
+            </Route>
             <Route path="/fixer/:userId" element={<PrivateRouteHandler><Fixer /></PrivateRouteHandler>} />
             <Route path="/sale/:userId" element={<PrivateRouteHandler><Sale /></PrivateRouteHandler>} />
             <Route 
@@ -102,15 +166,37 @@ const App = () => {
               path="/forms/saleform/edit/:id" 
               element={<PrivateRouteHandler><SaleForm /></PrivateRouteHandler>} 
             />
-            <Route path="/wishlist/:userId" element={<PrivateRouteHandler><WishList /></PrivateRouteHandler>} />
-            <Route 
-              path="/forms/wishlistform/new/:userId" 
-              element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>} 
-            />
-            <Route 
-              path="/forms/wishlistform/edit/:id" 
-              element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>} 
-            />
+            <Route path="/wishlist">
+              <Route path="/wishlist" element={<WishList />} />
+              <Route 
+                path=":userId" 
+                element={
+                  <PrivateRouteHandler>
+                    <WishList />
+                  </PrivateRouteHandler>
+                } 
+              />
+            </Route>
+            <Route path="/forms/wishlistform/new">
+              <Route 
+                path="/forms/wishlistform/new" 
+                element={<WishListForm />} 
+              />
+              <Route 
+                path=":userId" 
+                element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>}
+              />
+            </Route>
+            <Route path="/forms/wishlistform/edit/:id">
+              <Route 
+                path="/forms/wishlistform/edit/:id" 
+                element={<WishListForm />} 
+              />
+              <Route 
+                path="/forms/wishlistform/edit/:id" 
+                element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>}
+              />
+            </Route>
             <Route path="/profile/:userId" element={<PrivateRouteHandler><Profile /></PrivateRouteHandler>} />
             <Route 
               path="/forms/profileform/edit/:id" 
