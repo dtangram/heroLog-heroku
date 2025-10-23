@@ -125,7 +125,10 @@ export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => 
       ADD_PUBLISHER_SUCCESS,
       ADD_PUBLISHER_ERROR,
     ],
-    callAPI: () => API.post('/collectpub/', { id, ...publisher }),
+    callAPI: () => API.post('/collectpub/create', {
+      publisherName: publisher.publisherName.trim(),
+      collectpubUsersId: publisher.userId
+    }),
     payload: { 
       id,
       publisher: { id, ...publisher } as Publisher,

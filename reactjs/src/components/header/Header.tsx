@@ -99,13 +99,20 @@ const Header = ({
                 </NavItem>
 
                 <NavItem className={styles.slideUnder}>
-                <NavLink
+                  <NavLink
+                  className={getNavLinkClass}
+                  to='/dashboard'
+                  onClick={toggleMenuItem}
+                >
+                  DASHBOARD
+                </NavLink>
+                {/* <NavLink
                   className={getNavLinkClass}
                   to={`/dashboard/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
-                </NavLink>
+                </NavLink> */}
               </NavItem>
 
               <NavItem className={styles.slideUnder}>

@@ -200,14 +200,22 @@ const router = Router();
 // GET /collectionpublishers/signups/:userId
 // Get collection publishers for a specific user signup
 router.get(
-  '/signups/:userId',
+  '/',
   collectionpublisherCtrl.getCollectionPublishers
 );
 
-// POST /collectionpublishers
+// POST /collectionpublishers/create
+// Create a new publisher
+router.post(
+  '/create',
+  validationCtrl.validate('createCollectionPublisher'),
+  collectionpublisherCtrl.createCollectionPublisher
+);
+
+// POST /collectionpublishers/search
 // Find a publisher by name (search endpoint)
 router.post(
-  '/',
+  '/search',
   validationCtrl.validate('createCollectionPublisher'),
   findPublisherHandler
 );

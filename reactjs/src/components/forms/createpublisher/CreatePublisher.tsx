@@ -87,8 +87,12 @@ const CreatePublisher = ({
 
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/dashboard/${userId}`);
+      navigate('/dashboard');
     }, 1500);
+
+    // setTimeout(() => {
+    //   navigate(`/dashboard/${userId}`);
+    // }, 1500);
   };
 
   const showSuccess = !formErrors.publisherName && successMessage === 'success';
@@ -129,10 +133,16 @@ const CreatePublisher = ({
             <article>
               <p>
                 <Link
-                  url={`/dashboard/${userId}`}
+                  url='/dashboard'
                   title="CANCEL"
                 />
               </p>
+              {/* <p>
+                <Link
+                  url={`/dashboard/${userId}`}
+                  title="CANCEL"
+                />
+              </p> */}
               <input
                 id="submitQ1"
                 className={styles.submit}

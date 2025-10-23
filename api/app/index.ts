@@ -105,7 +105,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 // API routes
-app.use('/collectionpublishers', collectionpublisherRouter);
+app.use('/collectpub', collectionpublisherRouter);
 app.use('/comicbooktitles', comicbooktitleRouter);
 app.use('/comicbook', comicbookRouter);
 app.use('/messaging', messagingRouter);
