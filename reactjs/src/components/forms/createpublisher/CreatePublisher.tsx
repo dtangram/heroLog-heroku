@@ -18,7 +18,7 @@ const CreatePublisher = ({
 }: ContainerProps) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const userId = localStorage.getItem('id') || '';
+  // const userId = localStorage.getItem('id') || '';
  
   const [publisherName, setPublisherName] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -73,13 +73,13 @@ const CreatePublisher = ({
       updatePublisher({
         id,
         publisherName: publisherName.trim(),
-        userId
+        // userId
       });
     } else {
       // Create new publisher
       createPublisher({
         publisherName: publisherName.trim(),
-        userId
+        // userId
       });
     }
    

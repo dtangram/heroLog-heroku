@@ -23,7 +23,7 @@ const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 export interface Publisher {
   id: string;
   publisherName: string;
-  userId: string;
+  userId?: string;
 }
 
 interface PublisherState {
@@ -128,11 +128,11 @@ export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => 
     ],
     callAPI: () => API.post('/collectpub/create', {
       publisherName: publisher.publisherName.trim(),
-      collectpubUsersId: publisher.userId
+      collectpubUsersId: id
     }),
     payload: { 
       id,
-      publisher: { id, ...publisher } as Publisher,
+      publisher: { id, publisherName: publisher.publisherName } as Publisher,
     },
   };
 };

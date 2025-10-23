@@ -201,7 +201,7 @@ const router = Router();
 // Get collection publishers for a specific user signup
 router.get(
   '/',
-  collectionpublisherCtrl.getCollectionPublishers
+  collectionpublisherCtrl.getAllCollectionPublishers  // ← Use the new function
 );
 
 // POST /collectionpublishers/create

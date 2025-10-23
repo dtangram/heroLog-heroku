@@ -3,7 +3,7 @@ import { WhereOptions } from 'sequelize';
 
 // Properly typed model interface
 interface CollectionPublisherModel {
-  findAll: (options: { where: WhereOptions<CollectionPublisherAttributes> }) => Promise<CollectionPublisherInstance[]>;
+  findAll: (options?: { where?: WhereOptions<CollectionPublisherAttributes> }) => Promise<CollectionPublisherInstance[]>;
   findByPk: (id: string) => Promise<CollectionPublisherInstance | null>;
   create: (data: CollectionPublisherCreationAttributes) => Promise<CollectionPublisherInstance>;
   update: (
@@ -58,6 +58,26 @@ interface ValidationResult {
 interface SequelizeError {
   errors: Array<{ message: string }>;
 }
+
+// Get ALL collection publishers (no user filtering)
+export const getAllCollectionPublishers = async (
+  _req: Request,
+  res: Response<ApiResponse<CollectionPublisherAttributes[]>>
+): Promise<Response> => {
+  try {
+    const collectPublishers = await CollectionPublishers.findAll();
+    
+    const data = collectPublishers.map(publisher => publisher.toJSON());
+    
+    return res.status(200).json({
+      success: true,
+      data,
+      count: data.length
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 500, 'getAllCollectionPublishers');
+  }
+};
 
 // Import models with proper typing
 const models = require('../models') as {
