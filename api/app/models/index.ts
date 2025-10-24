@@ -3,7 +3,14 @@ import path from 'path';
 import { Sequelize, DataTypes } from 'sequelize';
 
 const basename = path.basename(__filename);
-const db: any = {};
+
+interface DbInterface {
+  [key: string]: any;
+  sequelize: Sequelize;
+  Sequelize: typeof Sequelize;
+}
+
+const db: DbInterface = {} as DbInterface;
 
 let sequelize: Sequelize;
 
@@ -28,7 +35,7 @@ if (process.env.DATABASE_URL) {
   const dbPassword = process.env.DB_PASSWORD || '';
   const dbHost = process.env.DB_HOST || 'localhost';
   const dbPort = parseInt(process.env.DB_PORT || '5432');
-
+  
   sequelize = new Sequelize(dbName, dbUser, dbPassword, {
     host: dbHost,
     port: dbPort,
@@ -63,4 +70,5 @@ Object.keys(db).forEach((modelName) => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-export = db;
+// Change this line from: export = db;
+export default db;

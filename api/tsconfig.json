@@ -33,6 +33,15 @@
       "@types/*": ["./types/*"]
     }
   },
-  "include": ["**/*.ts", "app/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+  "include": [
+    "**/*.ts", 
+    "app/**/*",
+    "db/config.json"
+  ],
+  "exclude": [
+    "node_modules", 
+    "dist", 
+    "**/*.spec.ts", 
+    "**/*.test.ts"
+  ]
 }
