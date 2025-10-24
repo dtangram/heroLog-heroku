@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
+import db from '../models';
 
 // Properly typed model interface
 interface CollectionPublisherModel {
@@ -59,12 +60,7 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-// Import models with proper typing
-const models = require('../models') as {
-  CollectionPublishers: CollectionPublisherModel;
-};
-
-const { CollectionPublishers } = models;
+const CollectionPublishers = db.CollectionPublishers as CollectionPublisherModel;
 
 // Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
