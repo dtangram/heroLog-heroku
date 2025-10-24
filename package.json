@@ -22,7 +22,8 @@
     "install-api": "npm install --prefix api",
     "install:all": "npm install && npm run install-api && npm run install-reactjs",
     "migrate": "npm run db:migrate --prefix api",
-    "heroku-postbuild": "npm run install:all && npm run build && npm run migrate"
+    "seed": "npm run db:seed --prefix api",
+    "heroku-postbuild": "npm run install:all && npm run build && npm run migrate && npm run seed"
   },
   "repository": {
     "type": "git"

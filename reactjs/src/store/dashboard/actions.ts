@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import API from '../../API';
+import { ANONYMOUS_USER_ID } from '../../constants';
 import {
   REQ_PUBLISHERS_PENDING,
   REQ_PUBLISHERS_SUCCESS,
@@ -54,7 +55,7 @@ interface APIAction {
 
 const getUserId = (): string => {
   const userId = localStorage.getItem('id');
-  return userId || '';
+  return userId || ANONYMOUS_USER_ID;  // Fallback to anonymous user
 };
 
 const isCached = (loadedAt: number): boolean => {
@@ -117,13 +118,10 @@ export const fetchPublisher = (id: string): APIAction => ({
 export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => {
   validatePublisher(publisher);
   
-  // Get the actual user ID from localStorage
+  // Get user ID (from localStorage or use anonymous ID)
   const userId = getUserId();
   
-  // Validate that we have a user ID
-  if (!userId) {
-    throw new Error('User ID not found. Please log in again.');
-  }
+  console.log('Creating publisher with userId:', userId);
   
   return {
     types: [
@@ -133,7 +131,7 @@ export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => 
     ],
     callAPI: () => API.post('/collectpub/create', {
       publisherName: publisher.publisherName.trim(),
-      collectpubUsersId: userId  // FIXED: Use the actual user ID from localStorage
+      collectpubUsersId: userId  // Will be either real user ID or anonymous ID
     }),
     payload: { 
       userId,
