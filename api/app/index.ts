@@ -4,6 +4,7 @@ import debug from 'debug';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import db from './models'; // Import db for health check
 
 // Import routers
 import collectionpublisherRouter from './routes/collectionpublishers';
@@ -94,14 +95,32 @@ if (ENV.nodeEnv === 'development') {
 // ROUTES
 // ============================================================================
 
-// Health check endpoint
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({
+// Health check endpoint with database status
+app.get('/health', async (_req: Request, res: Response) => {
+  const healthCheck = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: ENV.nodeEnv,
     allowedOrigins: ENV.corsOrigins,
-  });
+    database: {
+      status: 'unknown',
+      message: ''
+    }
+  };
+
+  try {
+    // Test database connection
+    await db.sequelize.authenticate();
+    healthCheck.database.status = 'connected';
+    healthCheck.database.message = 'Database connection is healthy';
+    res.status(200).json(healthCheck);
+  } catch (error) {
+    healthCheck.status = 'degraded';
+    healthCheck.database.status = 'disconnected';
+    healthCheck.database.message = 'Database connection failed';
+    errorLog('Database health check failed:', error);
+    res.status(503).json(healthCheck);
+  }
 });
 
 // API routes
