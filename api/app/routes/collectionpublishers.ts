@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Model, ModelStatic } from 'sequelize';
 import * as collectionpublisherCtrl from '../controllers/collectionpublishers';
 import * as validationCtrl from '../controllers/validation';
-import db from '../models';
+import db from '../models';  // FIXED: Use ES6 import
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -59,6 +59,7 @@ const ENV = {
 // MODELS
 // ============================================================================
 
+// FIXED: Use ES6 import instead of require
 const CollectionPublishers = db.CollectionPublishers as CollectionPublisherModel;
 
 // ============================================================================
@@ -195,11 +196,11 @@ const findPublisherHandler = async (
 
 const router = Router();
 
-// GET /collectionpublishers/signups/:userId
-// Get collection publishers for a specific user signup
+// GET /collectionpublishers
+// Get all collection publishers
 router.get(
   '/',
-  collectionpublisherCtrl.getAllCollectionPublishers  // ← Use the new function
+  collectionpublisherCtrl.getAllCollectionPublishers
 );
 
 // POST /collectionpublishers/create

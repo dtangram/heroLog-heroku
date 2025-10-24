@@ -18,7 +18,7 @@ const CreatePublisher = ({
 }: ContainerProps) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  // const userId = localStorage.getItem('id') || '';
+  const userId = localStorage.getItem('id') || '';
  
   const [publisherName, setPublisherName] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -39,7 +39,7 @@ const CreatePublisher = ({
   }, [id, fetchPublisher]);
 
   useEffect(() => {
-    if (publisher?.publisherName) {  // Fixed: added optional chaining
+    if (publisher?.publisherName) {
       setPublisherName(publisher.publisherName);
     }
   }, [publisher]);
@@ -68,18 +68,25 @@ const CreatePublisher = ({
       return;
     }
 
+    // Validate userId exists
+    if (!userId) {
+      console.error('User ID not found in localStorage');
+      setFormErrors({
+        publisherName: 'User session expired. Please log in again.'
+      });
+      return;
+    }
+
     if (id) {
       // Update existing publisher
       updatePublisher({
         id,
         publisherName: publisherName.trim(),
-        // userId
       });
     } else {
       // Create new publisher
       createPublisher({
         publisherName: publisherName.trim(),
-        // userId
       });
     }
    
@@ -89,10 +96,6 @@ const CreatePublisher = ({
     setTimeout(() => {
       navigate('/dashboard');
     }, 1500);
-
-    // setTimeout(() => {
-    //   navigate(`/dashboard/${userId}`);
-    // }, 1500);
   };
 
   const showSuccess = !formErrors.publisherName && successMessage === 'success';
@@ -137,12 +140,6 @@ const CreatePublisher = ({
                   title="CANCEL"
                 />
               </p>
-              {/* <p>
-                <Link
-                  url={`/dashboard/${userId}`}
-                  title="CANCEL"
-                />
-              </p> */}
               <input
                 id="submitQ1"
                 className={styles.submit}

@@ -23,7 +23,7 @@ const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 export interface Publisher {
   id: string;
   publisherName: string;
-  userId?: string;
+  collectpubUsersId?: string;
 }
 
 interface PublisherState {
@@ -98,7 +98,6 @@ export const fetchPublishers = (): APIAction => {
       REQ_PUBLISHERS_ERROR,
     ],
     callAPI: () => API.get('/collectpub'),
-    // callAPI: () => API.get(`/collectpub/signups/${userId}`),
     shouldCallAPI: (state: RootState) => shouldFetchUserPublishers(state, userId),
     payload: { userId },
   };
@@ -118,7 +117,13 @@ export const fetchPublisher = (id: string): APIAction => ({
 export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => {
   validatePublisher(publisher);
   
-  const id = uuidv4();
+  // Get the actual user ID from localStorage
+  const userId = getUserId();
+  
+  // Validate that we have a user ID
+  if (!userId) {
+    throw new Error('User ID not found. Please log in again.');
+  }
   
   return {
     types: [
@@ -128,11 +133,13 @@ export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => 
     ],
     callAPI: () => API.post('/collectpub/create', {
       publisherName: publisher.publisherName.trim(),
-      collectpubUsersId: id
+      collectpubUsersId: userId  // FIXED: Use the actual user ID from localStorage
     }),
     payload: { 
-      id,
-      publisher: { id, publisherName: publisher.publisherName } as Publisher,
+      userId,
+      publisher: { 
+        publisherName: publisher.publisherName 
+      } as Partial<Publisher>,
     },
   };
 };
