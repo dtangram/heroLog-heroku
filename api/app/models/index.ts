@@ -14,22 +14,24 @@ const db: DbInterface = {} as DbInterface;
 
 let sequelize: Sequelize;
 
+console.log('🔧 Initializing Sequelize...');
+
 // Heroku automatically provides DATABASE_URL
 if (process.env.DATABASE_URL) {
-  // Production: Use Heroku's DATABASE_URL
+  console.log('📦 Using DATABASE_URL for production');
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     protocol: 'postgres',
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false // Heroku uses self-signed certificates
+        rejectUnauthorized: false
       }
     },
-    logging: false // Disable SQL logging in production
+    logging: false
   });
 } else {
-  // Development: Use local config or environment variables
+  console.log('📦 Using local database configuration');
   const dbName = process.env.DB_NAME || 'herolog_dev';
   const dbUser = process.env.DB_USER || 'postgres';
   const dbPassword = process.env.DB_PASSWORD || '';
@@ -40,35 +42,59 @@ if (process.env.DATABASE_URL) {
     host: dbHost,
     port: dbPort,
     dialect: 'postgres',
-    logging: console.log // Enable logging in development
+    logging: console.log
   });
 }
 
+console.log('📂 Loading models from:', __dirname);
+console.log('📄 Basename:', basename);
+
 // Load all models
-fs
-  .readdirSync(__dirname)
-  .filter(file =>
-    file.indexOf('.') !== 0 &&
-    file !== basename &&
-    (file.slice(-3) === '.js' || file.slice(-3) === '.ts') &&
-    !file.endsWith('.d.ts')
-  )
+const files = fs.readdirSync(__dirname);
+console.log('📋 Files in models directory:', files);
+
+files
+  .filter(file => {
+    const isNotIndex = file !== basename;
+    const isNotDeclaration = !file.endsWith('.d.ts');
+    const isJsOrTs = file.slice(-3) === '.js' || file.slice(-3) === '.ts';
+    const isNotHidden = file.indexOf('.') !== 0;
+    
+    return isNotHidden && isNotIndex && isNotDeclaration && isJsOrTs;
+  })
   .forEach((file) => {
-    const modelFactory = require(path.join(__dirname, file));
-    const model = modelFactory.default || modelFactory;
-    const initializedModel = model(sequelize, DataTypes);
-    db[initializedModel.name] = initializedModel;
+    try {
+      console.log(`🔄 Loading model from file: ${file}`);
+      const modelPath = path.join(__dirname, file);
+      const modelModule = require(modelPath);
+      const modelFactory = modelModule.default || modelModule;
+      
+      if (typeof modelFactory !== 'function') {
+        console.error(`❌ ${file} does not export a function`);
+        return;
+      }
+      
+      const initializedModel = modelFactory(sequelize, DataTypes);
+      db[initializedModel.name] = initializedModel;
+      console.log(`✅ Loaded model: ${initializedModel.name}`);
+    } catch (error) {
+      console.error(`❌ Error loading model from ${file}:`, error);
+    }
   });
 
 // Set up associations
+console.log('🔗 Setting up associations...');
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
+    console.log(`🔗 Setting up associations for: ${modelName}`);
     db[modelName].associate(db);
   }
 });
 
+const modelNames = Object.keys(db).filter(k => k !== 'sequelize' && k !== 'Sequelize');
+console.log(`📦 Total models loaded: ${modelNames.length}`, modelNames);
+
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// Change this line from: export = db;
 export default db;

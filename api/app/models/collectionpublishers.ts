@@ -38,10 +38,10 @@ const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof
       },
     },
   }, {
-    tableName: 'CollectionPublishers', // Explicitly set table name
+    tableName: 'CollectionPublishers',
     timestamps: true,
-    underscored: false, // CHANGED: Set to false to match migration
-    freezeTableName: true, // ADDED: Prevent table name modification
+    underscored: false,  // CRITICAL: Set to false to match migration columns
+    freezeTableName: true,  // CRITICAL: Prevent table name pluralization
   }) as CollectionPublishersModel;
  
   CollectionPublishers.associate = (models: Models) => {
@@ -62,4 +62,5 @@ const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof
   return CollectionPublishers;
 };
 
-export = createCollectionPublishersModel;
+// CHANGED: Use export default instead of export =
+export default createCollectionPublishersModel;
