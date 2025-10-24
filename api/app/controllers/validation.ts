@@ -44,11 +44,19 @@ const checks = {
     .withMessage('Signup must be Regular or Fixer.')
     .toLowerCase(),
     
-  id: check('id')
+  // Integer ID validation (for legacy tables)
+  idInt: check('id')
     .exists().withMessage('ID is required.')
     .isInt({ min: 1 })
     .withMessage('ID must be a valid positive integer.')
     .toInt(),
+  
+  // UUID ID validation (for new tables using UUIDs)
+  idUUID: check('id')
+    .exists().withMessage('ID is required.')
+    .isUUID(4)
+    .withMessage('ID must be a valid UUID.')
+    .trim(),
     
   name: check('name')
     .exists().withMessage('Name is required.')
@@ -160,11 +168,12 @@ const checks = {
     .withMessage('User sent ID must be a valid positive integer.')
     .toInt(),
     
+  // FIXED: Changed from integer to UUID validation
   collectpubUsersId: check('collectpubUsersId')
     .exists().withMessage('Collection publisher user ID is required.')
-    .isInt({ min: 1 })
-    .withMessage('Collection publisher user ID must be a valid positive integer.')
-    .toInt(),
+    .isUUID(4)
+    .withMessage('Collection publisher user ID must be a valid UUID.')
+    .trim(),
 };
 
 /**
@@ -227,7 +236,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editCollectionPublisher': {
       return [
-        checks.id,
+        checks.idUUID,  // Changed from checks.id to checks.idUUID
         checks.publisherName,
         checkForErrors
       ];
@@ -235,7 +244,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteCollectionPublisher': {
       return [
-        checks.id,
+        checks.idUUID,  // Changed from checks.id to checks.idUUID
         checkForErrors
       ];
     }
@@ -249,7 +258,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editComicBookTitle': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checks.cbTitle,
         checkForErrors
       ];
@@ -257,7 +266,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteComicBookTitle': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checkForErrors
       ];
     }
@@ -272,7 +281,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editComicBook': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checks.title,
         checks.typeRV,
         checkForErrors
@@ -281,7 +290,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteComicBook': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checkForErrors
       ];
     }
@@ -300,7 +309,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editMessaging': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checks.name,
         checks.email,
         checks.subject,
@@ -311,7 +320,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteMessaging': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checkForErrors
       ];
     }
@@ -332,7 +341,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editSaleList': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checks.comicBookTitle,
         checks.typeRV,
         checkForErrors
@@ -341,7 +350,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteSaleList': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checkForErrors
       ];
     }
@@ -362,7 +371,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editWishList': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checks.comicBookTitle,
         checks.typeRV,
         checkForErrors
@@ -371,7 +380,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteWishList': {
       return [
-        checks.id,
+        checks.idInt,  // Using integer ID
         checkForErrors
       ];
     }

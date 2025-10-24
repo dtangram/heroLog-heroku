@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Model, ModelStatic } from 'sequelize';
 import * as collectionpublisherCtrl from '../controllers/collectionpublishers';
 import * as validationCtrl from '../controllers/validation';
+import db from '../models';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -58,10 +59,7 @@ const ENV = {
 // MODELS
 // ============================================================================
 
-const models = require('../models') as { 
-  CollectionPublishers: CollectionPublisherModel;
-};
-const { CollectionPublishers } = models;
+const CollectionPublishers = db.CollectionPublishers as CollectionPublisherModel;
 
 // ============================================================================
 // VALIDATION FUNCTIONS
