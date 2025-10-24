@@ -12,7 +12,7 @@ interface CollectionPublishersModel extends ModelStatic<Model> {
   associate: (models: Models) => void;
 }
 
-// The actual model factory function - direct TypeScript conversion
+// The actual model factory function
 const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): CollectionPublishersModel => {
   const CollectionPublishers = sequelize.define('CollectionPublishers', {
     id: {
@@ -38,8 +38,10 @@ const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof
       },
     },
   }, {
+    tableName: 'CollectionPublishers', // Explicitly set table name
     timestamps: true,
-    underscored: true,
+    underscored: false, // CHANGED: Set to false to match migration
+    freezeTableName: true, // ADDED: Prevent table name modification
   }) as CollectionPublishersModel;
  
   CollectionPublishers.associate = (models: Models) => {
