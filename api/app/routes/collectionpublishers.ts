@@ -208,13 +208,24 @@ router.get(
 router.post(
   '/create',
   (req: Request, _res: Response, next: NextFunction) => {
-    console.log('🚀 ROUTE HIT: /collectpub/create');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('='.repeat(80));
+    console.log('🚀 POST /collectpub/create HIT');
+    console.log('Time:', new Date().toISOString());
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('='.repeat(80));
     next();
   },
   validationCtrl.validate('createCollectionPublisher'),
   collectionpublisherCtrl.createCollectionPublisher
 );
+
+// TEST ENDPOINT - Remove after debugging
+router.get('/test-logging', (_req: Request, res: Response) => {
+  console.log('🧪 TEST ENDPOINT HIT');
+  console.log('Logging is working!');
+  return res.json({ message: 'Logging test successful' });
+});
 
 // POST /collectionpublishers/search
 // Find a publisher by name (search endpoint)
