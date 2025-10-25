@@ -5,6 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --exit-child --files server.ts",
+    "prebuild": "rimraf dist",
     "build": "rimraf dist && tsc",
     "start": "node dist/server.js",
     "start:prod": "npm run build && node dist/server.js",
