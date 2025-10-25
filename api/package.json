@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --exit-child --files server.ts",
     "prebuild": "rimraf dist",
-    "build": "rimraf dist && tsc",
+    "build": "rm -rf dist && tsc --project tsconfig.json",
     "start": "node dist/server.js",
     "start:prod": "npm run build && node dist/server.js",
     "lint": "eslint . --ext .js",
