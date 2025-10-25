@@ -207,6 +207,11 @@ router.get(
 // Create a new publisher
 router.post(
   '/create',
+  (req: Request, _res: Response, next: NextFunction) => {
+    console.log('🚀 ROUTE HIT: /collectpub/create');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    next();
+  },
   validationCtrl.validate('createCollectionPublisher'),
   collectionpublisherCtrl.createCollectionPublisher
 );

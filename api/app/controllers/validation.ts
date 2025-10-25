@@ -186,11 +186,20 @@ const checkForErrors = (
 ): void | Response => {
   const errors = validationResult(req);
   
+  // ADD LOGGING
+  console.log('🔍 VALIDATION CHECK');
+  console.log('URL:', req.url);
+  console.log('Method:', req.method);
+  console.log('Has errors:', !errors.isEmpty());
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  
   if (!errors.isEmpty()) {
     const formattedErrors = errors.array().map(error => ({
       field: isFieldValidationError(error) ? error.path : 'general',
       message: error.msg
     }));
+    
+    console.log('❌ VALIDATION ERRORS:', JSON.stringify(formattedErrors, null, 2));
     
     return res.status(400).json({
       success: false,
@@ -198,6 +207,7 @@ const checkForErrors = (
     });
   }
   
+  console.log('✅ VALIDATION PASSED - Proceeding to controller');
   return next();
 };
 
