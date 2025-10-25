@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
 import SuccessDisplay from '../success';
-import styles from './styles.module.css';
+import { ANONYMOUS_USER_ID } from '../../../constants';
 import { ContainerProps } from './container';
+import styles from './styles.module.css';
 
 interface FormErrorsState {
   publisherName: string;
@@ -18,7 +19,7 @@ const CreatePublisher = ({
 }: ContainerProps) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const userId = localStorage.getItem('id') || '';
+  const userId = localStorage.getItem('id') || ANONYMOUS_USER_ID;
  
   const [publisherName, setPublisherName] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -65,15 +66,6 @@ const CreatePublisher = ({
     const isValid = validateFields();
    
     if (!isValid) {
-      return;
-    }
-
-    // Validate userId exists
-    if (!userId) {
-      console.error('User ID not found in localStorage');
-      setFormErrors({
-        publisherName: 'User session expired. Please log in again.'
-      });
       return;
     }
 
