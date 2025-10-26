@@ -95,6 +95,12 @@ if (ENV.nodeEnv === 'development') {
 // ROUTES
 // ============================================================================
 
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(`📨 ${req.method} ${req.url}`);
+  console.log(`📨 Body:`, JSON.stringify(req.body));
+  next();
+});
+
 // Health check endpoint with database status
 app.get('/health', async (_req: Request, res: Response) => {
   const healthCheck = {
