@@ -171,7 +171,7 @@ const checks = {
   // FIXED: Changed from integer to UUID validation
   collectpubUsersId: check('collectpubUsersId')
     .exists().withMessage('Collection publisher user ID is required.')
-    .isUUID(4)
+    .isUUID()
     .withMessage('Collection publisher user ID must be a valid UUID.')
     .trim(),
 };

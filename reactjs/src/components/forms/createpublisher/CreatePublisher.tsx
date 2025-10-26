@@ -79,6 +79,7 @@ const CreatePublisher = ({
       // Create new publisher
       createPublisher({
         publisherName: publisherName.trim(),
+        collectpubUsersId: userId
       });
     }
    
