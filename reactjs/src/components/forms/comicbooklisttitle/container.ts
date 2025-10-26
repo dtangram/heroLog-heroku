@@ -8,34 +8,22 @@ import {
 interface ComicBookTitle {
   id: string;
   cbTitle: string;
-  collpubId: string;
+  collectpubId: string;
 }
 
 interface ComicBookTitleState {
   data: ComicBookTitle;
-  isLoading: boolean;
-  loadedAt: number;
-  error: string | null;
 }
 
 interface ComicBookTitlesState {
-  byId: Record<string, ComicBookTitleState>;
-  allIds: string[];
-  loadedAt: number;
-  isLoading: boolean;
-  error: string | null;
+  byId: {
+    [key: string]: ComicBookTitleState;
+  };
 }
 
 interface RootState {
-  comicbooklists: Record<string, ComicBookTitlesState>;
-}
-
-interface OwnProps {
-  match?: {
-    params?: {
-      id?: string;
-      pubId?: string;
-    };
+  comicbooklists: {
+    [collectpubId: string]: ComicBookTitlesState;
   };
 }
 
@@ -53,21 +41,28 @@ const findTitleInPublishers = (
   return null;
 };
 
-const mapStateToProps = (state: RootState, ownProps: OwnProps) => {
-  const { id, pubId } = ownProps?.match?.params || {};
+const mapStateToProps = (state: RootState) => {
+  const { comicbooklists } = state;
  
-  if (!state?.comicbooklists) {
-    return { comicbooklist: null, pubId };
+  if (!comicbooklists) {
+    return { comicbooklist: null };
   }
 
-  // For edit mode, find the title across all publishers
-  if (id) {
-    const comicbooklist = findTitleInPublishers(state.comicbooklists, id);
-    return { comicbooklist, pubId };
+  // Try to find the most recently loaded title across all publishers
+  const allPublishers = Object.values(comicbooklists);
+  
+  for (const publisher of allPublishers) {
+    const titleIds = Object.keys(publisher?.byId || {});
+    if (titleIds.length > 0) {
+      const lastTitleId = titleIds[titleIds.length - 1];
+      const titleState = publisher.byId[lastTitleId];
+      if (titleState?.data) {
+        return { comicbooklist: titleState.data };
+      }
+    }
   }
-
-  // For create mode, pass pubId to know which publisher
-  return { comicbooklist: null, pubId };
+ 
+  return { comicbooklist: null };
 };
 
 const mapDispatchToProps = {

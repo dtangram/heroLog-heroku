@@ -20,7 +20,7 @@ import {
 interface ComicBookTitle {
   id: string;
   cbTitle: string;
-  collpubId: string;
+  collectpubId: string;
 }
 
 interface ComicBookTitleState {
@@ -39,13 +39,13 @@ interface ComicBookTitlesState {
 }
 
 export interface State {
-  [collpubId: string]: ComicBookTitlesState;
+  [collectpubId: string]: ComicBookTitlesState;
 }
 
 interface Action {
   type: string;
   payload?: {
-    collpubId?: string;
+    collectpubId?: string;
     id?: string;
     comicbooklist?: ComicBookTitle;
   };
@@ -65,8 +65,8 @@ const initialState: State = {};
 
 const getPublisherState = (
   state: State,
-  collpubId: string
-): ComicBookTitlesState => state[collpubId] || initialPublisherState;
+  collectpubId: string
+): ComicBookTitlesState => state[collectpubId] || initialPublisherState;
 
 const findPublisherIdByTitleId = (state: State, id: string): string | null => {
   const publisherIds = Object.keys(state);
@@ -115,15 +115,15 @@ const updateTitleInState = (
 const comicbooklistsPending = (state: object, action: object): object => {
   const typedState = state as State;
   const typedAction = action as Action;
-  const { collpubId = '' } = typedAction.payload || {};
+  const { collectpubId = '' } = typedAction.payload || {};
   
-  if (!collpubId) return typedState;
+  if (!collectpubId) return typedState;
   
-  const publisherState = getPublisherState(typedState, collpubId);
+  const publisherState = getPublisherState(typedState, collectpubId);
 
   return {
     ...typedState,
-    [collpubId]: {
+    [collectpubId]: {
       ...publisherState,
       isLoading: true,
       error: null,
@@ -135,12 +135,12 @@ const comicbooklistsPending = (state: object, action: object): object => {
 const comicbooklistsSuccess = (state: object, action: object): object => {
   const typedState = state as State;
   const typedAction = action as Action;
-  const { collpubId = '' } = typedAction.payload || {};
+  const { collectpubId = '' } = typedAction.payload || {};
   
-  if (!collpubId) return typedState;
+  if (!collectpubId) return typedState;
   
   const titles = Array.isArray(typedAction.data) ? typedAction.data : [];
-  const publisherState = getPublisherState(typedState, collpubId);
+  const publisherState = getPublisherState(typedState, collectpubId);
   const now = Date.now();
 
   const newById = titles.reduce((acc, title) => ({
@@ -155,7 +155,7 @@ const comicbooklistsSuccess = (state: object, action: object): object => {
 
   return {
     ...typedState,
-    [collpubId]: {
+    [collectpubId]: {
       byId: newById,
       allIds: newAllIds,
       loadedAt: now,
@@ -169,15 +169,15 @@ const comicbooklistsSuccess = (state: object, action: object): object => {
 const comicbooklistsError = (state: object, action: object): object => {
   const typedState = state as State;
   const typedAction = action as Action;
-  const { collpubId = '' } = typedAction.payload || {};
+  const { collectpubId = '' } = typedAction.payload || {};
   
-  if (!collpubId) return typedState;
+  if (!collectpubId) return typedState;
   
-  const publisherState = getPublisherState(typedState, collpubId);
+  const publisherState = getPublisherState(typedState, collectpubId);
 
   return {
     ...typedState,
-    [collpubId]: {
+    [collectpubId]: {
       ...publisherState,
       isLoading: false,
       error: typedAction.err || 'Unknown error',
@@ -191,21 +191,21 @@ const comicbooklistPending = (state: object, action: object): object => {
   const typedAction = action as Action;
   const { id = '', comicbooklist } = typedAction.payload || {};
   
-  const collpubId = comicbooklist?.collpubId || findPublisherIdByTitleId(typedState, id);
+  const collectpubId = comicbooklist?.collectpubId || findPublisherIdByTitleId(typedState, id);
 
-  if (!collpubId) return typedState;
+  if (!collectpubId) return typedState;
 
-  const publisherState = getPublisherState(typedState, collpubId);
+  const publisherState = getPublisherState(typedState, collectpubId);
   const existingTitle = publisherState.byId[id];
   const titleData = existingTitle?.data || comicbooklist || {
     id,
     cbTitle: '',
-    collpubId,
+    collectpubId,
   } as ComicBookTitle;
 
   return {
     ...typedState,
-    [collpubId]: {
+    [collectpubId]: {
       ...publisherState,
       byId: {
         ...publisherState.byId,
@@ -224,26 +224,28 @@ const comicbooklistPending = (state: object, action: object): object => {
 const comicbooklistSuccess = (state: object, action: object): object => {
   const typedState = state as State;
   const typedAction = action as Action;
-  const { id = '' } = typedAction.payload || {};
   const title = typedAction.data as ComicBookTitle;
   
-  if (!title?.collpubId) return typedState;
+  if (!title || !title.id || !title.collectpubId) return typedState;
   
-  const { collpubId } = title;
-  const publisherState = getPublisherState(typedState, collpubId);
-  const existingData = publisherState.byId[id]?.data || {};
+  // ✅ FIX: Use the ID from the title data, not from payload
+  const titleId = title.id;
+  const { collectpubId } = title;
+  
+  const publisherState = getPublisherState(typedState, collectpubId);
+  const existingData = publisherState.byId[titleId]?.data || {};
 
-  const newAllIds = publisherState.allIds.includes(id)
+  const newAllIds = publisherState.allIds.includes(titleId)
     ? publisherState.allIds
-    : [...publisherState.allIds, id];
+    : [...publisherState.allIds, titleId];
 
   return {
     ...typedState,
-    [collpubId]: {
+    [collectpubId]: {
       ...publisherState,
       byId: {
         ...publisherState.byId,
-        [id]: createTitleState({ ...existingData, ...title }),
+        [titleId]: createTitleState({ ...existingData, ...title }),
       },
       allIds: newAllIds,
     },
@@ -260,17 +262,17 @@ const comicbooklistSuccessDelete = (state: object, action: object): object => {
   const typedAction = action as Action;
   const { id = '' } = typedAction.payload || {};
   
-  const collpubId = findPublisherIdByTitleId(typedState, id);
+  const collectpubId = findPublisherIdByTitleId(typedState, id);
   
-  if (!collpubId) return typedState;
+  if (!collectpubId) return typedState;
 
-  const publisherState = typedState[collpubId];
+  const publisherState = typedState[collectpubId];
   const { [id]: _deleted, ...remainingById } = publisherState.byId;
   const newAllIds = publisherState.allIds.filter(titleId => titleId !== id);
 
   return {
     ...typedState,
-    [collpubId]: {
+    [collectpubId]: {
       ...publisherState,
       byId: remainingById,
       allIds: newAllIds,
@@ -284,17 +286,17 @@ const comicbooklistError = (state: object, action: object): object => {
   const typedAction = action as Action;
   const { id = '', comicbooklist } = typedAction.payload || {};
   
-  const collpubId = comicbooklist?.collpubId || findPublisherIdByTitleId(typedState, id);
+  const collectpubId = comicbooklist?.collectpubId || findPublisherIdByTitleId(typedState, id);
   
-  if (!collpubId) return typedState;
+  if (!collectpubId) return typedState;
 
-  const publisherState = typedState[collpubId];
+  const publisherState = typedState[collectpubId];
   
   if (!publisherState?.byId?.[id]) return typedState;
 
   return {
     ...typedState,
-    [collpubId]: {
+    [collectpubId]: {
       ...publisherState,
       byId: updateTitleInState(publisherState.byId, id, {
         isLoading: false,

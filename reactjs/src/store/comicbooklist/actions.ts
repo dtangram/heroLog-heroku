@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import API from '../../API';
 import {
   REQ_COMIC_BOOK_TITLES_PENDING,
@@ -23,7 +22,7 @@ const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 interface ComicBookTitle {
   id: string;
   cbTitle: string;
-  collpubId: string;
+  collectpubId: string;
 }
 
 interface ComicBookTitleState {
@@ -55,8 +54,8 @@ interface APIAction {
 const isCached = (loadedAt: number): boolean => 
   loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
 
-const getPublisherState = (state: RootState, collpubId: string): ComicBookTitlesState | null =>
-  state?.comicbooklists?.[collpubId] || null;
+const getPublisherState = (state: RootState, collectpubId: string): ComicBookTitlesState | null =>
+  state?.comicbooklists?.[collectpubId] || null;
 
 const findTitleState = (state: RootState, id: string): ComicBookTitleState | null => {
   if (!state?.comicbooklists) return null;
@@ -71,8 +70,8 @@ const findTitleState = (state: RootState, id: string): ComicBookTitleState | nul
   return null;
 };
 
-const shouldFetchPublisherTitles = (state: RootState, collpubId: string): boolean => {
-  const publisherState = getPublisherState(state, collpubId);
+const shouldFetchPublisherTitles = (state: RootState, collectpubId: string): boolean => {
+  const publisherState = getPublisherState(state, collectpubId);
   
   if (!publisherState) return true;
   if (publisherState.isLoading) return false;
@@ -89,15 +88,24 @@ const shouldFetchTitle = (state: RootState, id: string): boolean => {
   return !isCached(titleState.loadedAt);
 };
 
-export const fetchComicBookTitles = (collpubId: string): APIAction => ({
+const validateComicBookTitle = (title: Partial<ComicBookTitle>): void => {
+  if (!title.cbTitle?.trim()) {
+    throw new Error('Comic book title is required');
+  }
+  if (!title.collectpubId?.trim()) {
+    throw new Error('Publisher ID is required');
+  }
+};
+
+export const fetchComicBookTitles = (collectpubId: string): APIAction => ({
   types: [
     REQ_COMIC_BOOK_TITLES_PENDING,
     REQ_COMIC_BOOK_TITLES_SUCCESS,
     REQ_COMIC_BOOK_TITLES_ERROR,
   ],
-  callAPI: () => API.get(`comicbooktitles/publishers/${collpubId}`),
-  shouldCallAPI: (state) => shouldFetchPublisherTitles(state, collpubId),
-  payload: { collpubId },
+  callAPI: () => API.get(`comicbooktitles/publishers/${collectpubId}`),
+  shouldCallAPI: (state) => shouldFetchPublisherTitles(state, collectpubId),
+  payload: { collectpubId },
 });
 
 export const fetchComicBookTitle = (id: string): APIAction => ({
@@ -114,8 +122,9 @@ export const fetchComicBookTitle = (id: string): APIAction => ({
 export const createComicBookTitle = (
   comicbooklist: Omit<ComicBookTitle, 'id'>
 ): APIAction => {
-  const id = uuidv4();
-  const newTitle = { id, ...comicbooklist };
+  validateComicBookTitle(comicbooklist);
+
+  console.log('Creating comic book title:', comicbooklist);
 
   return {
     types: [
@@ -123,22 +132,36 @@ export const createComicBookTitle = (
       ADD_COMIC_BOOK_TITLE_SUCCESS,
       ADD_COMIC_BOOK_TITLE_ERROR,
     ],
-    callAPI: () => API.post('/comicbooktitles/', newTitle),
-    payload: { id, comicbooklist: newTitle },
+    callAPI: () => API.post('/comicbooktitles/', {
+      cbTitle: comicbooklist.cbTitle.trim(),
+      collectpubId: comicbooklist.collectpubId
+    }),
+    payload: {
+      collectpubId: comicbooklist.collectpubId,
+      comicbooklist: {
+        cbTitle: comicbooklist.cbTitle
+      } as Partial<ComicBookTitle>,
+    },
   };
 };
 
 export const updateComicBookTitle = (
   { id, cbTitle }: Pick<ComicBookTitle, 'id' | 'cbTitle'>
-): APIAction => ({
-  types: [
-    UPDATE_COMIC_BOOK_TITLE_PENDING,
-    UPDATE_COMIC_BOOK_TITLE_SUCCESS,
-    UPDATE_COMIC_BOOK_TITLE_ERROR,
-  ],
-  callAPI: () => API.put(`/comicbooktitles/${id}`, { cbTitle }),
-  payload: { id },
-});
+): APIAction => {
+  if (!cbTitle?.trim()) {
+    throw new Error('Comic book title is required');
+  }
+
+  return {
+    types: [
+      UPDATE_COMIC_BOOK_TITLE_PENDING,
+      UPDATE_COMIC_BOOK_TITLE_SUCCESS,
+      UPDATE_COMIC_BOOK_TITLE_ERROR,
+    ],
+    callAPI: () => API.put(`/comicbooktitles/${id}`, { cbTitle: cbTitle.trim() }),
+    payload: { id },
+  };
+};
 
 export const deleteComicBookTitle = (id: string): APIAction => ({
   types: [

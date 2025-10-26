@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
@@ -10,11 +10,6 @@ interface FormErrorsState {
   cbTitle: string;
 }
 
-interface RouteParams extends Record<string, string | undefined> {
-  id?: string;
-  pubId?: string;
-}
-
 const ComicBookListTitle = ({
   comicbooklist,
   createComicBookTitle,
@@ -22,7 +17,7 @@ const ComicBookListTitle = ({
   updateComicBookTitle,
 }: ContainerProps) => {
   const navigate = useNavigate();
-  const { id, pubId } = useParams<RouteParams>();
+  const { id, pubId } = useParams<{ id?: string; pubId?: string }>();
   
   const [cbTitle, setCbTitle] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -31,7 +26,7 @@ const ComicBookListTitle = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0 });
     
     if (id) {
       fetchComicBookTitle(id);
@@ -46,70 +41,63 @@ const ComicBookListTitle = ({
     }
   }, [comicbooklist]);
 
-  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
     setCbTitle(value);
-    
-    // Clear error when user starts typing
-    if (formErrors.cbTitle) {
-      setFormErrors({ cbTitle: '' });
-    }
-  }, [formErrors.cbTitle]);
+  };
 
-  const validateFields = useCallback((): boolean => {
-    const trimmedTitle = cbTitle.trim();
-    const isValid = trimmedTitle.length >= 1;
+  const validateFields = (): boolean => {
+    const isCbTitleValid = cbTitle.trim().length >= 1;
     
     setFormErrors({
-      cbTitle: isValid ? '' : 'Comic Book title is required',
+      cbTitle: isCbTitleValid ? '' : 'Comic Book title is required',
     });
     
-    return isValid;
-  }, [cbTitle]);
+    return isCbTitleValid;
+  };
 
-  const handleSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     
-    if (!validateFields()) return;
+    const isValid = validateFields();
     
-    const trimmedTitle = cbTitle.trim();
-    
-    try {
-      if (id) {
-        await updateComicBookTitle({ id, cbTitle: trimmedTitle });
-      } else {
-        if (!pubId) {
-          console.error('Publisher ID is required for creating new title');
-          return;
-        }
-        await createComicBookTitle({ cbTitle: trimmedTitle, collpubId: pubId });
+    if (!isValid) {
+      return;
+    }
+
+    if (id) {
+      // Update existing comic book title
+      updateComicBookTitle({
+        id,
+        cbTitle: cbTitle.trim(),
+      });
+    } else {
+      // Create new comic book title
+      if (!pubId) {
+        console.error('Publisher ID is required for creating new title');
+        setFormErrors({ cbTitle: 'Publisher ID is missing' });
+        return;
       }
       
-      setSuccessMessage('success');
-    } catch (error) {
-      console.error('Save error:', error);
-      setFormErrors({ cbTitle: 'An error occurred while saving. Please try again.' });
+      createComicBookTitle({
+        cbTitle: cbTitle.trim(),
+        collectpubId: pubId
+      });
     }
-  }, [id, pubId, cbTitle, validateFields, createComicBookTitle, updateComicBookTitle]);
-
-  const handleBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
+    
+    setSuccessMessage('success');
+    
+    // Navigate back after successful submission
+    setTimeout(() => {
+      navigate(`/dashboard/${pubId}/comicbooklist`);
+    }, 1500);
+  };
 
   const showSuccess = !formErrors.cbTitle && successMessage === 'success';
   const pageTitle = id ? `Edit ${cbTitle}` : 'Add Comic Book Title to Collection';
 
   return (
     <article id="cbComicBookListTitle" className={styles.cbWrapper}>
-      <button
-        className={styles.backLink}
-        type="button"
-        onClick={handleBack}
-        aria-label="Go back to previous page"
-      >
-        Back
-      </button>
-
       <h1>
         {pageTitle}
         <figure
@@ -137,8 +125,6 @@ const ComicBookListTitle = ({
                   value={cbTitle}
                   onChange={handleInputChange}
                   required
-                  aria-required="true"
-                  aria-invalid={!!formErrors.cbTitle}
                 />
               </label>
             </fieldset>
@@ -155,7 +141,6 @@ const ComicBookListTitle = ({
                 className={styles.submit}
                 type="submit"
                 value="SUBMIT"
-                disabled={!cbTitle.trim()}
               />
             </article>
           </form>
