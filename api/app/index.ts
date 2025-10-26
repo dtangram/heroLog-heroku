@@ -59,7 +59,12 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
-    // Check if origin is in allowed list
+    // In production, allow same-origin requests (your Heroku domain)
+    if (ENV.nodeEnv === 'production') {
+      return callback(null, true);  // Allow all origins in production
+    }
+
+    // In development, check allowed list
     if (ENV.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -91,15 +96,16 @@ if (ENV.nodeEnv === 'development') {
   });
 }
 
-// ============================================================================
-// ROUTES
-// ============================================================================
-
+// Global request logger (for debugging)
 app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(`📨 ${req.method} ${req.url}`);
   console.log(`📨 Body:`, JSON.stringify(req.body));
   next();
 });
+
+// ============================================================================
+// ROUTES
+// ============================================================================
 
 // Health check endpoint with database status
 app.get('/health', async (_req: Request, res: Response) => {
