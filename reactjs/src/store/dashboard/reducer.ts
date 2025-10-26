@@ -168,22 +168,23 @@ const publisherPending = (state: object, action: object): object => {
 const publisherSuccess = (state: object, action: object): object => {
   const typedState = state as PublishersState;
   const typedAction = action as Action;
-  const { id = '' } = typedAction.payload || {};
   const publisher = typedAction.data as Publisher;
   
-  if (!publisher) return typedState;
+  if (!publisher || !publisher.id) return typedState;
   
-  const existingData = typedState.byId[id]?.data || {};
+  // ✅ FIX: Use the ID from the publisher data, not from payload
+  const publisherId = publisher.id;
+  const existingData = typedState.byId[publisherId]?.data || {};
 
-  const newAllIds = typedState.allIds.includes(id)
+  const newAllIds = typedState.allIds.includes(publisherId)
     ? typedState.allIds
-    : [...typedState.allIds, id];
+    : [...typedState.allIds, publisherId];
 
   return {
     ...typedState,
     byId: {
       ...typedState.byId,
-      [id]: createPublisherState({ ...existingData, ...publisher }),
+      [publisherId]: createPublisherState({ ...existingData, ...publisher }),
     },
     allIds: newAllIds,
   };
