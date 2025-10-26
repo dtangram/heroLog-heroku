@@ -4,6 +4,9 @@ import * as collectionpublisherCtrl from '../controllers/collectionpublishers';
 import * as validationCtrl from '../controllers/validation';
 import db from '../models';  // FIXED: Use ES6 import
 
+console.log('🔵 COLLECTION PUBLISHERS ROUTES FILE LOADED');
+console.log('🔵 Current time:', new Date().toISOString());
+
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
@@ -257,6 +260,9 @@ router.delete(
   validationCtrl.validate('deleteCollectionPublisher'),
   collectionpublisherCtrl.removeCollectionPublisher
 );
+
+console.log('🔵 COLLECTION PUBLISHERS ROUTER CONFIGURED');
+console.log('🔵 Router has', router.stack.length, 'routes');
 
 // ============================================================================
 // EXPORTS
