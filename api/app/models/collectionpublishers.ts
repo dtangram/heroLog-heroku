@@ -19,9 +19,6 @@ const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
       type: dataTypes.UUID,
-      validate: {
-        isUUID: { args: 4, msg: 'ID not valid, please try again' },
-      },
     },
     publisherName: {
       type: dataTypes.STRING(500),
@@ -33,9 +30,6 @@ const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof
     collectpubUsersId: {
       type: dataTypes.UUID,
       allowNull: true,
-      validate: {
-        isUUID: { args: 4, msg: 'Invalid user ID' },
-      },
     },
   }, {
     tableName: 'CollectionPublishers',
