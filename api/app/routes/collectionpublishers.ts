@@ -134,14 +134,14 @@ const sendSuccess = (
   res.status(200).json(buildSuccessResponse(message, data));
 };
 
-const sendError = (
-  res: Response,
-  statusCode: number,
-  message: string,
-  stack?: string
-): void => {
-  res.status(statusCode).json(buildErrorResponse(message, statusCode, stack));
-};
+// const sendError = (
+//   res: Response,
+//   statusCode: number,
+//   message: string,
+//   stack?: string
+// ): void => {
+//   res.status(statusCode).json(buildErrorResponse(message, statusCode, stack));
+// };
 
 // ============================================================================
 // ERROR HANDLING
@@ -166,7 +166,7 @@ const findPublisherHandler = async (
     const validation = validatePublisherName(req.body.publisherName);
 
     if (!validation.isValid) {
-      sendError(res, 400, validation.error!);
+      // sendError(res, 400, validation.error!);
       return;
     }
 
@@ -176,7 +176,7 @@ const findPublisherHandler = async (
     const publisher = await findPublisherByName(publisherName);
 
     if (!publisher) {
-      sendError(res, 404, 'Publisher not found');
+      // sendError(res, 404, 'Publisher not found');
       return;
     }
 
@@ -185,10 +185,11 @@ const findPublisherHandler = async (
 
   } catch (error) {
     if (error instanceof Error) {
-      const { message, stack } = handleError(error);
-      sendError(res, 500, message, stack);
+      return
+      // const { message, stack } = handleError(error);
+      // sendError(res, 500, message, stack);
     } else {
-      sendError(res, 500, 'An unexpected error occurred');
+      // sendError(res, 500, 'An unexpected error occurred');
     }
   }
 };
@@ -233,11 +234,11 @@ router.get('/test-logging', (_req: Request, res: Response) => {
 
 // POST /collectionpublishers/search
 // Find a publisher by name (search endpoint)
-router.post(
-  '/search',
-  validationCtrl.validate('createCollectionPublisher'),
-  findPublisherHandler
-);
+// router.post(
+//   '/search',
+//   validationCtrl.validate('createCollectionPublisher'),
+//   findPublisherHandler
+// );
 
 // GET /collectionpublishers/:id
 // Get a single publisher by ID
