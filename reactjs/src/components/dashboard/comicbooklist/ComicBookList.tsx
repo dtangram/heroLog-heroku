@@ -137,7 +137,7 @@ const ComicBookList = ({
 
         <h2>
           <section>
-            <RRLink to={`/forms/${pubId}/comicbooklisttitle/new`}>
+            <RRLink to={`/forms/${pubId}/${publisherName}/comicbooklisttitle/new`}>
               <figure><LibraryAddIcon /></figure>
               <p className={styles.link}>Add Comic Book Title</p>
             </RRLink>
@@ -164,7 +164,7 @@ const ComicBookList = ({
 
       <h2>
         <section>
-          <RRLink to={`/forms/${pubId}/comicbooklisttitle/new`}>
+          <RRLink to={`/forms/${pubId}/${publisherName}/comicbooklisttitle/new`}>
             <figure><LibraryAddIcon /></figure>
             <p className={styles.link}>Add Comic Book Title</p>
           </RRLink>

@@ -63,8 +63,8 @@ const App = () => {
             <Route path="/forms/createpublisher/new" element={<CreatePublisher />} />
             <Route path="/forms/createpublisher/edit/:id" element={<CreatePublisher />} />
             <Route path="/dashboard/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
-            <Route path="/forms/:pubId/comicbooklisttitle/new" element={<ComicBookListTitle />} />
-            <Route path="/forms/:pubId/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
+            <Route path="/forms/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />
+            <Route path="/forms/:pubId/:publisherName/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
             <Route path="/dashboard/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
             <Route path="/forms/:coboTitleId/comicbook/new" element={<ComicBook />} />
             <Route path="/forms/:coboTitleId/comicbook/edit/:id" element={<ComicBook />} />
