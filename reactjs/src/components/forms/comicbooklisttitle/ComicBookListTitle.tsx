@@ -133,7 +133,7 @@ const ComicBookListTitle = ({
             <article>
               <p>
                 <Link
-                  url={`/dashboard/${pubId}/comicbooklist`}
+                  url={`/dashboard/${pubId}/${publisherName}/comicbooklist`}
                   title="CANCEL"
                 />
               </p>

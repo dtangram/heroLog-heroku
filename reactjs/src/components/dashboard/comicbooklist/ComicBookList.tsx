@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { Link as RRLink, useParams } from 'react-router-dom';
+import { Link as RRLink, useNavigate, useParams } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import EditIcon from '@mui/icons-material/Edit';
@@ -43,6 +43,8 @@ const ComicBookList = ({
   deleteComicBookTitle,
 }: ConnectorProps) => {
   const { pubId = '', publisherName = '' } = useParams<RouteParams>();
+
+  const navigate = useNavigate();
 
   // Fetch comic book titles on mount
   useEffect(() => {
@@ -92,10 +94,22 @@ const ComicBookList = ({
     .map(id => byId[id]?.data)
     .filter(Boolean) as ComicBookTitle[];
 
+  const handleGoBack = useCallback(() => {
+    navigate('/dashboard');
+  }, [navigate]);
+
   // Early return for loading state
   if (isLoading) {
     return (
       <article id="cbComBookList" className={styles.cbWrap}>
+        <button 
+          className={styles.backLink} 
+          type="button" 
+          onClick={handleGoBack}
+        >
+          {'<'}Dashboard
+        </button>
+
         <h1>
           Your List of {publisherName} Titles
           <figure 
