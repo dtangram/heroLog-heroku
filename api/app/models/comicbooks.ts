@@ -11,16 +11,13 @@ interface ComicBooksModel extends ModelStatic<Model> {
   associate: (models: Models) => void;
 }
 
-// The actual model factory function - direct TypeScript conversion
+// The actual model factory function
 const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): ComicBooksModel => {
   const ComicBooks = sequelize.define('ComicBooks', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
       type: dataTypes.UUID,
-      validate: {
-        isUUID: { args: 4, msg: 'ID not valid, please try again' },
-      },
     },
     title: {
       type: dataTypes.STRING(500),
@@ -36,30 +33,18 @@ const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
     author: {
       type: dataTypes.STRING(500),
       allowNull: true,
-      validate: {
-        len: { args: [1, 500], msg: 'Comic Book author must be 1-500 characters' },
-      },
     },
     penciler: {
       type: dataTypes.STRING(500),
       allowNull: true,
-      validate: {
-        len: { args: [1, 500], msg: 'Comic Book penciler must be 1-500 characters' },
-      },
     },
     coverartist: {
       type: dataTypes.STRING(500),
       allowNull: true,
-      validate: {
-        len: { args: [1, 500], msg: 'Comic Book cover artist must be 1-500 characters' },
-      },
     },
     inker: {
       type: dataTypes.STRING(500),
       allowNull: true,
-      validate: {
-        len: { args: [1, 500], msg: 'Comic Book inker must be 1-500 characters' },
-      },
     },
     volume: {
       type: dataTypes.STRING(50),
@@ -68,10 +53,6 @@ const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
     year: {
       type: dataTypes.INTEGER,
       allowNull: true,
-      validate: {
-        min: { args: [1900], msg: 'Year must be 1900 or later' },
-        max: { args: [new Date().getFullYear() + 1], msg: 'Year cannot be in the future' },
-      },
     },
     comicBookCover: {
       type: dataTypes.TEXT,
@@ -91,13 +72,12 @@ const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
     comicbooktitlerelId: {
       type: dataTypes.UUID,
       allowNull: false,
-      validate: {
-        isUUID: { args: 4, msg: 'Invalid comic book title ID' },
-      },
     },
   }, {
+    tableName: 'ComicBooks',
     timestamps: true,
-    underscored: true,
+    underscored: false,  // CRITICAL: Set to false to match migration columns
+    freezeTableName: true,  // CRITICAL: Prevent table name pluralization
   }) as ComicBooksModel;
  
   ComicBooks.associate = (models: Models) => {
@@ -112,4 +92,5 @@ const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
   return ComicBooks;
 };
 
-export = createComicBooksModel;
+// CHANGED: Use export default instead of export =
+export default createComicBooksModel;

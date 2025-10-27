@@ -6,7 +6,7 @@ import {
   deleteComicBook,
 } from '../../../store/comicbooklistissues/actions';
 
-interface ComicBookProps {
+interface ComicBook {
   id: string;
   title: string;
   comicIssue: number;
@@ -21,26 +21,43 @@ interface ComicBookProps {
 }
 
 interface ComicBookState {
-  data: ComicBookProps;
+  data: ComicBook;
+}
+
+interface ComicBooksState {
+  byId: {
+    [key: string]: ComicBookState;
+  };
 }
 
 interface RootState {
   comicbooklistissues: {
-    byId: {
-      [key: string]: ComicBookState;
-    };
-    currentId?: string;
+    [titleId: string]: ComicBooksState;
   };
 }
 
 const mapStateToProps = (state: RootState) => {
-  const { comicbooklistissues: { byId, currentId } } = state;
+  const { comicbooklistissues } = state;
+ 
+  if (!comicbooklistissues) {
+    return { comicbook: null };
+  }
+
+  // Try to find the most recently loaded comic book across all titles
+  const allTitles = Object.values(comicbooklistissues);
   
-  // Try to get the current/last loaded comic book
-  const comicbookId = currentId || Object.keys(byId)[0];
-  const comicbook = comicbookId && byId[comicbookId] ? byId[comicbookId].data : null;
-  
-  return { comicbook };
+  for (const title of allTitles) {
+    const comicBookIds = Object.keys(title?.byId || {});
+    if (comicBookIds.length > 0) {
+      const lastComicBookId = comicBookIds[comicBookIds.length - 1];
+      const comicBookState = title.byId[lastComicBookId];
+      if (comicBookState?.data) {
+        return { comicbook: comicBookState.data };
+      }
+    }
+  }
+ 
+  return { comicbook: null };
 };
 
 const mapDispatchToProps = {

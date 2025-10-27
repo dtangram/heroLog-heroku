@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import API from '../../API';
 import {
   REQ_COMIC_BOOKS_PENDING,
@@ -84,6 +83,18 @@ const shouldFetchComicBook = (state: RootState, id: string): boolean => {
   return !isCached(comicBookState.loadedAt);
 };
 
+const validateComicBook = (comicBook: Partial<ComicBook>): void => {
+  if (!comicBook.title?.trim()) {
+    throw new Error('Comic book title is required');
+  }
+  if (!comicBook.type) {
+    throw new Error('Comic book type is required');
+  }
+  if (!comicBook.titleID?.trim()) {
+    throw new Error('Title ID is required');
+  }
+};
+
 export const fetchComicBooks = (titleID: string): APIAction => ({
   types: [
     REQ_COMIC_BOOKS_PENDING,
@@ -107,7 +118,9 @@ export const fetchComicBook = (id: string): APIAction => ({
 });
 
 export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIAction => {
-  const id = uuidv4();
+  validateComicBook(comicbooklistissue);
+  
+  console.log('Creating comic book:', comicbooklistissue);
   
   return {
     types: [
@@ -115,15 +128,37 @@ export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIA
       ADD_COMIC_BOOK_SUCCESS,
       ADD_COMIC_BOOK_ERROR,
     ],
-    callAPI: () => API.post('/comicbook/', { id, ...comicbooklistissue }),
+    callAPI: () => API.post('/comicbook/', {
+      title: comicbooklistissue.title.trim(),
+      comicIssue: comicbooklistissue.comicIssue,
+      author: comicbooklistissue.author.trim(),
+      penciler: comicbooklistissue.penciler.trim(),
+      coverartist: comicbooklistissue.coverartist.trim(),
+      inker: comicbooklistissue.inker.trim(),
+      volume: comicbooklistissue.volume,
+      year: comicbooklistissue.year,
+      type: comicbooklistissue.type,
+      comicBookCover: comicbooklistissue.comicBookCover,
+      titleID: comicbooklistissue.titleID,
+    }),
     payload: { 
-      id, 
-      comicbooklistissue: { id, ...comicbooklistissue } as ComicBook,
+      titleID: comicbooklistissue.titleID,
+      comicbooklistissue: {
+        title: comicbooklistissue.title,
+        type: comicbooklistissue.type,
+      } as Partial<ComicBook>,
     },
   };
 };
 
 export const updateComicBook = (comicbook: ComicBook): APIAction => {
+  if (!comicbook.title?.trim()) {
+    throw new Error('Comic book title is required');
+  }
+  if (!comicbook.type) {
+    throw new Error('Comic book type is required');
+  }
+
   const {
     id,
     title,
@@ -145,12 +180,12 @@ export const updateComicBook = (comicbook: ComicBook): APIAction => {
       UPDATE_COMIC_BOOK_ERROR,
     ],
     callAPI: () => API.put(`/comicbook/${id}`, {
-      title,
+      title: title.trim(),
       comicIssue,
-      author,
-      penciler,
-      coverartist,
-      inker,
+      author: author.trim(),
+      penciler: penciler.trim(),
+      coverartist: coverartist.trim(),
+      inker: inker.trim(),
       volume,
       year,
       type,

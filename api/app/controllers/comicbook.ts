@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
+import db from '../models';
+
+const ComicBooks = db.ComicBooks as ComicBookModel;
 
 // Comic book type literal
 type ComicBookType = 'regular' | 'variant';
@@ -92,21 +95,14 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-// Import models with proper typing
-const models = require('../models') as {
-  ComicBooks: ComicBookModel;
-};
-
-const { ComicBooks } = models;
-
 // Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
   return 'errors' in error && Array.isArray((error as SequelizeError).errors);
 };
 
-// UUID validation
+// UUID validation - Updated to accept all UUID versions
 const isValidUUID = (value: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(value);
 };
 
@@ -199,6 +195,9 @@ export const getComicBooks = async (
 ): Promise<Response> => {
   const { coboTitleId } = req.params;
   
+  console.log('📨 GET /comicbook/titles/:coboTitleId');
+  console.log('Comic book title ID:', coboTitleId);
+  
   // Validate required parameters
   const validation = validateParams(req.params, ['coboTitleId']);
   if (!validation.isValid) {
@@ -219,11 +218,13 @@ export const getComicBooks = async (
   
   try {
     const comicbookIssues = await ComicBooks.findAll({
-      where: { comicbooktitlerelId: coboTitleId },  // No parseInt for UUID
+      where: { comicbooktitlerelId: coboTitleId },
       order: [['comicIssue', 'ASC']]
     });
     
     const data = comicbookIssues.map(comic => comic.toJSON());
+    
+    console.log(`✅ Found ${data.length} comic books`);
     
     return res.status(200).json({
       success: true,
@@ -240,6 +241,8 @@ export const getComicBookRegular = async (
   _req: Request,
   res: Response<ApiResponse<ComicBookAttributes[]>>
 ): Promise<Response> => {
+  console.log('📨 GET /comicbook/regular');
+  
   try {
     const regularComicBooks = await ComicBooks.findAll({ 
       where: { type: 'regular' },
@@ -247,6 +250,8 @@ export const getComicBookRegular = async (
     });
     
     const data = regularComicBooks.map(comic => comic.toJSON());
+    
+    console.log(`✅ Found ${data.length} regular comic books`);
     
     return res.status(200).json({
       success: true,
@@ -263,6 +268,8 @@ export const getComicBookVariant = async (
   _req: Request,
   res: Response<ApiResponse<ComicBookAttributes[]>>
 ): Promise<Response> => {
+  console.log('📨 GET /comicbook/variant');
+  
   try {
     const variantComicBooks = await ComicBooks.findAll({ 
       where: { type: 'variant' },
@@ -270,6 +277,8 @@ export const getComicBookVariant = async (
     });
     
     const data = variantComicBooks.map(comic => comic.toJSON());
+    
+    console.log(`✅ Found ${data.length} variant comic books`);
     
     return res.status(200).json({
       success: true,
@@ -287,6 +296,9 @@ export const getOneById = async (
   res: Response<ApiResponse<ComicBookAttributes>>
 ): Promise<Response> => {
   const { id } = req.params;
+  
+  console.log('📨 GET /comicbook/:id');
+  console.log('Comic book ID:', id);
   
   // Validate required parameters
   const validation = validateParams(req.params, ['id']);
@@ -307,14 +319,17 @@ export const getOneById = async (
   }
   
   try {
-    const comicbook = await ComicBooks.findByPk(id);  // No parseInt for UUID
+    const comicbook = await ComicBooks.findByPk(id);
     
     if (!comicbook) {
+      console.log('❌ Comic book not found');
       return res.status(404).json({ 
         success: false,
         error: 'Comic book not found' 
       });
     }
+    
+    console.log('✅ Comic book found');
     
     return res.status(200).json({
       success: true,
@@ -328,8 +343,11 @@ export const getOneById = async (
 // Create a new comic book
 export const createComicBook = async (
   req: Request<{}, {}, Partial<ComicBookCreationAttributes>>,
-  res: Response<ApiResponse<Pick<ComicBookAttributes, 'id'>>>
+  res: Response<ApiResponse<ComicBookAttributes>>
 ): Promise<Response> => {
+  console.log('📨 POST /comicbook');
+  console.log('📨 Body:', req.body);
+  
   const {
     title,
     comicIssue,
@@ -347,6 +365,7 @@ export const createComicBook = async (
   // Validate required fields
   const validation = validateParams(req.body as Record<string, string>, ['title', 'comicIssue', 'type', 'comicbooktitlerelId']);
   if (!validation.isValid) {
+    console.log('❌ Validation failed:', validation.message);
     return res.status(400).json({ 
       success: false, 
       error: validation.message 
@@ -403,6 +422,7 @@ export const createComicBook = async (
   
   const titleIdValidation = validateUUID(comicbooktitlerelId, 'Comic book title relation ID');
   if (!titleIdValidation.isValid) {
+    console.log('❌ Invalid UUID:', comicbooktitlerelId);
     return res.status(400).json({ 
       success: false,
       error: titleIdValidation.message 
@@ -439,6 +459,8 @@ export const createComicBook = async (
     }
   }
   
+  console.log('✅ All validations passed, attempting to create...');
+  
   try {
     const newComicBook = await ComicBooks.create({
       title: title.trim(),
@@ -454,12 +476,18 @@ export const createComicBook = async (
       comicbooktitlerelId,
     });
     
+    const createdData = newComicBook.toJSON();
+    
+    console.log('✅ Comic book created successfully');
+    console.log('Created data:', createdData);
+    
     return res.status(201).json({ 
       success: true,
-      data: { id: newComicBook.id },
+      data: createdData,
       message: 'Comic book created successfully'
     });
   } catch (error) {
+    console.log('❌ ERROR IN CREATE:', error);
     return handleError(res, error as Error, 400, 'createComicBook');
   }
 };
@@ -470,6 +498,10 @@ export const updateComicBook = async (
   res: Response<ApiResponse<ComicBookAttributes>>
 ): Promise<Response> => {
   const { id } = req.params;
+  
+  console.log('📨 PUT /comicbook/:id');
+  console.log('Comic book ID:', id);
+  console.log('📨 Body:', req.body);
   
   // Validate required parameters
   const validation = validateParams(req.params, ['id']);
@@ -543,12 +575,13 @@ export const updateComicBook = async (
     const [rowsUpdated, updatedRecords] = await ComicBooks.update(
       updateData,
       {
-        where: { id },  // No parseInt for UUID
+        where: { id },
         returning: true,
       }
     );
     
     if (rowsUpdated === 0) {
+      console.log('❌ No rows updated');
       return res.status(404).json({ 
         success: false,
         error: 'Comic book not found or no changes made' 
@@ -571,6 +604,8 @@ export const updateComicBook = async (
       updatedComicBook = record.toJSON();
     }
     
+    console.log('✅ Comic book updated successfully');
+    
     return res.status(200).json({
       success: true,
       data: updatedComicBook,
@@ -587,6 +622,9 @@ export const removeComicBook = async (
   res: Response<ApiResponse<never>>
 ): Promise<Response> => {
   const { id } = req.params;
+  
+  console.log('📨 DELETE /comicbook/:id');
+  console.log('Comic book ID:', id);
   
   // Validate required parameters
   const validation = validateParams(req.params, ['id']);
@@ -611,6 +649,7 @@ export const removeComicBook = async (
     const existingRecord = await ComicBooks.findByPk(id);
     
     if (!existingRecord) {
+      console.log('❌ Comic book not found');
       return res.status(404).json({ 
         success: false,
         error: 'Comic book not found' 
@@ -618,7 +657,7 @@ export const removeComicBook = async (
     }
     
     const rowsDeleted = await ComicBooks.destroy({ 
-      where: { id }  // No parseInt for UUID
+      where: { id }
     });
     
     if (rowsDeleted === 0) {
@@ -627,6 +666,8 @@ export const removeComicBook = async (
         error: 'Failed to delete comic book' 
       });
     }
+    
+    console.log('✅ Comic book deleted successfully');
     
     return res.status(200).json({ 
       success: true,

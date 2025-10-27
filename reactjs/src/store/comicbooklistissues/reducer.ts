@@ -240,18 +240,20 @@ const comicbooklistissuePending = (state: object, action: object): object => {
 const comicbooklistissueSuccess = (state: object, action: object): object => {
   const typedState = state as State;
   const typedAction = action as Action;
-  const { id = '' } = typedAction.payload || {};
   const comicBook = typedAction.data as ComicBook;
   
-  if (!comicBook?.titleID) return typedState;
+  if (!comicBook || !comicBook.id || !comicBook.titleID) return typedState;
   
+  // ✅ FIX: Use the ID from the comic book data, not from payload
+  const comicBookId = comicBook.id;
   const { titleID } = comicBook;
+  
   const titleState = getTitleState(typedState, titleID);
-  const existingData = titleState.byId[id]?.data || {};
+  const existingData = titleState.byId[comicBookId]?.data || {};
 
-  const newAllIds = titleState.allIds.includes(id)
+  const newAllIds = titleState.allIds.includes(comicBookId)
     ? titleState.allIds
-    : [...titleState.allIds, id];
+    : [...titleState.allIds, comicBookId];
 
   return {
     ...typedState,
@@ -259,7 +261,7 @@ const comicbooklistissueSuccess = (state: object, action: object): object => {
       ...titleState,
       byId: {
         ...titleState.byId,
-        [id]: createComicBookState({ ...existingData, ...comicBook }),
+        [comicBookId]: createComicBookState({ ...existingData, ...comicBook }),
       },
       allIds: newAllIds,
     },

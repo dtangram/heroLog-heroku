@@ -139,7 +139,7 @@ const ComicBookComponent = ({
   };
 
   const validateFields = (): boolean => {
-    const isTitleValid = title.length >= 1;
+    const isTitleValid = title.trim().length >= 1;
     const isTypeValid = type.length > 0;
 
     setFormErrors({
@@ -150,22 +150,22 @@ const ComicBookComponent = ({
     return isTitleValid && isTypeValid;
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const isValid = validateFields();
+    
     if (!isValid) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     const comicBookData = {
-      title,
+      title: title.trim(),
       comicIssue,
-      author,
-      penciler,
-      coverartist,
-      inker,
+      author: author.trim(),
+      penciler: penciler.trim(),
+      coverartist: coverartist.trim(),
+      inker: inker.trim(),
       volume,
       year,
       comicBookCover,
@@ -173,35 +173,29 @@ const ComicBookComponent = ({
       titleID: coboTitleId || '',
     };
 
-    try {
-      if (id) {
-        await updateComicBook({
-          id,
-          ...comicBookData,
-        });
-      } else {
-        await createComicBook(comicBookData);
-      }
-      
-      setSuccessMessage('success');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
-      console.error('Save error:', error);
+    if (id) {
+      // Update existing comic book
+      updateComicBook({
+        id,
+        ...comicBookData,
+      });
+    } else {
+      // Create new comic book
+      createComicBook(comicBookData);
     }
+    
+    setSuccessMessage('success');
+    
+    // Navigate back after successful submission
+    setTimeout(() => {
+      navigate(`/dashboard/${coboTitleId}/comicbooklistissues`);
+    }, 1500);
   };
 
   const showSuccess = !formErrors.title && !formErrors.type && successMessage === 'success';
 
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
-      <button 
-        className={styles.backLink} 
-        type="button" 
-        onClick={() => navigate(-1)}
-      >
-        Back
-      </button>
-
       <h1>
         {id ? `Edit ${title}` : 'Add Comic Book'}
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
@@ -244,6 +238,7 @@ const ComicBookComponent = ({
                     name="title"
                     value={title}
                     onChange={handleInputChange}
+                    required
                   />
                 </label>
 
