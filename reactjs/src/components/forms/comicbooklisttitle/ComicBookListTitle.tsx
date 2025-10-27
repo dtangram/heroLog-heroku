@@ -17,7 +17,7 @@ const ComicBookListTitle = ({
   updateComicBookTitle,
 }: ContainerProps) => {
   const navigate = useNavigate();
-  const { id, pubId } = useParams<{ id?: string; pubId?: string }>();
+  const { id, pubId, publisherName } = useParams<{ id?: string; pubId?: string; publisherName: string }>();
   
   const [cbTitle, setCbTitle] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -89,7 +89,7 @@ const ComicBookListTitle = ({
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/dashboard/${pubId}/comicbooklist`);
+      navigate(`/dashboard/${pubId}/publisherName/comicbooklist`);
     }, 1500);
   };
 
