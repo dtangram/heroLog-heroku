@@ -89,7 +89,7 @@ const ComicBookListTitle = ({
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/dashboard/${pubId}/publisherName/comicbooklist`);
+      navigate(`/dashboard/${pubId}/${publisherName}/comicbooklist`);
     }, 1500);
   };
 
