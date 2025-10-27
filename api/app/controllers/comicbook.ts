@@ -359,11 +359,17 @@ export const createComicBook = async (
     year,
     comicBookCover,
     type,
-    comicbooktitlerelId,
-  } = req.body;
+    titleID,
+  } = req.body as any;
+  
+  // Map titleID to comicbooktitlerelId
+  const comicbooktitlerelId = titleID;
   
   // Validate required fields
-  const validation = validateParams(req.body as Record<string, string>, ['title', 'comicIssue', 'type', 'comicbooktitlerelId']);
+  const validation = validateParams(
+    { title, comicIssue, type, titleID } as Record<string, string>, 
+    ['title', 'comicIssue', 'type', 'titleID']
+  );
   if (!validation.isValid) {
     console.log('❌ Validation failed:', validation.message);
     return res.status(400).json({ 
@@ -412,17 +418,17 @@ export const createComicBook = async (
     });
   }
   
-  // Validate comicbooktitlerelId
-  if (!comicbooktitlerelId) {
+  // Validate titleID
+  if (!titleID) {
     return res.status(400).json({ 
       success: false,
-      error: 'Comic book title relation ID is required' 
+      error: 'Title ID is required' 
     });
   }
   
-  const titleIdValidation = validateUUID(comicbooktitlerelId, 'Comic book title relation ID');
+  const titleIdValidation = validateUUID(titleID, 'Title ID');
   if (!titleIdValidation.isValid) {
-    console.log('❌ Invalid UUID:', comicbooktitlerelId);
+    console.log('❌ Invalid UUID:', titleID);
     return res.status(400).json({ 
       success: false,
       error: titleIdValidation.message 
@@ -430,7 +436,7 @@ export const createComicBook = async (
   }
   
   // Validate year if provided
-  if (year !== undefined && (typeof year !== 'number' || !isValidYear(year))) {
+  if (year !== undefined && year !== '' && (typeof year !== 'number' || !isValidYear(Number(year)))) {
     return res.status(400).json({ 
       success: false,
       error: 'Year must be a valid number between 1900 and current year + 1'
@@ -448,7 +454,7 @@ export const createComicBook = async (
   ];
   
   for (const { field, name } of optionalStringFields) {
-    if (field !== undefined) {
+    if (field !== undefined && field !== '') {
       const fieldValidation = validateString(field as string, name);
       if (!fieldValidation.isValid) {
         return res.status(400).json({ 
@@ -470,7 +476,7 @@ export const createComicBook = async (
       coverartist: coverartist?.trim() || null,
       inker: inker?.trim() || null,
       volume: volume?.trim() || null,
-      year: year || null,
+      year: year && year !== '' ? Number(year) : null,
       comicBookCover: comicBookCover?.trim() || null,
       type,
       comicbooktitlerelId,
