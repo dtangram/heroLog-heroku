@@ -206,7 +206,7 @@ const ComicBookListIssues = ({
 
       <h2>
         <section>
-          <RRLink to={`/forms/${coboTitleId}/comicbook/new`}>
+          <RRLink to={`/forms/${coboTitleId}/${cbTitle}/comicbook/new`}>
             <figure><LibraryAddIcon /></figure>
             <p className={styles.link}>Add Comic Book</p>
           </RRLink>
@@ -215,7 +215,7 @@ const ComicBookListIssues = ({
 
       <article className={styles.cbList}>
         <section className={styles.wrapper}>
-          <article>
+          <article className={styles.articleWrap}>
             {comicBooks.map(({
               id,
               title,
@@ -232,7 +232,7 @@ const ComicBookListIssues = ({
               <section className={styles.comicSec} key={id}>
                 <article className={styles.comicWrap}>
                   <section className={styles.comicImgWrap}>
-                    <img src={comicBookCover} alt={`${title} Issue ${comicIssue} cover`} />
+                    <img src={(comicBookCover ? comicBookCover : logo)} alt={`${title} Issue ${comicIssue} cover`} />
                   </section>
 
                   <section className={styles.paraWrap}>
@@ -288,15 +288,15 @@ const ComicBookListIssues = ({
                       <span>Cover:</span>
                       &nbsp;
                       {type}
-                    </p>
-
-                    <section>
+                    </p>                   
+                  </section>
+                  <section className={styles.paragraphFooter}>
                       <section className={styles.editStyle}>
                         <figure><EditIcon /></figure>
                         <p className={styles.link}>
                           <Link 
                             className={styles.link} 
-                            url={`/forms/${coboTitleId}/comicbook/edit/${id}`} 
+                            url={`/forms/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`} 
                             title="Edit" 
                           />
                         </p>
@@ -312,7 +312,6 @@ const ComicBookListIssues = ({
                         <p>Delete</p>
                       </button>
                     </section>
-                  </section>
                 </article>
               </section>
             ))}

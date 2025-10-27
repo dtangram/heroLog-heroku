@@ -20,7 +20,7 @@ const ComicBookComponent = ({
   updateComicBook,
 }: ContainerProps) => {
   const navigate = useNavigate();
-  const { id, coboTitleId } = useParams<{ id?: string; coboTitleId?: string }>();
+  const { id, coboTitleId, cbTitle } = useParams<{ id?: string, coboTitleId?: string, cbTitle?: string }>();
 
   const [title, setTitle] = useState('');
   const [comicIssue, setComicIssue] = useState('');
@@ -171,6 +171,8 @@ const ComicBookComponent = ({
       comicBookCover,
       type,
       titleID: coboTitleId || '',
+      comicBookTitle: cbTitle || '',
+
     };
 
     if (id) {
@@ -188,7 +190,7 @@ const ComicBookComponent = ({
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/dashboard/${coboTitleId}/comicbooklistissues`);
+      navigate(`/dashboard/${coboTitleId}/${cbTitle}/comicbooklistissues`);
     }, 1500);
   };
 
@@ -358,7 +360,7 @@ const ComicBookComponent = ({
             <article>
               <p>
                 <Link 
-                  url={`/dashboard/${coboTitleId}/comicbooklistissues`} 
+                  url={`/dashboard/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
                   title="CANCEL" 
                 />
               </p>

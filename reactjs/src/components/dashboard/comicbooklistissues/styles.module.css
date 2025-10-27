@@ -99,15 +99,47 @@
   width: 10%;
 }
 
-.cbWrap .cbList .wrapper article{
+.articleWrap{
   align-items: center;
-  background: #770422;
-  border-radius: 15px;
   display: flex;
   flex-wrap: wrap;
+  gap: 8px;
   justify-content: space-evenly;
   margin: auto;
   padding: 20px 5% 3px;
+}
+
+.comicSec {
+  background: #AECEAB;
+  border-radius: 15px;
+  padding: 30px;
+  width: 30%;
+}
+
+.comicWrap {
+  background: #770422;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+}
+
+.comicImgWrap {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.paraWrap {
+  padding-left: 10%;
+  width: 100%;
+}
+
+.comicWrap > .paragraphFooter {
+  background: transparent;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
 }
 
 .cbWrap .cbList .wrapper article p.loadMessage{
