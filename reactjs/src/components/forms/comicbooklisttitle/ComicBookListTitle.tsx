@@ -17,7 +17,7 @@ const ComicBookListTitle = ({
   updateComicBookTitle,
 }: ContainerProps) => {
   const navigate = useNavigate();
-  const { id, pubId, publisherName } = useParams<{ id?: string; pubId?: string; publisherName: string }>();
+  const { id, pubId, publisherName } = useParams<{ id?: string; pubId?: string; publisherName?: string }>();
   
   const [cbTitle, setCbTitle] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -81,7 +81,8 @@ const ComicBookListTitle = ({
       
       createComicBookTitle({
         cbTitle: cbTitle.trim(),
-        collectpubId: pubId
+        collectpubId: pubId,
+        collectPubName: publisherName || '',
       });
     }
     

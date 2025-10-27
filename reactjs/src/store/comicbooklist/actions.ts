@@ -20,9 +20,10 @@ import {
 const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 interface ComicBookTitle {
-  id: string;
-  cbTitle: string;
-  collectpubId: string;
+  id: string
+  cbTitle: string
+  collectpubId: string
+  collectPubName: string
 }
 
 interface ComicBookTitleState {
@@ -134,13 +135,15 @@ export const createComicBookTitle = (
     ],
     callAPI: () => API.post('/comicbooktitles/', {
       cbTitle: comicbooklist.cbTitle.trim(),
-      collectpubId: comicbooklist.collectpubId
+      collectpubId: comicbooklist.collectpubId,
+      collectPubName: comicbooklist.collectPubName,
     }),
     payload: {
       collectpubId: comicbooklist.collectpubId,
       comicbooklist: {
         cbTitle: comicbooklist.cbTitle
       } as Partial<ComicBookTitle>,
+      collectPubName: comicbooklist.collectPubName,
     },
   };
 };

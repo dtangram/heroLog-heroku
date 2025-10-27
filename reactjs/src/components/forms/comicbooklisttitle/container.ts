@@ -6,9 +6,10 @@ import {
 } from '../../../store/comicbooklist/actions';
 
 interface ComicBookTitle {
-  id: string;
-  cbTitle: string;
-  collectpubId: string;
+  id: string
+  cbTitle: string
+  collectpubId: string
+  collectPubName: string
 }
 
 interface ComicBookTitleState {
@@ -26,20 +27,6 @@ interface RootState {
     [collectpubId: string]: ComicBookTitlesState;
   };
 }
-
-const findTitleInPublishers = (
-  publishers: Record<string, ComicBookTitlesState>,
-  id: string
-): ComicBookTitle | null => {
-  const publisherStates = Object.values(publishers);
- 
-  for (const state of publisherStates) {
-    const titleState = state?.byId?.[id];
-    if (titleState?.data) return titleState.data;
-  }
- 
-  return null;
-};
 
 const mapStateToProps = (state: RootState) => {
   const { comicbooklists } = state;
