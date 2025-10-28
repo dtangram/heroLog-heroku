@@ -55,13 +55,28 @@ const ComicBookListIssues = ({
   const { coboTitleId = '', cbTitle = '' } = useParams<RouteParams>();
   const navigate = useNavigate();
 
-  // Fetch comic books on mount
+  // Fetch comic books on mount and when coboTitleId changes
   useEffect(() => {
-    window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0 });
     
     if (coboTitleId) {
-      fetchComicBooks?.(coboTitleId);
+      fetchComicBooks(coboTitleId);
     }
+  }, [coboTitleId, fetchComicBooks]);
+
+  // Refetch when user returns to this page (e.g., after editing)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && coboTitleId) {
+        fetchComicBooks(coboTitleId);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [coboTitleId, fetchComicBooks]);
 
   // Handle navigation back
@@ -73,26 +88,20 @@ const ComicBookListIssues = ({
   const handleDelete = useCallback((id: string, title: string): void => {
     if (!id) return;
 
-    const confirmed = window?.confirm?.(
+    const confirmed = window.confirm(
       `Are you sure you want to delete "${title}"?`
     );
 
     if (!confirmed) return;
 
-    try {
-      deleteComicBook?.(id);
-      // Refetch data after deletion
+    deleteComicBook(id);
+    
+    // Refetch after deletion
+    setTimeout(() => {
       if (coboTitleId) {
-        fetchComicBooks?.(coboTitleId);
+        fetchComicBooks(coboTitleId);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'An unexpected error occurred';
-      
-      console.error('Failed to delete comic book:', errorMessage);
-      window?.alert?.('Failed to delete comic book. Please try again.');
-    }
+    }, 500);
   }, [deleteComicBook, fetchComicBooks, coboTitleId]);
 
   // Extract current comic book data
