@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { Link as RRLink, useParams, useNavigate } from 'react-router-dom';
+import { Link as RRLink, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import EditIcon from '@mui/icons-material/Edit';
@@ -54,30 +54,16 @@ const ComicBookListIssues = ({
 }: ConnectorProps) => {
   const { coboTitleId = '', cbTitle = '' } = useParams<RouteParams>();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Fetch comic books on mount and when coboTitleId changes
+  // Fetch comic books on mount and when returning from edit
   useEffect(() => {
     window.scrollTo({ top: 0 });
     
     if (coboTitleId) {
       fetchComicBooks(coboTitleId);
     }
-  }, [coboTitleId, fetchComicBooks]);
-
-  // Refetch when user returns to this page (e.g., after editing)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && coboTitleId) {
-        fetchComicBooks(coboTitleId);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [coboTitleId, fetchComicBooks]);
+  }, [coboTitleId, fetchComicBooks, location.state]);
 
   // Handle navigation back
   const handleGoBack = useCallback(() => {
