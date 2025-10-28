@@ -2,24 +2,29 @@ import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 
-const ComicBooks = db.ComicBooks as ComicBookModel;
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 // Comic book type literal
 type ComicBookType = 'regular' | 'variant';
 
-// Properly typed model interface
-interface ComicBookModel {
-  findAll: (options: { 
-    where?: WhereOptions<ComicBookAttributes>;
-    order?: Array<[string, string]>;
-  }) => Promise<ComicBookInstance[]>;
-  findByPk: (id: string) => Promise<ComicBookInstance | null>;
-  create: (data: ComicBookCreationAttributes) => Promise<ComicBookInstance>;
-  update: (
-    data: Partial<ComicBookAttributes>, 
-    options: { where: WhereOptions<ComicBookAttributes>; returning: boolean }
-  ) => Promise<[number, ComicBookInstance[]]>;
-  destroy: (options: { where: WhereOptions<ComicBookAttributes> }) => Promise<number>;
+// Model attributes interface
+interface ComicBookAttributes {
+  id: string;
+  title: string;
+  comicIssue: string | null;
+  author: string | null;
+  penciler: string | null;
+  coverartist: string | null;
+  inker: string | null;
+  volume: string | null;
+  year: number | null;
+  comicBookCover: string | null;
+  type: ComicBookType;
+  comicbooktitlerelId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Model instance interface
@@ -41,22 +46,19 @@ interface ComicBookInstance {
   toJSON: () => ComicBookAttributes;
 }
 
-// Fixed interface to match actual model structure (UUIDs, not numbers)
-interface ComicBookAttributes {
-  id: string;  // UUID string
-  title: string;
-  comicIssue: string | null;
-  author: string | null;
-  penciler: string | null;
-  coverartist: string | null;
-  inker: string | null;
-  volume: string | null;
-  year: number | null;
-  comicBookCover: string | null;
-  type: ComicBookType;
-  comicbooktitlerelId: string;  // UUID string
-  createdAt: Date;
-  updatedAt: Date;
+// Model interface
+interface ComicBookModel {
+  findAll: (options: { 
+    where?: WhereOptions<ComicBookAttributes>;
+    order?: Array<[string, string]>;
+  }) => Promise<ComicBookInstance[]>;
+  findByPk: (id: string) => Promise<ComicBookInstance | null>;
+  create: (data: ComicBookCreationAttributes) => Promise<ComicBookInstance>;
+  update: (
+    data: Partial<ComicBookAttributes>, 
+    options: { where: WhereOptions<ComicBookAttributes>; returning: boolean }
+  ) => Promise<[number, ComicBookInstance[]]>;
+  destroy: (options: { where: WhereOptions<ComicBookAttributes> }) => Promise<number>;
 }
 
 // Creation interface
@@ -72,6 +74,36 @@ interface ComicBookCreationAttributes {
   comicBookCover?: string | null;
   type: ComicBookType;
   comicbooktitlerelId: string;
+}
+
+// Frontend request interface (accepts strings from forms)
+interface ComicBookCreateRequest {
+  title: string;
+  comicIssue: string;
+  author?: string;
+  penciler?: string;
+  coverartist?: string;
+  inker?: string;
+  volume?: string;
+  year?: string | number;
+  comicBookCover?: string;
+  type: ComicBookType;
+  titleID: string;
+}
+
+// Frontend update request interface
+interface ComicBookUpdateRequest {
+  title?: string;
+  comicIssue?: string;
+  author?: string;
+  penciler?: string;
+  coverartist?: string;
+  inker?: string;
+  volume?: string;
+  year?: string | number;
+  comicBookCover?: string;
+  type?: ComicBookType;
+  comicbooktitlerelId?: string;
 }
 
 // API response interface
@@ -95,12 +127,18 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+const ComicBooks = db.ComicBooks as ComicBookModel;
+
 // Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
   return 'errors' in error && Array.isArray((error as SequelizeError).errors);
 };
 
-// UUID validation - Updated to accept all UUID versions
+// UUID validation
 const isValidUUID = (value: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(value);
@@ -126,13 +164,9 @@ const handleError = (
 ): Response<ApiResponse<never>> => {
   console.error(`Error in ${context}:`, error);
   
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
+  const errors: string[] = isSequelizeError(error)
+    ? error.errors.map(err => err.message)
+    : [error.message];
   
   return res.status(statusCode).json({ 
     success: false,
@@ -188,6 +222,10 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
   return { isValid: true };
 };
 
+// ============================================================================
+// CONTROLLERS
+// ============================================================================
+
 // Get all comic books for a specific title
 export const getComicBooks = async (
   req: Request<{ coboTitleId: string }>,
@@ -198,7 +236,6 @@ export const getComicBooks = async (
   console.log('📨 GET /comicbook/titles/:coboTitleId');
   console.log('Comic book title ID:', coboTitleId);
   
-  // Validate required parameters
   const validation = validateParams(req.params, ['coboTitleId']);
   if (!validation.isValid) {
     return res.status(400).json({ 
@@ -207,7 +244,6 @@ export const getComicBooks = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(coboTitleId, 'Comic book title ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -300,7 +336,6 @@ export const getOneById = async (
   console.log('📨 GET /comicbook/:id');
   console.log('Comic book ID:', id);
   
-  // Validate required parameters
   const validation = validateParams(req.params, ['id']);
   if (!validation.isValid) {
     return res.status(400).json({ 
@@ -309,7 +344,6 @@ export const getOneById = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(id, 'Comic book ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -342,7 +376,7 @@ export const getOneById = async (
 
 // Create a new comic book
 export const createComicBook = async (
-  req: Request<{}, {}, Partial<ComicBookCreationAttributes>>,
+  req: Request<Record<string, never>, Record<string, never>, ComicBookCreateRequest>,
   res: Response<ApiResponse<ComicBookAttributes>>
 ): Promise<Response> => {
   console.log('📨 POST /comicbook');
@@ -360,7 +394,7 @@ export const createComicBook = async (
     comicBookCover,
     type,
     titleID,
-  } = req.body as any;
+  } = req.body;
   
   // Map titleID to comicbooktitlerelId
   const comicbooktitlerelId = titleID;
@@ -444,18 +478,18 @@ export const createComicBook = async (
   }
   
   // Validate optional string fields
-  const optionalStringFields: Array<{ field: string | unknown; name: string }> = [
-    { field: author, name: 'Author' },
-    { field: penciler, name: 'Penciler' },
-    { field: coverartist, name: 'Cover artist' },
-    { field: inker, name: 'Inker' },
-    { field: volume, name: 'Volume' },
-    { field: comicBookCover, name: 'Comic book cover' }
+  const optionalFields: Array<{ value: string | undefined; name: string }> = [
+    { value: author, name: 'Author' },
+    { value: penciler, name: 'Penciler' },
+    { value: coverartist, name: 'Cover artist' },
+    { value: inker, name: 'Inker' },
+    { value: volume, name: 'Volume' },
+    { value: comicBookCover, name: 'Comic book cover' }
   ];
   
-  for (const { field, name } of optionalStringFields) {
-    if (field !== undefined && field !== '') {
-      const fieldValidation = validateString(field as string, name);
+  for (const { value, name } of optionalFields) {
+    if (value !== undefined && value !== '') {
+      const fieldValidation = validateString(value, name);
       if (!fieldValidation.isValid) {
         return res.status(400).json({ 
           success: false,
@@ -476,7 +510,7 @@ export const createComicBook = async (
       coverartist: coverartist?.trim() || null,
       inker: inker?.trim() || null,
       volume: volume?.trim() || null,
-      year: year && year !== '' ? Number(year) : null,
+      year: year ? (typeof year === 'string' ? Number(year) : year) : null,
       comicBookCover: comicBookCover?.trim() || null,
       type,
       comicbooktitlerelId,
@@ -499,9 +533,8 @@ export const createComicBook = async (
 };
 
 // Update an existing comic book
-// Update an existing comic book
 export const updateComicBook = async (
-  req: Request<{ id: string }, {}, Partial<ComicBookAttributes>>,
+  req: Request<{ id: string }, Record<string, never>, ComicBookUpdateRequest>,
   res: Response<ApiResponse<ComicBookAttributes>>
 ): Promise<Response> => {
   const { id } = req.params;
@@ -510,7 +543,6 @@ export const updateComicBook = async (
   console.log('Comic book ID:', id);
   console.log('📨 Body:', req.body);
   
-  // Validate required parameters
   const validation = validateParams(req.params, ['id']);
   if (!validation.isValid) {
     return res.status(400).json({ 
@@ -519,7 +551,6 @@ export const updateComicBook = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(id, 'Comic book ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -528,7 +559,6 @@ export const updateComicBook = async (
     });
   }
   
-  // Validate request body is not empty
   if (!req.body || Object.keys(req.body).length === 0) {
     return res.status(400).json({ 
       success: false,
@@ -536,7 +566,6 @@ export const updateComicBook = async (
     });
   }
   
-  // Validate type if provided
   if (req.body.type && !isValidComicBookType(req.body.type)) {
     return res.status(400).json({ 
       success: false,
@@ -544,12 +573,9 @@ export const updateComicBook = async (
     });
   }
   
-  // Cast to any to handle string values from frontend
-  const bodyData = req.body as any;
-  
-  // Validate year if provided (handle both string and number)
-  if (bodyData.year !== undefined && bodyData.year !== null && bodyData.year !== '') {
-    const yearValue = typeof bodyData.year === 'string' ? Number(bodyData.year) : bodyData.year;
+  // Validate year if provided
+  if (req.body.year !== undefined && req.body.year !== null && req.body.year !== '') {
+    const yearValue = typeof req.body.year === 'string' ? Number(req.body.year) : req.body.year;
     if (isNaN(yearValue) || !isValidYear(yearValue)) {
       return res.status(400).json({ 
         success: false,
@@ -558,7 +584,6 @@ export const updateComicBook = async (
     }
   }
   
-  // Validate comicbooktitlerelId if provided
   if (req.body.comicbooktitlerelId) {
     const titleIdValidation = validateUUID(req.body.comicbooktitlerelId, 'Comic book title relation ID');
     if (!titleIdValidation.isValid) {
@@ -569,28 +594,45 @@ export const updateComicBook = async (
     }
   }
   
-  // Sanitize string fields - convert empty strings to null
-  const updateData: any = { ...req.body };
-  const stringFields = [
+  // Build properly typed update data
+  const updateData: Partial<ComicBookAttributes> = {};
+  
+  // Handle string fields
+  const stringFields: Array<keyof ComicBookUpdateRequest> = [
     'title', 'comicIssue', 'author', 'penciler', 'coverartist', 'inker', 'volume', 'comicBookCover'
   ];
   
   stringFields.forEach(field => {
-    const value = updateData[field];
-    if (value !== undefined) {
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        // Convert empty strings to null, keep non-empty strings
-        updateData[field] = trimmed.length > 0 ? trimmed : null;
+    const value = req.body[field];
+    if (value !== undefined && typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed.length > 0) {
+        (updateData as Record<string, string>)[field] = trimmed;
+      } else {
+        (updateData as Record<string, null>)[field] = null;
       }
     }
   });
   
-  // Handle year field specially - convert empty string to null
-  if (updateData.year === '') {
-    updateData.year = null;
-  } else if (updateData.year && typeof updateData.year === 'string') {
-    updateData.year = Number(updateData.year);
+  // Handle year field
+  if (req.body.year !== undefined) {
+    if (req.body.year === '') {
+      updateData.year = null;
+    } else if (typeof req.body.year === 'string') {
+      updateData.year = Number(req.body.year);
+    } else {
+      updateData.year = req.body.year;
+    }
+  }
+  
+  // Handle type field
+  if (req.body.type) {
+    updateData.type = req.body.type;
+  }
+  
+  // Handle foreign key
+  if (req.body.comicbooktitlerelId) {
+    updateData.comicbooktitlerelId = req.body.comicbooktitlerelId;
   }
   
   console.log('📝 Sanitized update data:', updateData);
@@ -612,7 +654,6 @@ export const updateComicBook = async (
       });
     }
     
-    // Handle different database dialects
     let updatedComicBook: ComicBookAttributes;
     
     if (updatedRecords && updatedRecords.length > 0) {
@@ -651,7 +692,6 @@ export const removeComicBook = async (
   console.log('📨 DELETE /comicbook/:id');
   console.log('Comic book ID:', id);
   
-  // Validate required parameters
   const validation = validateParams(req.params, ['id']);
   if (!validation.isValid) {
     return res.status(400).json({ 
@@ -660,7 +700,6 @@ export const removeComicBook = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(id, 'Comic book ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -670,7 +709,6 @@ export const removeComicBook = async (
   }
   
   try {
-    // Check if record exists
     const existingRecord = await ComicBooks.findByPk(id);
     
     if (!existingRecord) {
