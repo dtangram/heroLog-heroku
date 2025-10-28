@@ -34,7 +34,7 @@ router.get(
 router.post(
   '/',
   validationCtrl.validate('createComicBook'),
-  comicbookCtrl.createComicBook
+  comicbookCtrl.createComicBook as any  // Type cast to fix Express typing issue
 );
 
 // GET /comicbook/:id
@@ -49,7 +49,7 @@ router.get(
 router.put(
   '/:id',
   validationCtrl.validate('editComicBook'),
-  comicbookCtrl.updateComicBook
+  comicbookCtrl.updateComicBook as any  // Type cast to fix Express typing issue
 );
 
 // DELETE /comicbook/:id
