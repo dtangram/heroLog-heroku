@@ -53,9 +53,10 @@ interface RootState {
 
 interface APIAction {
   types: [string, string, string];
-  callAPI: () => Promise<{ data: ComicBook | ComicBook[] }>;
+  callAPI: () => Promise<{ data: ComicBook | ComicBook[] | { data: ComicBook | ComicBook[] } }>;
   shouldCallAPI?: (state: RootState) => boolean;
   payload: Record<string, string | ComicBook | Partial<ComicBook>>;
+  transformResponse?: (response: any) => any;
 }
 
 const isCached = (loadedAt: number): boolean => {
@@ -95,6 +96,26 @@ const validateComicBook = (comicBook: Partial<ComicBook>): void => {
   }
 };
 
+// Transform API response to match Redux store expectations
+const transformComicBookResponse = (response: any): ComicBook => {
+  const data = response.data?.data || response.data || response;
+  
+  return {
+    ...data,
+    titleID: data.titleID || data.comicbooktitlerelId, // Map API field to store field
+  };
+};
+
+const transformComicBooksResponse = (response: any): ComicBook[] => {
+  const data = response.data?.data || response.data || response;
+  const books = Array.isArray(data) ? data : [data];
+  
+  return books.map(book => ({
+    ...book,
+    titleID: book.titleID || book.comicbooktitlerelId,
+  }));
+};
+
 export const fetchComicBooks = (titleID: string): APIAction => ({
   types: [
     REQ_COMIC_BOOKS_PENDING,
@@ -104,6 +125,7 @@ export const fetchComicBooks = (titleID: string): APIAction => ({
   callAPI: () => API.get(`/comicbook/titles/${titleID}`),
   shouldCallAPI: (state: RootState) => shouldFetchTitleComicBooks(state, titleID),
   payload: { titleID },
+  transformResponse: transformComicBooksResponse,
 });
 
 export const fetchComicBook = (id: string): APIAction => ({
@@ -115,6 +137,7 @@ export const fetchComicBook = (id: string): APIAction => ({
   callAPI: () => API.get(`/comicbook/${id}`),
   shouldCallAPI: (state: RootState) => shouldFetchComicBook(state, id),
   payload: { id },
+  transformResponse: transformComicBookResponse,
 });
 
 export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIAction => {
@@ -148,6 +171,7 @@ export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIA
         type: comicbooklistissue.type,
       } as Partial<ComicBook>,
     },
+    transformResponse: transformComicBookResponse,
   };
 };
 
@@ -171,6 +195,7 @@ export const updateComicBook = (comicbook: ComicBook): APIAction => {
     year,
     type,
     comicBookCover,
+    titleID,
   } = comicbook;
 
   return {
@@ -191,7 +216,14 @@ export const updateComicBook = (comicbook: ComicBook): APIAction => {
       type,
       comicBookCover,
     }),
-    payload: { id },
+    payload: { 
+      id,
+      comicbooklistissue: {
+        id,
+        titleID, // Include titleID so reducer knows where to update
+      } as Partial<ComicBook>,
+    },
+    transformResponse: transformComicBookResponse,
   };
 };
 
