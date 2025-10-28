@@ -499,6 +499,7 @@ export const createComicBook = async (
 };
 
 // Update an existing comic book
+// Update an existing comic book
 export const updateComicBook = async (
   req: Request<{ id: string }, {}, Partial<ComicBookAttributes>>,
   res: Response<ApiResponse<ComicBookAttributes>>
@@ -543,13 +544,18 @@ export const updateComicBook = async (
     });
   }
   
-  // Validate year if provided
-  if (req.body.year !== undefined && req.body.year !== null && 
-      (typeof req.body.year !== 'number' || !isValidYear(req.body.year))) {
-    return res.status(400).json({ 
-      success: false,
-      error: 'Year must be a valid number between 1900 and current year + 1'
-    });
+  // Cast to any to handle string values from frontend
+  const bodyData = req.body as any;
+  
+  // Validate year if provided (handle both string and number)
+  if (bodyData.year !== undefined && bodyData.year !== null && bodyData.year !== '') {
+    const yearValue = typeof bodyData.year === 'string' ? Number(bodyData.year) : bodyData.year;
+    if (isNaN(yearValue) || !isValidYear(yearValue)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Year must be a valid number between 1900 and current year + 1'
+      });
+    }
   }
   
   // Validate comicbooktitlerelId if provided
@@ -563,19 +569,31 @@ export const updateComicBook = async (
     }
   }
   
-  // Sanitize string fields
-  const updateData: Partial<ComicBookAttributes> = { ...req.body };
-  const stringFields: Array<keyof ComicBookAttributes> = [
+  // Sanitize string fields - convert empty strings to null
+  const updateData: any = { ...req.body };
+  const stringFields = [
     'title', 'comicIssue', 'author', 'penciler', 'coverartist', 'inker', 'volume', 'comicBookCover'
   ];
   
   stringFields.forEach(field => {
     const value = updateData[field];
-    if (value && typeof value === 'string') {
-      const trimmed = value.trim();
-      (updateData as Record<string, string | null>)[field] = trimmed.length > 0 ? trimmed : null;
+    if (value !== undefined) {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        // Convert empty strings to null, keep non-empty strings
+        updateData[field] = trimmed.length > 0 ? trimmed : null;
+      }
     }
   });
+  
+  // Handle year field specially - convert empty string to null
+  if (updateData.year === '') {
+    updateData.year = null;
+  } else if (updateData.year && typeof updateData.year === 'string') {
+    updateData.year = Number(updateData.year);
+  }
+  
+  console.log('📝 Sanitized update data:', updateData);
   
   try {
     const [rowsUpdated, updatedRecords] = await ComicBooks.update(
@@ -618,6 +636,7 @@ export const updateComicBook = async (
       message: 'Comic book updated successfully'
     });
   } catch (error) {
+    console.log('❌ ERROR IN UPDATE:', error);
     return handleError(res, error as Error, 400, 'updateComicBook');
   }
 };

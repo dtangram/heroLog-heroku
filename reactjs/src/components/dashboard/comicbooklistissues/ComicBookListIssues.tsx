@@ -104,90 +104,9 @@ const ComicBookListIssues = ({
     .map(id => byId[id]?.data)
     .filter(Boolean) as ComicBook[];
 
-  // Early return for loading state
-  if (isLoading) {
-    return (
-      <article id="cbComBookListIssues">
-        <button 
-          className={styles.backLink} 
-          type="button" 
-          onClick={handleGoBack}
-        >
-          Back
-        </button>
-
-        <h1>
-          Your List of {cbTitle} Comics
-          <figure 
-            className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
-          />
-        </h1>
-
-        <h2>
-          <section>
-            <RRLink to={`/forms/${coboTitleId}/comicbook/new`}>
-              <figure><LibraryAddIcon /></figure>
-              <p className={styles.link}>Add Comic Book</p>
-            </RRLink>
-          </section>
-        </h2>
-
-        <article className={styles.cbList}>
-          <article className={styles.loadMessageWrap}>
-            <section>
-              <img src={logo} alt="HeroLog Logo" />
-            </section>
-
-            <section className={styles.loadWrap}>
-              <p className={styles.loadMessage}>Loading</p>
-              <BeatLoader size={10} color="#770422" />
-            </section>
-          </article>
-        </article>
-      </article>
-    );
-  }
-
-  // Early return for empty state
-  if (comicBooks.length === 0) {
-    return (
-      <article id="cbComBookListIssues">
-        <button 
-          className={styles.backLink} 
-          type="button" 
-          onClick={handleGoBack}
-        >
-          Back
-        </button>
-
-        <h1>
-          Your List of {cbTitle} Comics
-          <figure 
-            className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
-          />
-        </h1>
-
-        <h2>
-          <section>
-            <RRLink to={`/forms/${coboTitleId}/${cbTitle}/comicbook/new`}>
-              <figure><LibraryAddIcon /></figure>
-              <p className={styles.link}>Add Comic Book</p>
-            </RRLink>
-          </section>
-        </h2>
-
-        <article className={styles.cbList}>
-          <Empty />
-        </article>
-      </article>
-    );
-  }
-
-  // Main render with comic books list
-  return (
-    <article id="cbComBookListIssues">
+  // Common header section to avoid repetition
+  const renderHeader = () => (
+    <>
       <button 
         className={styles.backLink} 
         type="button" 
@@ -212,7 +131,45 @@ const ComicBookListIssues = ({
           </RRLink>
         </section>
       </h2>
+    </>
+  );
 
+  // Early return for loading state
+  if (isLoading) {
+    return (
+      <article id="cbComBookListIssues">
+        {renderHeader()}
+        <article className={styles.cbList}>
+          <article className={styles.loadMessageWrap}>
+            <section>
+              <img src={logo} alt="HeroLog Logo" />
+            </section>
+            <section className={styles.loadWrap}>
+              <p className={styles.loadMessage}>Loading</p>
+              <BeatLoader size={10} color="#770422" />
+            </section>
+          </article>
+        </article>
+      </article>
+    );
+  }
+
+  // Early return for empty state
+  if (comicBooks.length === 0) {
+    return (
+      <article id="cbComBookListIssues">
+        {renderHeader()}
+        <article className={styles.cbList}>
+          <Empty />
+        </article>
+      </article>
+    );
+  }
+
+  // Main render with comic books list
+  return (
+    <article id="cbComBookListIssues">
+      {renderHeader()}
       <article className={styles.cbList}>
         <section className={styles.wrapper}>
           <article className={styles.articleWrap}>
@@ -232,86 +189,45 @@ const ComicBookListIssues = ({
               <section className={styles.comicSec} key={id}>
                 <article className={styles.comicWrap}>
                   <section className={styles.comicImgWrap}>
-                    <img src={(comicBookCover ? comicBookCover : logo)} alt={`${title} Issue ${comicIssue} cover`} />
+                    <img 
+                      src={comicBookCover || logo} 
+                      alt={`${title} Issue ${comicIssue} cover`} 
+                    />
                   </section>
 
                   <section className={styles.paraWrap}>
-                    <p>
-                      <span>Title:</span>
-                      &nbsp;
-                      {title}
-                    </p>
-
-                    <p>
-                      <span>Issue:</span>
-                      &nbsp;
-                      {comicIssue}
-                    </p>
-
-                    <p>
-                      <span>Author:</span>
-                      &nbsp;
-                      {author}
-                    </p>
-
-                    <p>
-                      <span>Penciler:</span>
-                      &nbsp;
-                      {penciler}
-                    </p>
-
-                    <p>
-                      <span>Cover Artist:</span>
-                      &nbsp;
-                      {coverartist}
-                    </p>
-
-                    <p>
-                      <span>Inker:</span>
-                      &nbsp;
-                      {inker}
-                    </p>
-
-                    <p>
-                      <span>Volume:</span>
-                      &nbsp;
-                      {volume}
-                    </p>
-
-                    <p>
-                      <span>Year:</span>
-                      &nbsp;
-                      {year}
-                    </p>
-
-                    <p>
-                      <span>Cover:</span>
-                      &nbsp;
-                      {type}
-                    </p>                   
+                    <p><span>Title:</span> {title || 'N/A'}</p>
+                    <p><span>Issue:</span> {comicIssue || 'N/A'}</p>
+                    <p><span>Author:</span> {author || 'N/A'}</p>
+                    <p><span>Penciler:</span> {penciler || 'N/A'}</p>
+                    <p><span>Cover Artist:</span> {coverartist || 'N/A'}</p>
+                    <p><span>Inker:</span> {inker || 'N/A'}</p>
+                    <p><span>Volume:</span> {volume || 'N/A'}</p>
+                    <p><span>Year:</span> {year || 'N/A'}</p>
+                    <p><span>Cover:</span> {type || 'N/A'}</p>
                   </section>
+
                   <section className={styles.paragraphFooter}>
-                      <section className={styles.editStyle}>
-                        <figure><EditIcon /></figure>
-                        <p className={styles.link}>
-                          <Link 
-                            className={styles.link} 
-                            url={`/forms/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`} 
-                            title="Edit" 
-                          />
-                        </p>
-                      </section>
-                      
-                      <button 
-                        className={styles.deleteStyle} 
-                        type="button" 
-                        onClick={() => handleDelete(id, title)}
-                        aria-label={`Delete ${title} Issue ${comicIssue}`}
-                      >
-                        <figure><DeleteIcon /></figure>
-                        <p>Delete</p>
-                      </button>
+                    <section className={styles.editStyle}>
+                      <figure><EditIcon /></figure>
+                      <p className={styles.link}>
+                        <Link 
+                          url={`/forms/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`} 
+                          title="Edit" 
+                        />
+                      </p>
                     </section>
+                    
+                    <button 
+                      className={styles.deleteStyle} 
+                      type="button" 
+                      onClick={() => handleDelete(id, title)}
+                      aria-label={`Delete ${title} Issue ${comicIssue}`}
+                    >
+                      <figure><DeleteIcon /></figure>
+                      <p>Delete</p>
+                    </button>
+                  </section>
                 </article>
               </section>
             ))}
