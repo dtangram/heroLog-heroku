@@ -4,7 +4,7 @@ import ComicBookListIssues from './ComicBookListIssues';
 export type { 
   ComicBook, 
   ComicBookIssueData, 
-  ComicBookListIssues as ComicBookListIssuesType
+  CBListIssues as ComicBookListIssuesType
 } from './ComicBookListIssues';
 export type { ConnectorProps } from './container';
 

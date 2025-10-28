@@ -34,7 +34,7 @@ export interface ComicBookIssueData {
   isLoading: boolean;
 }
 
-export interface ComicBookListIssues {
+export interface CBListIssues {
   [titleId: string]: ComicBookIssueData;
 }
 
@@ -171,7 +171,7 @@ const ComicBookListIssues = ({
 
         <h2>
           <section>
-            <RRLink to={`/forms/${coboTitleId}/comicbook/new`}>
+            <RRLink to={`/forms/${coboTitleId}/${cbTitle}/comicbook/new`}>
               <figure><LibraryAddIcon /></figure>
               <p className={styles.link}>Add Comic Book</p>
             </RRLink>
