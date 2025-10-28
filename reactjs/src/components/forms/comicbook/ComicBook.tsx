@@ -17,6 +17,7 @@ const ComicBookComponent = ({
   comicbook,
   createComicBook,
   fetchComicBook,
+  fetchComicBooks,
   updateComicBook,
 }: ContainerProps) => {
   const navigate = useNavigate();
@@ -151,49 +152,48 @@ const ComicBookComponent = ({
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
+    event.preventDefault();
 
-  const isValid = validateFields();
-  
-  if (!isValid) {
-    return;
-  }
+    const isValid = validateFields();
+    
+    if (!isValid) {
+      return;
+    }
 
-  const comicBookData = {
-    title: title.trim(),
-    comicIssue,
-    author: author.trim(),
-    penciler: penciler.trim(),
-    coverartist: coverartist.trim(),
-    inker: inker.trim(),
-    volume,
-    year,
-    comicBookCover,
-    type,
-    titleID: coboTitleId || '',
-    comicBookTitle: cbTitle || '',
+    const comicBookData = {
+      title: title.trim(),
+      comicIssue,
+      author: author.trim(),
+      penciler: penciler.trim(),
+      coverartist: coverartist.trim(),
+      inker: inker.trim(),
+      volume,
+      year,
+      comicBookCover,
+      type,
+      titleID: coboTitleId || '',
+      comicBookTitle: cbTitle || '',
+    };
+
+    if (id) {
+      updateComicBook({
+        id,
+        ...comicBookData,
+      });
+    } else {
+      createComicBook(comicBookData);
+    }
+    
+    setSuccessMessage('success');
+    
+    // Refetch the list and then navigate
+    setTimeout(() => {
+      if (coboTitleId) {
+        fetchComicBooks(coboTitleId); // Refetch before navigating
+      }
+      navigate(`/dashboard/${coboTitleId}/${cbTitle}/comicbooklistissues`);
+    }, 1500);
   };
-
-  if (id) {
-    // Update existing comic book
-    updateComicBook({
-      id,
-      ...comicBookData,
-    });
-  } else {
-    // Create new comic book
-    createComicBook(comicBookData);
-  }
-  
-  setSuccessMessage('success');
-  
-  // Navigate back with state to trigger refetch
-  setTimeout(() => {
-    navigate(`/dashboard/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
-      state: { refetch: true, timestamp: Date.now() }
-    });
-  }, 1500);
-};
 
   const showSuccess = !formErrors.title && !formErrors.type && successMessage === 'success';
 

@@ -1,10 +1,11 @@
 import { connect, ConnectedProps } from 'react-redux';
-import {
+import { 
   createComicBook,
   fetchComicBook,
   updateComicBook,
-  deleteComicBook,
+  deleteComicBook
 } from '../../../store/comicbooklistissues/actions';
+import { fetchComicBooks } from '../../../store/comicbooklistissues/actions';
 
 interface ComicBook {
   id: string;
@@ -63,6 +64,7 @@ const mapStateToProps = (state: RootState) => {
 const mapDispatchToProps = {
   createComicBook,
   fetchComicBook,
+  fetchComicBooks,
   updateComicBook,
   deleteComicBook,
 };
