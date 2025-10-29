@@ -4,7 +4,7 @@ interface APIResponse {
 
 interface ReduxAction {
   type: string;
-  [key: string]: string | number | boolean | object | null | undefined;
+  [key: string]: string | number | boolean | object | null | undefined | Function;
 }
 
 interface APIAction extends ReduxAction {
@@ -12,6 +12,7 @@ interface APIAction extends ReduxAction {
   callAPI: () => Promise<APIResponse>;
   shouldCallAPI?: (state: object) => boolean;
   payload?: Record<string, string | number | boolean | object | null>;
+  transformResponse?: (response: APIResponse) => object | object[] | string | number | boolean | null; // Add this
 }
 
 interface DispatchAction extends ReduxAction {
@@ -61,6 +62,7 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
       callAPI,
       shouldCallAPI = () => true,
       payload,
+      transformResponse, // Extract transformResponse
       type,
       ...restProps
     } = action;
@@ -115,8 +117,28 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
     callAPI()
       .then((response) => {
         // Extract data from response
-        const data = extractActionData(response);
-
+        let data = extractActionData(response);
+        
+        // Apply transform if provided
+        if (transformResponse && typeof transformResponse === 'function') {
+          try {
+            data = transformResponse(response);
+          } catch (transformError) {
+            console.error('Error in transformResponse:', transformError);
+            // If transform fails, dispatch error
+            const errorMessage = transformError instanceof Error 
+              ? transformError.message 
+              : 'Failed to transform response';
+            
+            store.dispatch({
+              ...actionProps,
+              type: failureType,
+              err: errorMessage,
+            } as DispatchAction);
+            return;
+          }
+        }
+        
         // Dispatch SUCCESS action
         store.dispatch({
           ...actionProps,
@@ -129,9 +151,9 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
         const errorMessage = error instanceof Error 
           ? error.message 
           : 'An unknown error occurred';
-
+        
         console.error('API call failed:', errorMessage);
-
+        
         // Dispatch FAILURE action
         store.dispatch({
           ...actionProps,
