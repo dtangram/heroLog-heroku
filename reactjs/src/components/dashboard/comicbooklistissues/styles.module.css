@@ -207,15 +207,21 @@
   color: #AECEAB;
 }
 
+.linkWrapper:hover {
+  cursor: pointer;
+}
+
 .editLink{
   color: #AECEAB;
+  display: block;
+  height: 28px;
 }
 
 .editLink::after{
   background-color: #AECEAB;
 }
 
-.editLink:hover::after {
+.linkWrapper:hover .editLink::after {
   background: #AECEAB;
 }
 
