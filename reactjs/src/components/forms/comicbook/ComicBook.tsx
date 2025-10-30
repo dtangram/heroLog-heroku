@@ -21,7 +21,13 @@ const ComicBookComponent = ({
   updateComicBook,
 }: ContainerProps) => {
   const navigate = useNavigate();
-  const { id, coboTitleId, cbTitle, pubId, publisherName } = useParams<{ id?: string, coboTitleId?: string, cbTitle?: string, pubId?: string, publisherName?: string }>();
+  const { id, coboTitleId, cbTitle, pubId, publisherName } = useParams<{ 
+    id?: string;
+    coboTitleId?: string;
+    cbTitle?: string;
+    pubId?: string;
+    publisherName?: string;
+  }>();
 
   const [title, setTitle] = useState('');
   const [comicIssue, setComicIssue] = useState('');
@@ -90,52 +96,47 @@ const ComicBookComponent = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const coverButton = document.getElementById('comicBookCover') as HTMLButtonElement;
-    if (coverButton) coverButton.disabled = false;
-
-    const fileParts = file.name.split('.');
     const fileName = file.name;
-    const fileType = fileParts[fileParts.length - 1] || '';
+    const fileType = file.type;
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
     const fileSize = file.size;
 
-    const validTypes = ['jpg', 'png', 'jpeg'];
-    if (!validTypes.includes(fileType)) {
+    const validExtensions = ['jpg', 'png', 'jpeg'];
+    if (!validExtensions.includes(fileExtension)) {
       alert('Image needs to have a .jpeg, .jpg or .png file extension.');
-      window.location.reload();
       return;
     }
 
     if (fileSize > 1e6) {
       alert('Image size needs to be smaller than 1MB');
-      window.location.reload();
       return;
     }
+
+    const coverButton = document.getElementById('comicBookCover') as HTMLButtonElement;
 
     try {
       if (coverButton) coverButton.disabled = true;
 
-      const response = await API.post('/sign_s3', { fileName, fileType });
-      const { signedRequest, url } = response.data.returnData;
+      const response = await API.post('/s3/sign', { fileName, fileType });
+      const { signedRequest, url } = response.data;
 
-      const options = {
+      await axios.put(signedRequest, file, {
         headers: {
           'Content-Type': fileType,
-          'x-amz-acl': 'public-read',
         },
-      };
+      });
 
-      await axios.put(signedRequest, file, options);
       setComicBookCover(url);
 
       const figure = document.querySelector('form > figure') as HTMLElement;
       if (figure) figure.style.display = 'inline-block';
 
-      // NOTE: AWS Rekognition image moderation should be implemented server-side
-      // The original client-side implementation has been removed for security
+      if (coverButton) coverButton.disabled = false;
       
     } catch (error) {
       console.error('Upload error:', error);
       if (coverButton) coverButton.disabled = false;
+      alert('Failed to upload image. Please try again.');
     }
   };
 
@@ -189,9 +190,11 @@ const ComicBookComponent = ({
     // Refetch the list and then navigate
     setTimeout(() => {
       if (coboTitleId) {
-        fetchComicBooks(coboTitleId); // Refetch before navigating
+        fetchComicBooks(coboTitleId);
       }
-      navigate(`/dashboard/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`);
+      navigate(`/dashboard/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
+        state: { refetch: true, timestamp: Date.now() }
+      });
     }, 1500);
   };
 
@@ -200,7 +203,7 @@ const ComicBookComponent = ({
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
       <h1>
-        {coboTitleId ? `Edit ${title}` : 'Add Comic Book'}
+        {id ? `Edit ${title}` : 'Add Comic Book'}
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
 
