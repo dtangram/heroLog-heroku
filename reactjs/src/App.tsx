@@ -65,9 +65,9 @@ const App = () => {
             <Route path="/dashboard/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
             <Route path="/forms/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />
             <Route path="/forms/:pubId/:publisherName/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
-            <Route path="/dashboard/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
-            <Route path="/forms/:coboTitleId/:cbTitle/comicbook/new" element={<ComicBook />} />
-            <Route path="/forms/:coboTitleId/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
+            <Route path="/dashboard/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
+            <Route path="/forms/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new" element={<ComicBook />} />
+            <Route path="/forms/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
             <Route path="/fixer/:userId" element={<PrivateRouteHandler><Fixer /></PrivateRouteHandler>} />
             <Route path="/sale/:userId" element={<PrivateRouteHandler><Sale /></PrivateRouteHandler>} />
             <Route 
@@ -78,9 +78,10 @@ const App = () => {
               path="/forms/saleform/edit/:id" 
               element={<PrivateRouteHandler><SaleForm /></PrivateRouteHandler>} 
             />
-            <Route path="/wishlist" element={<WishList />} />
-            <Route path="/forms/wishlistform/new" element={<WishListForm />} />
-            <Route path="/forms/wishlistform/edit/:id" element={<WishListForm />} />
+
+            <Route path="/wishlist/:userId" element={<PrivateRouteHandler><WishList /></PrivateRouteHandler>} />
+            <Route path="/forms/wishlistform/new/:userId" element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>} />
+            <Route path="/forms/wishlistform/edit/:id" element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>} />
             <Route path="/profile/:userId" element={<PrivateRouteHandler><Profile /></PrivateRouteHandler>} />
             <Route 
               path="/forms/profileform/edit/:id" 

@@ -21,7 +21,7 @@ const ComicBookComponent = ({
   updateComicBook,
 }: ContainerProps) => {
   const navigate = useNavigate();
-  const { id, coboTitleId, cbTitle } = useParams<{ id?: string, coboTitleId?: string, cbTitle?: string }>();
+  const { id, coboTitleId, cbTitle, pubId, publisherName } = useParams<{ id?: string, coboTitleId?: string, cbTitle?: string, pubId?: string, publisherName?: string }>();
 
   const [title, setTitle] = useState('');
   const [comicIssue, setComicIssue] = useState('');
@@ -191,7 +191,7 @@ const ComicBookComponent = ({
       if (coboTitleId) {
         fetchComicBooks(coboTitleId); // Refetch before navigating
       }
-      navigate(`/dashboard/${coboTitleId}/${cbTitle}/comicbooklistissues`);
+      navigate(`/dashboard/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`);
     }, 1500);
   };
 
@@ -200,7 +200,7 @@ const ComicBookComponent = ({
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
       <h1>
-        {id ? `Edit ${title}` : 'Add Comic Book'}
+        {coboTitleId ? `Edit ${title}` : 'Add Comic Book'}
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
 
@@ -361,7 +361,7 @@ const ComicBookComponent = ({
             <article>
               <p>
                 <Link 
-                  url={`/dashboard/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
+                  url={`/dashboard/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
                   title="CANCEL" 
                 />
               </p>

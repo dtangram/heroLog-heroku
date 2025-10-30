@@ -146,6 +146,10 @@ input {
 figure {
   margin: 0; }
 
+.link {
+  text-decoration: none;
+}
+
 .link::after {
   content: '';
   display: block;

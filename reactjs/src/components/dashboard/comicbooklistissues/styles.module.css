@@ -63,11 +63,23 @@
 	width: 80%;
 }
 
+.backLinkWrapper, .paragraphFooter, .editStyle, .deleteWrapper {
+  padding: 0;
+  position: unset;
+  width: auto;
+}
+
+.backLinkWrapper{
+  display: flex;
+  gap: 12px;
+  margin: 0 0 10px 7%;
+}
+
 .backLink{
   color: #333;
   font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 10px;
+  width: auto;
 }
 
 .backLink:hover, .link:hover{
@@ -109,7 +121,7 @@
   padding: 20px 5% 3px;
 }
 
-.comicSec {
+.articleWrap .comicSec {
   background: #AECEAB;
   border-radius: 15px;
   padding: 30px;
@@ -195,9 +207,43 @@
   color: #AECEAB;
 }
 
-.cbWrap .cbList .wrapper article p a:hover::after{
+.editLink{
+  color: #AECEAB;
+}
+
+.editLink::after{
+  background-color: #AECEAB;
+}
+
+.editLink:hover::after {
   background: #AECEAB;
-  width: 30%;
+}
+
+.deleteStyle {
+  align-items: center;
+  background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  font-size: 1.5rem;
+  margin: auto 0;
+  padding: 5px 0;
+  text-align: center;
+  width: 100px;
+}
+
+.deleteStyle p {
+  color: #770422;
+  margin: 0
+}
+
+.deleteStyle:hover, .deleteStyle:hover p {
+  background: #2B2B2B;
+  color: #AECEAB;
 }
 
 .cbWrap .cbList .wrapper > h2{

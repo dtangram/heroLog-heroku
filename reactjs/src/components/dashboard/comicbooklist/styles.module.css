@@ -1,3 +1,33 @@
+.backLink{
+  color: #333;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 0 10px 7%;
+  width: auto;
+}
+
+.backLink:hover{
+  color: #770422;
+}
+
+.backLink::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 0px;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.backLink:hover::after{
+  background: #770422;
+  width: 50%;
+}
+
 .cbWrap{
   background: #FFF;
   margin-top: 150px;
@@ -318,6 +348,16 @@
 	display: inline-block;
   text-align: center;
 } */
+
+@media (max-width: 800px){
+  .cbWrapper{
+    margin-top: 110px;
+  }
+
+  .backLink{
+    margin: 0 0 40px 3%;
+  }
+}
 
 
 

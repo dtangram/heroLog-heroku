@@ -125,16 +125,6 @@ const Header = ({
                 </NavLink>
               </NavItem>
 
-              <NavItem className={styles.slideUnder}>
-                <NavLink
-                  className={getNavLinkClass}
-                  to={`/wishlist/${userId}`}
-                  onClick={toggleMenuItem}
-                >
-                  WISH
-                </NavLink>
-              </NavItem>
-
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                     className={getNavLinkClass}

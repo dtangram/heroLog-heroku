@@ -6,12 +6,21 @@ import styles from './styles.module.css';
 function Link({
   url, title, icon, className,
 }) {
+  const isStringIcon = typeof icon === 'string';
+  const classNames = [
+    styles.link,              // Base link styles
+    className  // Optional additional styles
+  ].filter(Boolean).join(' ');
+
   return (
-    <RRLink to={url} className={[styles[className], styles.link].join(' ')}>
-      <i className={[icon, 'fas'].join(' ')} />
+    <RRLink to={url} className={classNames}>
+      {isStringIcon ? (
+        <i className={[icon, 'fas'].join(' ')} />
+      ) : (
+        icon
+      )}
       <span>
-        {' '}
-        {title}
+        {' '}{title}
       </span>
     </RRLink>
   );
@@ -20,7 +29,10 @@ function Link({
 Link.propTypes = {
   url: PropTypes.string.isRequired,
   title: PropTypes.string,
-  icon: PropTypes.string,
+  icon: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.element,
+  ]),
   className: PropTypes.string,
 };
 

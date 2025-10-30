@@ -52,7 +52,7 @@ const ComicBookListIssues = ({
   comicbooklistissues = {},
   deleteComicBook,
 }: ConnectorProps) => {
-  const { coboTitleId = '', cbTitle = '' } = useParams<RouteParams>();
+  const { coboTitleId = '', cbTitle = '', pubId = '', publisherName = '' } = useParams<RouteParams>();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -66,8 +66,12 @@ const ComicBookListIssues = ({
   }, [coboTitleId, fetchComicBooks, location.state]);
 
   // Handle navigation back
-  const handleGoBack = useCallback(() => {
-    navigate(-1);
+  const handleGoToDashboard = useCallback(() => {
+    navigate('/dashboard');
+  }, [navigate]);
+
+  const handleGoToPublisher = useCallback(() => {
+    navigate(`${`/dashboard/${pubId}/${publisherName}/comicbooklist`}`);
   }, [navigate]);
 
   // Handle comic book deletion
@@ -102,13 +106,22 @@ const ComicBookListIssues = ({
   // Common header section to avoid repetition
   const renderHeader = () => (
     <>
-      <button 
-        className={styles.backLink} 
+      <section className={styles.backLinkWrapper}>
+        <button 
+        className={styles.backLink}
         type="button" 
-        onClick={handleGoBack}
-      >
-        Back
-      </button>
+        onClick={handleGoToDashboard}
+        >
+          &lt; Dashboard
+        </button>
+        <button 
+          className={styles.backLink}
+          type="button" 
+          onClick={handleGoToPublisher}
+        >
+          &lt; {publisherName}
+        </button>
+      </section>
 
       <h1>
         Your List of {cbTitle} Comics
@@ -120,7 +133,7 @@ const ComicBookListIssues = ({
 
       <h2>
         <section>
-          <RRLink to={`/forms/${coboTitleId}/${cbTitle}/comicbook/new`}>
+          <RRLink to={`/forms/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/new`}>
             <figure><LibraryAddIcon /></figure>
             <p className={styles.link}>Add Comic Book</p>
           </RRLink>
@@ -201,27 +214,28 @@ const ComicBookListIssues = ({
                     <p><span>Year:</span> {year || 'N/A'}</p>
                     <p><span>Cover:</span> {type || 'N/A'}</p>
                   </section>
-
                   <section className={styles.paragraphFooter}>
                     <section className={styles.editStyle}>
-                      <figure><EditIcon /></figure>
-                      <p className={styles.link}>
-                        <Link 
-                          url={`/forms/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`} 
+                      <p className={styles.linkWrapper}>
+                        <Link className={styles.editLink}
+                          url={`/forms/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`}
+                          icon={<EditIcon />}
                           title="Edit" 
                         />
                       </p>
                     </section>
                     
-                    <button 
-                      className={styles.deleteStyle} 
-                      type="button" 
-                      onClick={() => handleDelete(id, title)}
-                      aria-label={`Delete ${title} Issue ${comicIssue}`}
-                    >
-                      <figure><DeleteIcon /></figure>
-                      <p>Delete</p>
-                    </button>
+                    <section className={styles.deleteWrapper}>
+                      <button 
+                        className={styles.deleteStyle}
+                        type="button" 
+                        onClick={() => handleDelete(id, title)}
+                        aria-label={`Delete ${title} Issue ${comicIssue}`}
+                      >
+                        <figure><DeleteIcon /></figure>
+                        <p>Delete</p>
+                      </button>
+                    </section>
                   </section>
                 </article>
               </section>

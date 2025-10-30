@@ -43,37 +43,40 @@ const ComicBookList = ({
   deleteComicBookTitle,
 }: ConnectorProps) => {
   const { pubId = '', publisherName = '' } = useParams<RouteParams>();
-
   const navigate = useNavigate();
 
   // Fetch comic book titles on mount
   useEffect(() => {
-    window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0 });
     
     if (pubId) {
-      fetchComicBookTitles?.(pubId);
+      fetchComicBookTitles(pubId);
     }
   }, [pubId, fetchComicBookTitles]);
+
+  // Handle navigation back
+  const handleGoToDashboard = useCallback(() => {
+    navigate('/dashboard');
+  }, [navigate]);
 
   // Handle comic book title deletion
   const handleDelete = useCallback(async (id: string, title: string): Promise<void> => {
     if (!id) return;
 
-    const confirmed = window?.confirm?.(
+    const confirmed = window.confirm(
       `Are you sure you want to delete "${title}"?`
     );
 
     if (!confirmed) return;
 
     try {
-      const result = deleteComicBookTitle?.(id);
-      // Handle both promise and non-promise returns
+      const result = deleteComicBookTitle(id);
       if (result && typeof result === 'object' && 'then' in result) {
         await result;
       }
-      // Refetch data after deletion instead of full page reload
+      // Refetch data after deletion
       if (pubId) {
-        fetchComicBookTitles?.(pubId);
+        fetchComicBookTitles(pubId);
       }
     } catch (error) {
       const errorMessage = error instanceof Error 
@@ -81,7 +84,7 @@ const ComicBookList = ({
         : 'An unexpected error occurred';
       
       console.error('Failed to delete comic book title:', errorMessage);
-      window?.alert?.('Failed to delete comic book title. Please try again.');
+      window.alert('Failed to delete comic book title. Please try again.');
     }
   }, [deleteComicBookTitle, fetchComicBookTitles, pubId]);
 
@@ -94,80 +97,17 @@ const ComicBookList = ({
     .map(id => byId[id]?.data)
     .filter(Boolean) as ComicBookTitle[];
 
-  const handleGoBack = useCallback(() => {
-    navigate('/dashboard');
-  }, [navigate]);
+  // Common header to avoid repetition
+  const renderHeader = () => (
+    <>
+      <button 
+        className={styles.backLink} 
+        type="button" 
+        onClick={handleGoToDashboard}
+      >
+        &lt; Dashboard
+      </button>
 
-  // Early return for loading state
-  if (isLoading) {
-    return (
-      <article id="cbComBookList" className={styles.cbWrap}>
-        <button 
-          className={styles.backLink} 
-          type="button" 
-          onClick={handleGoBack}
-        >
-          {'<'}Dashboard
-        </button>
-
-        <h1>
-          Your List of {publisherName} Titles
-          <figure 
-            className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
-          />
-        </h1>
-
-        <h2>
-          <section>
-            <RRLink to={`/forms/${pubId}/${publisherName}/comicbooklisttitle/new`}>
-              <figure><LibraryAddIcon /></figure>
-              <p className={styles.link}>Add Comic Book Title</p>
-            </RRLink>
-          </section>
-        </h2>
-
-        <article className={styles.cbList}>
-          <section className={styles.loadWrap}>
-            <p className={styles.loadMessage}>Loading</p>
-            <BeatLoader size={10} color="#FFF" />
-          </section>
-        </article>
-      </article>
-    );
-  }
-
-  // Early return for empty state
-  if (comicBookTitles.length === 0) {
-    return (
-      <article id="cbComBookList" className={styles.cbWrap}>
-        <h1>
-          Your List of {publisherName} Titles
-          <figure 
-            className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
-          />
-        </h1>
-
-        <h2>
-          <section>
-            <RRLink to={`/forms/${pubId}/${publisherName}/comicbooklisttitle/new`}>
-              <figure><LibraryAddIcon /></figure>
-              <p className={styles.link}>Add Comic Book Title</p>
-            </RRLink>
-          </section>
-        </h2>
-
-        <article className={styles.cbList}>
-          <Empty />
-        </article>
-      </article>
-    );
-  }
-
-  // Main render with comic book titles list
-  return (
-    <article id="cbComBookList" className={styles.cbWrap}>
       <h1>
         Your List of {publisherName} Titles
         <figure 
@@ -184,7 +124,40 @@ const ComicBookList = ({
           </RRLink>
         </section>
       </h2>
+    </>
+  );
 
+  // Early return for loading state
+  if (isLoading) {
+    return (
+      <article id="cbComBookList" className={styles.cbWrap}>
+        {renderHeader()}
+        <article className={styles.cbList}>
+          <section className={styles.loadWrap}>
+            <p className={styles.loadMessage}>Loading</p>
+            <BeatLoader size={10} color="#FFF" />
+          </section>
+        </article>
+      </article>
+    );
+  }
+
+  // Early return for empty state
+  if (comicBookTitles.length === 0) {
+    return (
+      <article id="cbComBookList" className={styles.cbWrap}>
+        {renderHeader()}
+        <article className={styles.cbList}>
+          <Empty />
+        </article>
+      </article>
+    );
+  }
+
+  // Main render with comic book titles list
+  return (
+    <article id="cbComBookList" className={styles.cbWrap}>
+      {renderHeader()}
       <article className={styles.cbList}>
         <section className={styles.wrapper}>
           <article>
@@ -192,7 +165,7 @@ const ComicBookList = ({
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/dashboard/${id}/${cbTitle}/comicbooklistissues`} 
+                    to={`/dashboard/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
                     className={styles.link}
                   >
                     {cbTitle}
