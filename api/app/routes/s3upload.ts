@@ -146,7 +146,6 @@ const generateSignedUrl = async (
     Bucket: bucketName,
     Key: fileName,
     ContentType: fileType,
-    ACL: 'public-read',
   });
 
   const signedRequest = await getSignedUrl(s3Client, command, {
@@ -245,6 +244,39 @@ const router = Router();
 // POST /s3/sign
 // Generate a signed URL for S3 file upload
 router.post('/sign', signS3Handler);
+
+// In your s3upload.ts router, add:
+router.get('/test', async (_req, res) => {
+  try {
+    const { S3Client, ListBucketsCommand } = await import('@aws-sdk/client-s3');
+    
+    const client = new S3Client({
+      region: ENV.awsRegion,
+      credentials: {
+        accessKeyId: ENV.awsAccessKeyId,
+        secretAccessKey: ENV.awsSecretAccessKey,
+      },
+    });
+
+    const command = new ListBucketsCommand({});
+    const response = await client.send(command);
+
+    res.json({
+      success: true,
+      message: 'AWS credentials are valid',
+      buckets: response.Buckets?.map(b => b.Name),
+      config: {
+        region: ENV.awsRegion,
+        bucket: ENV.s3BucketName,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 // ============================================================================
 // EXPORTS
