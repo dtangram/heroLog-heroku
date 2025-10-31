@@ -197,10 +197,13 @@ const ComicBookListIssues = ({
               <section className={styles.comicSec} key={id}>
                 <article className={styles.comicWrap}>
                   <section className={styles.comicImgWrap}>
-                    <img 
-                      src={comicBookCover || logo} 
-                      alt={`${title} Issue ${comicIssue} cover`} 
-                    />
+                    <a href={comicBookCover} target="_blank" rel="noopener noreferrer">
+                      <img
+                        className={comicBookCover && styles.cbCoverImg}
+                        src={comicBookCover || logo} 
+                        alt={`${title} Issue ${comicIssue} cover`} 
+                      />
+                    </a>
                   </section>
 
                   <section className={styles.paraWrap}>

@@ -146,6 +146,7 @@ const generateSignedUrl = async (
     Bucket: bucketName,
     Key: fileName,
     ContentType: fileType,
+    ACL: 'public-read',
   });
 
   const signedRequest = await getSignedUrl(s3Client, command, {

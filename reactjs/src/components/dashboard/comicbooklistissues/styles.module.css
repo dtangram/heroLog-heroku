@@ -1,3 +1,23 @@
+.loadMessageWrap > section{
+  margin: 0 auto;
+  min-height: auto !important;
+  text-align: center;
+  width: 200px;
+}
+
+.loadMessageWrap > section img{
+  opacity: .2;
+  width: 100%;
+}
+
+.loadMessageWrap p.loadMessage{
+  color: #2B2B2B;
+  font-size: 4rem !important;
+  padding: 3% 0;
+  text-align: center;
+  width: 100%;
+}
+
 .cbWrap{
   background: #FFF;
   margin-top: 150px;
@@ -108,7 +128,7 @@
 }
 
 .link:hover::after{
-  width: 10%;
+  width: 90%;
 }
 
 .articleWrap{
@@ -137,9 +157,20 @@
   padding: 20px;
 }
 
-.comicImgWrap {
-  margin: 0 auto;
+.comicImgWrap, .comicImgWrap a {
+  height: 350px;
+  min-height: auto;
+  padding: 0;
   text-align: center;
+}
+
+.comicImgWrap a .cbCoverImg{
+  height: inherit;
+}
+
+.comicImgWrap a:hover .cbCoverImg {
+  cursor: pointer;
+  outline:3px solid #AECEAB;
 }
 
 .paraWrap {
@@ -181,11 +212,6 @@
   padding: 0;
   width: 90%;
 }
-
-.cbWrap .cbList article .comicSec .comicWrap .comicImgWrap img{
-  width: 100%;
-}
-
 .cbWrap .cbList article .comicSec .comicWrap p{
   line-height: 40px;
   margin-bottom: 30px;

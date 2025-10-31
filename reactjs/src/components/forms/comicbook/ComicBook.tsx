@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
 import SuccessDisplay from '../success';
@@ -120,11 +119,18 @@ const ComicBookComponent = ({
       const response = await API.post('/s3/sign', { fileName, fileType });
       const { signedRequest, url } = response.data;
 
-      await axios.put(signedRequest, file, {
+      // ✅ Use fetch instead of axios for S3 upload
+      const uploadResponse = await fetch(signedRequest, {
+        method: 'PUT',
+        body: file,
         headers: {
           'Content-Type': fileType,
         },
       });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+      }
 
       setComicBookCover(url);
 

@@ -9,6 +9,8 @@ import {
   removeUser 
 } from '../controllers/user';
 import { validate } from '../controllers/validation';
+import db from '../models';
+const { Users } = db as unknown as { Users: UserModel };
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -63,15 +65,6 @@ interface StringValidationResult {
 const ENV = {
   nodeEnv: process.env.NODE_ENV || 'development',
 };
-
-// ============================================================================
-// MODELS
-// ============================================================================
-
-const models = require('../models') as { 
-  Users: UserModel;
-};
-const { Users } = models;
 
 // ============================================================================
 // VALIDATION FUNCTIONS
