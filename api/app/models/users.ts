@@ -66,6 +66,7 @@ const createUsersModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): Us
     profilePic: {
       type: dataTypes.STRING,
       allowNull: true,
+      field: 'profile_pic',
     },
     type: {
       type: dataTypes.ENUM('regular', 'fixer'),

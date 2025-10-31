@@ -6,7 +6,8 @@ import {
   getFixer, 
   getOneById, 
   updateUser, 
-  removeUser 
+  removeUser,
+  createUser
 } from '../controllers/user';
 import { validate } from '../controllers/validation';
 import db from '../models';
@@ -243,7 +244,7 @@ router.get(
 // POST /users
 // Find a user by username (search endpoint)
 router.post(
-  '/',
+  '/search',
   validate('signup'),
   findUserHandler
 );
