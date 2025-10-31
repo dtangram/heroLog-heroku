@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { WhereOptions } from 'sequelize';
+import db from '../models';
 
 // User type literal
 type UserType = 'regular' | 'fixer';
@@ -95,16 +96,18 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-// Import models with proper typing
-const models = require('../models') as {
-  Users: UserModel;
-};
-
-const { Users } = models;
-
 // Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
   return 'errors' in error && Array.isArray((error as SequelizeError).errors);
+};
+
+// Helper to get Users model
+const getUsersModel = (): UserModel => {
+  const Users = db.Users as UserModel;
+  if (!Users) {
+    throw new Error('Users model not loaded');
+  }
+  return Users;
 };
 
 // UUID validation
@@ -262,6 +265,7 @@ const findUsers = async (
     throw new Error('Invalid query parameters');
   }
   
+  const Users = getUsersModel();
   return await Users.findAll({ where: whereClause });
 };
 
@@ -297,7 +301,7 @@ export const getUser = async (
   }
   
   try {
-    const users = await findUsers({ id: userId });  // No parseInt for UUID
+    const users = await findUsers({ id: userId });
     
     if (!users || users.length === 0) {
       return res.status(404).json({
@@ -387,7 +391,8 @@ export const getOneById = async (
   }
   
   try {
-    const user = await Users.findByPk(id);  // No parseInt for UUID
+    const Users = getUsersModel();
+    const user = await Users.findByPk(id);
     
     if (!user) {
       return res.status(404).json({ 
@@ -498,6 +503,8 @@ export const createUser = async (
   }
   
   try {
+    const Users = getUsersModel();
+    
     // Check if username already exists
     const existingUser = await Users.findOne({ 
       where: { username: username.trim() } 
@@ -535,7 +542,7 @@ export const createUser = async (
       password: hashedPassword,
       accesstoken: accesstoken || null,
       type: type.toLowerCase() as UserType,
-      profilePic: 'https://dothanthorntonbucket.s3.amazonaws.com/material-design-account-icon.png',
+      profilePic: 'https://herologimages.s3.us-east-2.amazonaws.com/material-design-account-icon.png',
     });
     
     return res.status(201).json({ 
@@ -646,13 +653,15 @@ export const updateUser = async (
   }
   
   try {
+    const Users = getUsersModel();
+    
     // Check if username is being updated and already exists
     if (updateData.username) {
       const existingUser = await Users.findOne({ 
         where: { username: updateData.username } 
       });
       
-      if (existingUser && existingUser.id !== id) {  // Compare UUIDs as strings
+      if (existingUser && existingUser.id !== id) {
         return res.status(409).json({
           success: false,
           error: 'Username already exists'
@@ -666,7 +675,7 @@ export const updateUser = async (
         where: { email: updateData.email } 
       });
       
-      if (existingEmail && existingEmail.id !== id) {  // Compare UUIDs as strings
+      if (existingEmail && existingEmail.id !== id) {
         return res.status(409).json({
           success: false,
           error: 'Email already exists'
@@ -677,7 +686,7 @@ export const updateUser = async (
     const [rowsUpdated, updatedRecords] = await Users.update(
       updateData,
       {
-        where: { id },  // No parseInt for UUID
+        where: { id },
         returning: true,
       }
     );
@@ -744,8 +753,10 @@ export const removeUser = async (
   }
   
   try {
+    const Users = getUsersModel();
+    
     // Check if record exists before attempting deletion
-    const existingRecord = await Users.findByPk(id);  // No parseInt for UUID
+    const existingRecord = await Users.findByPk(id);
     
     if (!existingRecord) {
       return res.status(404).json({ 
@@ -755,7 +766,7 @@ export const removeUser = async (
     }
     
     const rowsDeleted = await Users.destroy({ 
-      where: { id }  // No parseInt for UUID
+      where: { id }
     });
     
     if (rowsDeleted === 0) {
