@@ -12,6 +12,10 @@ import { validate } from '../controllers/validation';
 import db from '../models';
 const { Users } = db as unknown as { Users: UserModel };
 
+console.log('🔍 Available models:', Object.keys(db));
+console.log('🔍 Users model:', db.Users);
+console.log('🔍 Full db object:', db);
+
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
