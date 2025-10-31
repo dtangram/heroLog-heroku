@@ -6,8 +6,7 @@ import {
   getFixer, 
   getOneById, 
   updateUser, 
-  removeUser,
-  createUser
+  removeUser
 } from '../controllers/user';
 import { validate } from '../controllers/validation';
 import db from '../models';
