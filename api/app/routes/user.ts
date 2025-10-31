@@ -10,7 +10,6 @@ import {
 } from '../controllers/user';
 import { validate } from '../controllers/validation';
 import db from '../models';
-const { Users } = db as unknown as { Users: UserModel };
 
 console.log('🔍 Available models:', Object.keys(db));
 console.log('🔍 Users model:', db.Users);
@@ -103,10 +102,18 @@ const validateUsername = (
 
 const findUserByUsername = async (
   username: string
-): Promise<UserInstance | null> =>
-  Users.findOne({ 
+): Promise<UserInstance | null> => {
+  // ✅ Access directly from db instead
+  const Users = db.Users as UserModel;
+  
+  if (!Users) {
+    throw new Error('Users model not loaded');
+  }
+  
+  return Users.findOne({ 
     where: { username: username.toLowerCase() } 
   });
+};
 
 // ============================================================================
 // RESPONSE BUILDERS
