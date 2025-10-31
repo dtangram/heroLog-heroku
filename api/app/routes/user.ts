@@ -6,14 +6,15 @@ import {
   getFixer, 
   getOneById, 
   updateUser, 
-  removeUser
+  removeUser,
+  createUser
 } from '../controllers/user';
 import { validate } from '../controllers/validation';
 import db from '../models';
 
-console.log('🔍 Available models:', Object.keys(db));
-console.log('🔍 Users model:', db.Users);
-console.log('🔍 Full db object:', db);
+// console.log('🔍 Available models:', Object.keys(db));
+// console.log('🔍 Users model:', db.Users);
+// console.log('🔍 Full db object:', db);
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -241,6 +242,12 @@ router.get(
 );
 
 // POST /users
+router.post(
+  '/',
+  validate('signup'),
+  createUser
+);
+
 // Find a user by username (search endpoint)
 router.post(
   '/search',
