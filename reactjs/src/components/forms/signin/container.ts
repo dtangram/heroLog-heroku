@@ -1,4 +1,4 @@
-import { connect } from 'react-redux';
+import { connect, ConnectedProps  } from 'react-redux';
 import { loginUser } from '../../../store/signin/actions';
 import { fetchUserProfile } from '../../../store/user/actions';
 import Signin from './Signin';
@@ -39,4 +39,8 @@ const mapDispatchToProps = {
   fetchUserProfile
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(Signin);
+const connector = connect(mapStateToProps, mapDispatchToProps);
+
+export type ConnectorProps = ConnectedProps<typeof connector>;
+
+export default connector;
