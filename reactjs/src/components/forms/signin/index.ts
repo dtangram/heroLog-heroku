@@ -1,4 +1,4 @@
-// index.ts
-import ConnectedSignin from './container';
+import connector from './container';
+import Signin from './Signin';
 
-export default ConnectedSignin;
+export default connector(Signin);
