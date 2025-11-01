@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { connect } from 'react-redux';
+import { connect, ConnectedProps } from 'react-redux';
 import { fetchUserProfile } from './store/user/actions';
 
 interface UserData {
@@ -21,11 +21,26 @@ interface RootState {
   signins: Signins;
 }
 
-interface PrivateRouteHandlerProps {
+// Map state to props
+const mapStateToProps = (state: RootState) => ({
+  user: state.user,
+  signins: state.signins
+});
+
+// Map dispatch to props
+const mapDispatchToProps = {
+  fetchUser: fetchUserProfile  // This expects (idUser: string) => Action
+};
+
+// Create connector
+const connector = connect(mapStateToProps, mapDispatchToProps);
+
+// Get the props type from connector
+type PropsFromRedux = ConnectedProps<typeof connector>;
+
+// Component props interface
+interface PrivateRouteHandlerProps extends PropsFromRedux {
   children: React.ReactNode;
-  user?: User;  // Fixed: made optional
-  signins?: Signins;  // Fixed: made optional
-  fetchUser: () => void;
 }
 
 const PrivateRouteHandler = ({ 
@@ -39,27 +54,26 @@ const PrivateRouteHandler = ({
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const userId = signins?.id || localStorage.getItem('id');
    
-    if (token && token !== 'undefined') {
-      fetchUser();
+    if (token && token !== 'undefined' && userId) {
+      fetchUser(userId);  // ✅ Pass the userId
     }
    
     setLoading(false);
-  }, [fetchUser]);
+  }, [fetchUser, signins?.id]);
 
   useEffect(() => {
-    if (signins?.id) {  // Fixed: added optional chaining
+    if (signins?.id) {
       setLoading(true);
     }
     setLoading(false);
   }, [signins]);
 
-  // Fixed: added defensive checks with optional chaining
   if (user?.isLoading || loading) {
-    return <div>Loading</div>;
+    return <div>Loading...</div>;
   }
 
-  // Fixed: check if user exists before checking data
   if (!user || !user.data) {
     return (
       <Navigate
@@ -73,13 +87,4 @@ const PrivateRouteHandler = ({
   return <>{children}</>;
 };
 
-const mapStateToProps = (state: RootState) => ({
-  user: state.user || undefined,  // Fixed: provide fallback
-  signins: state.signins || undefined  // Fixed: provide fallback
-});
-
-const mapDispatchToProps = {
-  fetchUser: fetchUserProfile
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(PrivateRouteHandler);
+export default connector(PrivateRouteHandler);
