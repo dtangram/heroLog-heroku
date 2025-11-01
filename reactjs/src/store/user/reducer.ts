@@ -96,17 +96,16 @@ const handleUserProfilePending = (state: object, _action: object): object => {
 };
 
 const handleUserProfileSuccess = (state: object, action: object): object => {
+  console.log('🎯 USER PROFILE SUCCESS:', action);  // ✅ Add this
   const typedState = state as UserState;
   const typedAction = action as Action;
   
-  // Defensive: Validate action data exists and is valid
   if (!isValidUserProfile(typedAction.data)) {
-    return createErrorState(
-      typedState,
-      'Invalid user profile data received'
-    );
+    console.log('❌ Invalid user data:', typedAction.data);  // ✅ Add this
+    return createErrorState(typedState, 'Invalid user profile data received');
   }
 
+  console.log('✅ Valid user data:', typedAction.data);  // ✅ Add this
   return createSuccessState(typedState, typedAction.data);
 };
 
