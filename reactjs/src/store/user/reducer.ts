@@ -1,23 +1,16 @@
 import createReducer from '../helpers/createReducer';
 import {
-  REQ_USERS_PENDING,
-  REQ_USERS_SUCCESS,
-  REQ_USERS_ERROR,
-  REQ_USER_PENDING,
-  REQ_USER_SUCCESS,
-  REQ_USER_ERROR,
-  ADD_USER_PENDING,
-  ADD_USER_SUCCESS,
-  ADD_USER_ERROR,
-  UPDATE_USER_PENDING,
-  UPDATE_USER_SUCCESS,
-  UPDATE_USER_ERROR,
-  DELETE_USER_PENDING,
-  DELETE_USER_SUCCESS,
-  DELETE_USER_ERROR,
+  REQ_USER_PROFILE_PENDING,
+  REQ_USER_PROFILE_SUCCESS,
+  REQ_USER_PROFILE_ERROR,
+  REQ_USER_LOGOUT,
 } from '../actionTypes';
 
-interface User {
+// ============================================================================
+// TYPES
+// ============================================================================
+
+interface UserProfile {
   id: string;
   firstname: string;
   lastname: string;
@@ -25,219 +18,129 @@ interface User {
   email: string;
   type: string;
   profilePic: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-interface UserState {
-  data: User;
-  isLoading: boolean;
-  loadedAt: number;
-  error: string | null;
-}
-
-export interface UsersState {
-  byId: Record<string, UserState>;
-  allIds: string[];
-  loadedAt: number;
+export interface UserState {
+  data: UserProfile | null;
   isLoading: boolean;
   error: string | null;
+  loadedAt: number;
 }
 
 interface Action {
   type: string;
   payload?: {
-    userId?: string;
     id?: string;
-    signup?: User;
   };
-  data?: User | User[];
+  data?: UserProfile;
   err?: string;
 }
 
-const initialState: UsersState = {
-  byId: {},
-  allIds: [],
-  loadedAt: 0,
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const INITIAL_STATE: UserState = {
+  data: null,
   isLoading: false,
   error: null,
+  loadedAt: 0,
 };
 
-const createUserState = (data: User): UserState => ({
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+const createLoadingState = (state: UserState): UserState => ({
+  ...state,
+  isLoading: true,
+  error: null,
+});
+
+const createSuccessState = (state: UserState, data: UserProfile): UserState => ({
+  ...state,
   data,
   isLoading: false,
-  loadedAt: Date.now(),
   error: null,
+  loadedAt: Date.now(),
 });
 
-const updateUserInState = (
-  byId: Record<string, UserState>,
-  id: string,
-  updates: Partial<UserState>
-): Record<string, UserState> => ({
-  ...byId,
-  [id]: {
-    ...byId[id],
-    ...updates,
-  },
+const createErrorState = (state: UserState, errorMessage: string): UserState => ({
+  ...state,
+  isLoading: false,
+  error: errorMessage,
 });
 
-// Fetch all users - PENDING
-const signupsPending = (state: object, action: object): object => {
-  const typedState = state as UsersState;
-  return {
-    ...typedState,
-    isLoading: true,
-    error: null,
-  };
-};
-
-// Fetch all users - SUCCESS
-const signupsSuccess = (state: object, action: object): object => {
-  const typedState = state as UsersState;
-  const typedAction = action as Action;
-  const users = Array.isArray(typedAction.data) ? typedAction.data : [];
-  const now = Date.now();
-
-  const newById = users.reduce((acc, user) => ({
-    ...acc,
-    [user.id]: createUserState(user),
-  }), typedState.byId);
-
-  const newAllIds = Array.from(new Set([
-    ...typedState.allIds,
-    ...users.map(user => user.id),
-  ]));
-
-  return {
-    ...typedState,
-    byId: newById,
-    allIds: newAllIds,
-    loadedAt: now,
-    isLoading: false,
-    error: null,
-  };
-};
-
-// Fetch all users - ERROR
-const signupsError = (state: object, action: object): object => {
-  const typedState = state as UsersState;
-  const typedAction = action as Action;
-  return {
-    ...typedState,
-    isLoading: false,
-    error: typedAction.err || 'Failed to fetch users',
-  };
-};
-
-// Fetch/Create/Update single user - PENDING
-const signupPending = (state: object, action: object): object => {
-  const typedState = state as UsersState;
-  const typedAction = action as Action;
-  const { id = '', signup } = typedAction.payload || {};
-  const existingUser = typedState.byId[id]?.data || signup || {} as User;
-
-  return {
-    ...typedState,
-    byId: updateUserInState(typedState.byId, id, {
-      data: existingUser,
-      isLoading: true,
-      error: null,
-    }),
-  };
-};
-
-// Fetch/Create single user - SUCCESS
-const signupSuccess = (state: object, action: object): object => {
-  const typedState = state as UsersState;
-  const typedAction = action as Action;
-  const user = typedAction.data as User;
-  const { id } = user;
-  const existingData = typedState.byId[id]?.data || {};
-
-  const newAllIds = typedState.allIds.includes(id)
-    ? typedState.allIds
-    : [...typedState.allIds, id];
-
-  return {
-    ...typedState,
-    byId: {
-      ...typedState.byId,
-      [id]: createUserState({ ...existingData, ...user }),
-    },
-    allIds: newAllIds,
-  };
-};
-
-// Update single user - SUCCESS
-const signupSuccessUpdate = (state: object, action: object): object => {
-  const typedState = state as UsersState;
-  const typedAction = action as Action;
-  const { id = '' } = typedAction.payload || {};
-  const updatedUser = typedAction.data as User;
-  const existingData = typedState.byId[id]?.data || {};
-
-  const newAllIds = typedState.allIds.includes(id)
-    ? typedState.allIds
-    : [...typedState.allIds, id];
-
-  return {
-    ...typedState,
-    byId: {
-      ...typedState.byId,
-      [id]: createUserState({ ...existingData, ...updatedUser }),
-    },
-    allIds: newAllIds,
-  };
-};
-
-// Delete single user - SUCCESS
-const signupSuccessDelete = (state: object, action: object): object => {
-  const typedState = state as UsersState;
-  const typedAction = action as Action;
-  const { id = '' } = typedAction.payload || {};
+const isValidUserProfile = (data: UserProfile | null | undefined): data is UserProfile => {
+  if (!data) return false;
   
-  const { [id]: deletedUser, ...remainingById } = typedState.byId;
-  const newAllIds = typedState.allIds.filter(userId => userId !== id);
-
-  return {
-    ...typedState,
-    byId: remainingById,
-    allIds: newAllIds,
-  };
+  return Boolean(
+    data.id &&
+    data.firstname &&
+    data.lastname &&
+    data.username &&
+    data.email &&
+    data.type
+  );
 };
 
-// Fetch/Create/Update/Delete single user - ERROR
-const signupError = (state: object, action: object): object => {
-  const typedState = state as UsersState;
+// ============================================================================
+// REDUCER HANDLERS
+// ============================================================================
+
+const handleUserProfilePending = (state: object, _action: object): object => {
+  const typedState = state as UserState;
+  return createLoadingState(typedState);
+};
+
+const handleUserProfileSuccess = (state: object, action: object): object => {
+  const typedState = state as UserState;
   const typedAction = action as Action;
-  const { id = '' } = typedAction.payload || {};
+  
+  // Defensive: Validate action data exists and is valid
+  if (!isValidUserProfile(typedAction.data)) {
+    return createErrorState(
+      typedState,
+      'Invalid user profile data received'
+    );
+  }
 
-  if (!typedState.byId[id]) return typedState;
-
-  return {
-    ...typedState,
-    byId: updateUserInState(typedState.byId, id, {
-      isLoading: false,
-      error: typedAction.err || 'Unknown error',
-    }),
-  };
+  return createSuccessState(typedState, typedAction.data);
 };
 
-const reducer = createReducer(initialState, {
-  [REQ_USERS_PENDING]: signupsPending,
-  [REQ_USERS_SUCCESS]: signupsSuccess,
-  [REQ_USERS_ERROR]: signupsError,
-  [REQ_USER_PENDING]: signupPending,
-  [REQ_USER_SUCCESS]: signupSuccess,
-  [REQ_USER_ERROR]: signupError,
-  [ADD_USER_PENDING]: signupPending,
-  [ADD_USER_SUCCESS]: signupSuccess,
-  [ADD_USER_ERROR]: signupError,
-  [UPDATE_USER_PENDING]: signupPending,
-  [UPDATE_USER_SUCCESS]: signupSuccessUpdate,
-  [UPDATE_USER_ERROR]: signupError,
-  [DELETE_USER_PENDING]: signupPending,
-  [DELETE_USER_SUCCESS]: signupSuccessDelete,
-  [DELETE_USER_ERROR]: signupError,
+const handleUserProfileError = (state: object, action: object): object => {
+  const typedState = state as UserState;
+  const typedAction = action as Action;
+  
+  // Defensive: Provide meaningful error message
+  const errorMessage = typedAction.err || 'Failed to load user profile';
+  
+  return createErrorState(typedState, errorMessage);
+};
+
+const handleUserLogout = (_state: object, _action: object): object => {
+  // Defensive: Always return fresh initial state on logout
+  return { ...INITIAL_STATE };
+};
+
+// ============================================================================
+// REDUCER
+// ============================================================================
+
+const reducer = createReducer(INITIAL_STATE, {
+  [REQ_USER_PROFILE_PENDING]: handleUserProfilePending,
+  [REQ_USER_PROFILE_SUCCESS]: handleUserProfileSuccess,
+  [REQ_USER_PROFILE_ERROR]: handleUserProfileError,
+  [REQ_USER_LOGOUT]: handleUserLogout,
 });
 
-export default reducer as (state: UsersState | undefined, action: Action) => UsersState;
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+export default reducer as (
+  state: UserState | undefined,
+  action: Action
+) => UserState;
