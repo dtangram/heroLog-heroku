@@ -2,10 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import debug from 'debug';
 import { Model, ModelStatic } from 'sequelize';
+import jwt from 'jsonwebtoken';
+import db from '../models';
 import * as authCtrl from '../controllers/auth';
 import * as validationCtrl from '../controllers/validation';
-
-const jwt = require('jsonwebtoken');
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -26,7 +26,7 @@ interface UserInstance extends Model<UserAttributes>, UserAttributes {}
 type UserModel = ModelStatic<UserInstance>;
 
 interface LoginRequestBody {
-  login: string;
+  username: string;
   password: string;
 }
 
@@ -58,7 +58,7 @@ interface StringValidationResult {
 interface CredentialsValidationResult {
   isValid: boolean;
   value?: {
-    login: string;
+    username: string;
     password: string;
   };
   error?: string;
@@ -81,8 +81,14 @@ const ENV = {
 // MODELS
 // ============================================================================
 
-const models = require('../models') as { Users: UserModel };
-const { Users } = models;
+// Access model when needed (or destructure safely)
+const getUsersModel = (): UserModel => {
+  const Users = db.Users as UserModel;
+  if (!Users) {
+    throw new Error('Users model not loaded');
+  }
+  return Users;
+};
 
 // ============================================================================
 // VALIDATION FUNCTIONS
@@ -110,13 +116,13 @@ const validateJwtSecret = (): StringValidationResult => {
 };
 
 const validateLoginCredentials = (
-  login: string | undefined | null,
+  username: string | undefined | null,  // Changed parameter name
   password: string | undefined | null
 ): CredentialsValidationResult => {
-  if (!login || typeof login !== 'string' || !login.trim()) {
+  if (!username || typeof username !== 'string' || !username.trim()) {
     return {
       isValid: false,
-      error: 'Login is required'
+      error: 'Username is required'  // Updated error message
     };
   }
 
@@ -130,7 +136,7 @@ const validateLoginCredentials = (
   return {
     isValid: true,
     value: {
-      login: login.trim(),
+      username: username.trim(),  // Keep this as 'login' for internal use
       password
     }
   };
@@ -141,9 +147,11 @@ const validateLoginCredentials = (
 // ============================================================================
 
 const findUserByLogin = async (
-  login: string
-): Promise<UserInstance | null> =>
-  Users.findOne({ where: { username: login.toLowerCase() } });
+  username: string
+): Promise<UserInstance | null> => {
+  const Users = getUsersModel();
+  return Users.findOne({ where: { username: username.toLowerCase() } });
+};
 
 const verifyUserPassword = async (
   password: string,
@@ -156,7 +164,7 @@ const generateAuthToken = (
   secret: string
 ): string => {
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign({ id: userId }, secret, { expiresIn });
+  return jwt.sign({ id: userId }, secret, { expiresIn } as jwt.SignOptions);
 };
 
 // ============================================================================
@@ -231,7 +239,7 @@ const loginHandler = async (
   try {
     // Validate credentials
     const credentialsValidation = validateLoginCredentials(
-      req.body.login,
+      req.body.username,
       req.body.password
     );
 
@@ -240,10 +248,10 @@ const loginHandler = async (
       return;
     }
 
-    const { login, password } = credentialsValidation.value!;
+    const { username, password } = credentialsValidation.value!;
 
     // Find user
-    const user = await findUserByLogin(login);
+    const user = await findUserByLogin(username);
 
     if (!user) {
       sendError(res, 401, 'Invalid credentials');
