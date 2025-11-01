@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, ChangeEvent, FormEvent } from 
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import API from '../../../API';
 import FormErrors from '../../../formErrors';
+import type { ConnectorProps } from './container';
 import styles from './styles.module.css';
 
 // Constants
@@ -28,13 +29,6 @@ interface UserData {
 
 interface UserState {
   data?: UserData;
-}
-
-interface SigninProps {
-  users?: User;
-  user?: UserState;
-  fetchUserProfile: (id?: string) => void;
-  loginUser: (payload: { username: string; password: string }) => void;
 }
 
 interface LoginFormData {
@@ -71,7 +65,7 @@ const getGoogleAccounts = (): GoogleAccounts | null => {
   return (window as any).google?.accounts || null;
 };
 
-const Signin: React.FC<SigninProps> = ({ 
+const Signin: React.FC<ConnectorProps> = ({ 
   users, 
   user, 
   fetchUserProfile, 
@@ -200,7 +194,7 @@ const Signin: React.FC<SigninProps> = ({
   // Initial setup
   useEffect(() => {
     window.scrollTo({ top: 0 });
-    fetchUserProfile();
+    fetchUserProfile(id as string);
     console.log('Environment:', process.env.NODE_ENV);
     console.log('API URL:', process.env.REACT_APP_API_URL);
   }, [fetchUserProfile]);

@@ -1,7 +1,6 @@
 import { connect, ConnectedProps  } from 'react-redux';
 import { loginUser } from '../../../store/signin/actions';
 import { fetchUserProfile } from '../../../store/user/actions';
-import Signin from './Signin';
 
 interface User {
   id: string;
