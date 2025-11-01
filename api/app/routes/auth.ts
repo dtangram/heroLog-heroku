@@ -47,6 +47,10 @@ interface ErrorResponse {
 
 interface LoginResponseData {
   token: string;
+  id: string;           // ✅ Add this
+  username?: string;    // ✅ Add this
+  email?: string;       // ✅ Add this
+  type?: string;
 }
 
 interface StringValidationResult {
@@ -284,8 +288,14 @@ const loginHandler = async (
     // Generate token
     const token = generateAuthToken(user.id, secretValidation.value!);
 
-    // Send success response
-    sendSuccess(res, 'User logged in successfully', { token });
+    // Send success response with user data
+    sendSuccess(res, 'User logged in successfully', { 
+      token,
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      type: user.type
+    });
 
   } catch (error) {
     if (error instanceof Error) {
