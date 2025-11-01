@@ -70,10 +70,12 @@ const clearAuthData = (): void => {
   localStorage.removeItem('userData');
 };
 
-export const fetchUserProfile = (): Action => {
+export const fetchUserProfile = (idUser: string): Action => {
   const userId = getUserId();
+
+  idUser = userId || idUser;
  
-  if (!userId) {
+  if (!idUser) {
     console.warn('No user ID found in localStorage');
     // Fixed: Return a no-op action instead of null
     return {
@@ -88,9 +90,9 @@ export const fetchUserProfile = (): Action => {
       REQ_USER_PROFILE_SUCCESS,
       REQ_USER_PROFILE_ERROR,
     ],
-    callAPI: () => API.get(`/users/${userId}`),
-    shouldCallAPI: (state: RootState) => shouldFetchUserProfile(state, userId),
-    payload: { id: userId },
+    callAPI: () => API.get(`/users/${idUser}`),
+    shouldCallAPI: (state: RootState) => shouldFetchUserProfile(state, idUser),
+    payload: { id: idUser },
   };
 };
 

@@ -30,15 +30,17 @@ const Header = ({
 
   // Fetch login user on mount
   useEffect(() => {
-    fetchUserProfile?.();
+    fetchUserProfile?.(userId);
   }, [fetchUserProfile]);
 
   // Fetch login user when signin changes
-  useEffect(() => {
-    if (signins?.id) {
-      fetchUserProfile?.();
-    }
-  }, [signins, fetchUserProfile]);
+useEffect(() => {
+  const userId = signins?.id || localStorage.getItem('id');
+  
+  if (userId) {
+    fetchUserProfile(userId);  // ✅ Pass the userId!
+  }
+}, [signins?.id, fetchUserProfile]);
 
   // Toggle navbar
   const toggle = useCallback(() => {
