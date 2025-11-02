@@ -91,12 +91,23 @@ export const fetchUserProfile = (idUser?: string): Action => {
     callAPI: () => API.get(`/users/${userId}`),
     shouldCallAPI: (state: RootState) => shouldFetchUserProfile(state, userId),
     payload: { id: userId },
-    transformResponse: (response) => {
-      // ✅ Unwrap the nested data
-      if (response && typeof response === 'object' && 'data' in response) {
-        const apiResponse = response.data as { success?: boolean; data?: UserProfile };
-        return apiResponse.data || null;
+    transformResponse: (response: { data?: { success?: boolean; data?: UserProfile } }) => {
+      console.log('🔍 Full response:', response);  // ✅ Add this
+      console.log('🔍 response.data:', response?.data);  // ✅ Add this
+      console.log('🔍 response.data.data:', response?.data?.data);  // ✅ Add this
+      
+      // Try multiple paths
+      if (response?.data?.data) {
+        console.log('✅ Found at response.data.data');
+        return response.data.data;
       }
+      
+      if (response?.data && 'success' in response.data) {
+        console.log('✅ Found at response.data (has success property)');
+        return response.data as UserProfile;
+      }
+      
+      console.log('❌ Could not find user data');
       return null;
     },
   };
