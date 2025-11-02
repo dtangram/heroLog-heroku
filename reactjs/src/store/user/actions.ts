@@ -36,6 +36,7 @@ interface APIAction {
   callAPI: () => Promise<{ data: UserProfile }>;
   shouldCallAPI?: (state: RootState) => boolean;
   payload: { id: string };
+  transformResponse?: (response: { data?: { success?: boolean; data?: UserProfile } }) => UserProfile | null;
 }
 
 interface SimpleAction {
@@ -70,14 +71,11 @@ const clearAuthData = (): void => {
   localStorage.removeItem('userData');
 };
 
-export const fetchUserProfile = (idUser: string): Action => {
-  const userId = getUserId();
-
-  idUser = userId || idUser;
+export const fetchUserProfile = (idUser?: string): Action => {
+  const userId = idUser || getUserId();
  
-  if (!idUser) {
+  if (!userId) {
     console.warn('No user ID found in localStorage');
-    // Fixed: Return a no-op action instead of null
     return {
       type: 'USER_PROFILE_FETCH_SKIPPED',
       payload: { reason: 'no_user_id' }
@@ -90,9 +88,17 @@ export const fetchUserProfile = (idUser: string): Action => {
       REQ_USER_PROFILE_SUCCESS,
       REQ_USER_PROFILE_ERROR,
     ],
-    callAPI: () => API.get(`/users/${idUser}`),
-    shouldCallAPI: (state: RootState) => shouldFetchUserProfile(state, idUser),
-    payload: { id: idUser },
+    callAPI: () => API.get(`/users/${userId}`),
+    shouldCallAPI: (state: RootState) => shouldFetchUserProfile(state, userId),
+    payload: { id: userId },
+    transformResponse: (response) => {
+      // ✅ Unwrap the nested data
+      if (response && typeof response === 'object' && 'data' in response) {
+        const apiResponse = response.data as { success?: boolean; data?: UserProfile };
+        return apiResponse.data || null;
+      }
+      return null;
+    },
   };
 };
 
