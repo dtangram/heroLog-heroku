@@ -78,7 +78,8 @@ const middleware = applyMiddleware(...(middlewares as any[]));
 
 // Set up Redux DevTools Extension
 const composeEnhancers =
-  (isDevelopment && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) || compose;
+  // (isDevelopment && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) || compose;
+  window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
 
 // Create store
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
