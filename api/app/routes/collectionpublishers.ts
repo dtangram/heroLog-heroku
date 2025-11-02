@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { authenticateToken, AuthRequest  } from '../middleware/auth';
 import * as collectionpublisherCtrl from '../controllers/collectionpublishers';
 import * as validationCtrl from '../controllers/validation';
 
@@ -11,20 +12,24 @@ console.log('🔵 Current time:', new Date().toISOString());
 
 const router = Router();
 
+// Apply auth middleware to all routes
+router.use(authenticateToken);
+
 // GET /collectionpublishers
-// Get all collection publishers
+// Get collection publishers for authenticated user
 router.get(
   '/',
-  collectionpublisherCtrl.getAllCollectionPublishers
+  collectionpublisherCtrl.getCollectionPublishers  // ✅ Changed from getAllCollectionPublishers
 );
 
 // POST /collectionpublishers/create
-// Create a new publisher
+// Create a new publisher for authenticated user
 router.post(
   '/create',
-  (req: Request, res: Response, next: NextFunction) => {
+  (req: AuthRequest , res: Response, next: NextFunction) => {
     try {
-      console.log('🚀 ROUTE HIT');
+      console.log('🚀 CREATE ROUTE HIT');
+      console.log('User from token:', req.user);  // ✅ Log authenticated user
       console.log('Body:', req.body);
       next();
     } catch (error) {
@@ -44,14 +49,14 @@ router.get('/test-logging', (_req: Request, res: Response) => {
 });
 
 // GET /collectionpublishers/:id
-// Get a single publisher by ID
+// Get a single publisher by ID (must belong to user)
 router.get(
   '/:id',
   collectionpublisherCtrl.getOneById
 );
 
 // PUT /collectionpublishers/:id
-// Update a publisher
+// Update a publisher (must belong to user)
 router.put(
   '/:id',
   validationCtrl.validate('editCollectionPublisher'),
@@ -59,7 +64,7 @@ router.put(
 );
 
 // DELETE /collectionpublishers/:id
-// Delete a publisher
+// Delete a publisher (must belong to user)
 router.delete(
   '/:id',
   validationCtrl.validate('deleteCollectionPublisher'),

@@ -117,11 +117,6 @@ export const fetchPublisher = (id: string): APIAction => ({
 export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => {
   validatePublisher(publisher);
   
-  // Get user ID (from localStorage or use anonymous ID)
-  const userId = getUserId();
-  
-  console.log('Creating publisher with userId:', userId);
-  
   return {
     types: [
       ADD_PUBLISHER_PENDING,
@@ -130,10 +125,8 @@ export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => 
     ],
     callAPI: () => API.post('/collectpub/create', {
       publisherName: publisher.publisherName.trim(),
-      collectpubUsersId: userId  // Will be either real user ID or anonymous ID
     }),
     payload: { 
-      userId,
       publisher: { 
         publisherName: publisher.publisherName 
       } as Partial<Publisher>,

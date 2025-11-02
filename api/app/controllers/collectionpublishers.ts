@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/auth';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 
@@ -58,12 +59,6 @@ interface ValidationResult {
 // Sequelize error interface
 interface SequelizeError {
   errors: Array<{ message: string }>;
-}
-
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-  };
 }
 
 const CollectionPublishers = db.CollectionPublishers as CollectionPublisherModel;
