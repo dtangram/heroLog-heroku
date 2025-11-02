@@ -17,19 +17,19 @@ interface Signins {
 }
 
 interface RootState {
-  user: User;
+  userProfile: User;  // ✅ Changed from 'user' to 'userProfile'
   signins: Signins;
 }
 
 // Map state to props
 const mapStateToProps = (state: RootState) => ({
-  user: state.user,
+  user: state.userProfile,  // ✅ Changed from state.user to state.userProfile
   signins: state.signins
 });
 
 // Map dispatch to props
 const mapDispatchToProps = {
-  fetchUser: fetchUserProfile  // This expects (idUser: string) => Action
+  fetchUser: fetchUserProfile
 };
 
 // Create connector
@@ -57,7 +57,7 @@ const PrivateRouteHandler = ({
     const userId = signins?.id || localStorage.getItem('id');
    
     if (token && token !== 'undefined' && userId) {
-      fetchUser(userId);  // ✅ Pass the userId
+      fetchUser(userId);
     }
    
     setLoading(false);
