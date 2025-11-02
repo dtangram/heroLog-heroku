@@ -54,12 +54,6 @@ useEffect(() => {
     }
   }, [screenwidth]);
 
-  useEffect(() => {
-  console.log('🔍 Header - user state:', user);
-  console.log('🔍 Header - user.data:', user?.data);
-  console.log('🔍 Header - signins state:', signins);
-}, [user, signins]);
-
   // Handle user logout
   const logUserOut = useCallback(() => {
     localStorage?.removeItem('token');
@@ -109,18 +103,11 @@ useEffect(() => {
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                   className={getNavLinkClass}
-                  to='/dashboard'
-                  onClick={toggleMenuItem}
-                >
-                  DASHBOARD
-                </NavLink>
-                {/* <NavLink
-                  className={getNavLinkClass}
                   to={`/dashboard/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
-                </NavLink> */}
+                </NavLink>
               </NavItem>
 
               <NavItem className={styles.slideUnder}>
@@ -190,7 +177,7 @@ useEffect(() => {
                 </NavLink>
               </NavItem>
 
-              <NavItem className={styles.slideUnder}>
+              {/* <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
                   to={`/dashboard/${userId}`}
@@ -198,7 +185,7 @@ useEffect(() => {
                 >
                   DASHBOARD
                 </NavLink>
-              </NavItem>
+              </NavItem> */}
 
               <NavItem className={styles.slideUnder}>
                 <NavLink

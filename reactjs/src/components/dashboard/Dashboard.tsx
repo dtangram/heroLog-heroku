@@ -5,6 +5,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Link from '../../link';
 import Empty from '../empty';
+import type { ConnectorProps } from './container';
 import styles from './styles.module.css';
 
 // ============================================================================
@@ -16,13 +17,6 @@ interface Publisher {
   publisherName: string;
 }
 
-interface DashboardProps {
-  fetchPublishers: () => void;
-  publishers: Publisher[];
-  deletePublisher: (id: string) => void;
-  isLoading: boolean;
-}
-
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -31,8 +25,17 @@ const Dashboard = ({
   fetchPublishers, 
   publishers = [], 
   deletePublisher, 
-  isLoading = false 
-}: DashboardProps) => {
+  isLoading = false,
+  // user = {
+  //   id: '',
+  //   firstname: '',
+  //   lastname: '',
+  //   username: '',
+  //   email: '',
+  //   type: '',
+  //   profilePic: ''
+  // }
+}: ConnectorProps) => {
   
   // Fetch publishers on mount
   useEffect(() => {

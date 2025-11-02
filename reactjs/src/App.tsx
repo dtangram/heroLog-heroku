@@ -49,7 +49,7 @@ const App = () => {
 
             {/* Private Routes */}
             <Route path="/" element={<PrivateRouteHandler><Home /></PrivateRouteHandler>} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/:userId" element={<Dashboard />} />
             <Route 
               path="/forms/messaging/:userId/:comicBookTitle/:comicIssue/:userSent/:username/:userEmail" 
               element={<PrivateRouteHandler><ModalMessage /></PrivateRouteHandler>} 

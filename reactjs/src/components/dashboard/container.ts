@@ -1,7 +1,6 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { useCallback } from 'react';
+import { connect, ConnectedProps } from 'react-redux';
 import { fetchPublishers, deletePublisher } from '../../store/dashboard/actions';
-import Dashboard from './Dashboard';
+import Dashboard from './Dashboard';  // ✅ Import the component
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -18,61 +17,62 @@ interface PublisherState {
   isLoading: boolean;
 }
 
+interface UserData {
+  id: string;
+  firstname: string;
+  lastname: string;
+  username: string;
+  email: string;
+  type: string;
+  profilePic: string;
+}
+
+interface User {
+  data?: UserData;
+  isLoading: boolean;
+}
+
 interface RootState {
   publishers: PublisherState;
+  userProfile: User;
 }
 
 // ============================================================================
-// SELECTORS
+// MAP STATE TO PROPS
 // ============================================================================
 
-const selectPublishers = (state: RootState): Publisher[] => {
-  const { publishers } = state;
- 
-  if (!publishers) {
-    return [];
-  }
-
-  const { byId = {}, allIds = [] } = publishers;
+function mapStateToProps(state: RootState) {
+  const { publishers, userProfile } = state;
   
-  return allIds
-    .filter(id => byId[id]?.data)
-    .map(id => byId[id].data);
-};
-
-const selectIsLoading = (state: RootState): boolean => {
-  return state.publishers?.isLoading ?? false;
-};
-
-// ============================================================================
-// CONTAINER COMPONENT
-// ============================================================================
-
-const DashboardContainer = () => {
-  const dispatch = useDispatch();
+  // Transform publishers into array
+  const publishersList = publishers?.allIds
+    ?.filter(id => publishers.byId[id]?.data)
+    .map(id => publishers.byId[id].data) || [];
   
-  const publishersList = useSelector(selectPublishers);
-  const loading = useSelector(selectIsLoading);
-  
-  const handleFetchPublishers = useCallback(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    dispatch(fetchPublishers() as any);
-  }, [dispatch]);
-  
-  const handleDeletePublisher = useCallback((id: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    dispatch(deletePublisher(id) as any);
-  }, [dispatch]);
-  
-  const props = {
-    fetchPublishers: handleFetchPublishers,
+  return {
     publishers: publishersList,
-    deletePublisher: handleDeletePublisher,
-    isLoading: loading
+    isLoading: publishers?.isLoading || false,
+    user: userProfile?.data,
   };
-  
-  return Dashboard(props);
+}
+
+// ============================================================================
+// MAP DISPATCH TO PROPS
+// ============================================================================
+
+const mapDispatchToProps = {
+  fetchPublishers,
+  deletePublisher,
 };
 
-export default DashboardContainer;
+// ============================================================================
+// CONNECTOR
+// ============================================================================
+
+const connector = connect(mapStateToProps, mapDispatchToProps);
+
+export type ConnectorProps = ConnectedProps<typeof connector>;
 export type { Publisher };
+
+// ✅ Connect and export
+export default connector(Dashboard);
