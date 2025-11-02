@@ -177,7 +177,7 @@ useEffect(() => {
                 </NavLink>
               </NavItem>
 
-              {/* <NavItem className={styles.slideUnder}>
+              <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
                   to={`/dashboard/${userId}`}
@@ -185,7 +185,7 @@ useEffect(() => {
                 >
                   DASHBOARD
                 </NavLink>
-              </NavItem> */}
+              </NavItem>
 
               <NavItem className={styles.slideUnder}>
                 <NavLink
