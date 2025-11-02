@@ -17,13 +17,13 @@ interface SignIns {
 }
 
 interface RootState {
-  user: User;
+  userProfile: User;
   signins: SignIns;
 }
 
 function mapStateToProps(state: RootState) {
-  const { user, signins } = state;
-  return { user, signins };
+  const { userProfile, signins } = state;
+  return { user: userProfile, signins };
 }
 
 const mapDispatchToProps = {
