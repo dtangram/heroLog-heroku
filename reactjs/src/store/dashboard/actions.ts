@@ -88,8 +88,8 @@ const validatePublisher = (publisher: Partial<Publisher>): void => {
   }
 };
 
-export const fetchPublishers = (): APIAction => {
-  const userId = getUserId();
+export const fetchPublishers = (idUser?: string): APIAction => {
+  const userId = idUser || getUserId();
   
   return {
     types: [

@@ -26,22 +26,25 @@ const Dashboard = ({
   publishers = [], 
   deletePublisher, 
   isLoading = false,
-  // user = {
-  //   id: '',
-  //   firstname: '',
-  //   lastname: '',
-  //   username: '',
-  //   email: '',
-  //   type: '',
-  //   profilePic: ''
-  // }
+  user = {
+    id: '',
+    firstname: '',
+    lastname: '',
+    username: '',
+    email: '',
+    type: '',
+    profilePic: ''
+  }
 }: ConnectorProps) => {
   
   // Fetch publishers on mount
-  useEffect(() => {
-    window?.scrollTo?.({ top: 0, behavior: 'smooth' });
-    fetchPublishers?.();
-  }, [fetchPublishers]);
+useEffect(() => {
+  window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+  
+  if (user?.id) {
+    fetchPublishers?.(user.id);  // ✅ Pass user ID
+  }
+}, [fetchPublishers, user?.id]);
 
   // Handle publisher deletion with confirmation and error handling
   const handleDelete = useCallback((id: string, name: string): void => {

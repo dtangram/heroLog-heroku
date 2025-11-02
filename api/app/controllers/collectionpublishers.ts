@@ -60,6 +60,12 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
+
 const CollectionPublishers = db.CollectionPublishers as CollectionPublisherModel;
 
 // Type guard for Sequelize errors
@@ -145,30 +151,18 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
   return { isValid: true };
 };
 
-// Generic function to find collection publishers with filters
-const findCollectionPublishers = async (
-  whereClause: WhereOptions<CollectionPublisherAttributes>
-): Promise<CollectionPublisherInstance[]> => {
-  if (!whereClause || Object.keys(whereClause).length === 0) {
-    throw new Error('Invalid query parameters');
-  }
-  
-  return await CollectionPublishers.findAll({ where: whereClause });
-};
-
-// Get all collection publishers by user ID (using collectpubUsersId)
+// Get all collection publishers by user ID (from params or token)
 export const getCollectionPublishers = async (
-  req: Request<{ userId: string }>,
+  req: AuthRequest,  // ✅ Make userId optional in params
   res: Response<ApiResponse<CollectionPublisherAttributes[]>>
 ): Promise<Response> => {
-  const { userId } = req.params;
+  // ✅ Get userId from params OR from JWT token
+  const userId = req.params.userId || req.user?.id;
   
-  // Validate required parameters
-  const validation = validateParams(req.params, ['userId']);
-  if (!validation.isValid) {
+  if (!userId) {
     return res.status(400).json({ 
       success: false, 
-      error: validation.message 
+      error: 'User ID is required' 
     });
   }
   
@@ -182,8 +176,9 @@ export const getCollectionPublishers = async (
   }
   
   try {
-    const collectPublishers = await findCollectionPublishers({ 
-      collectpubUsersId: userId  // No parseInt needed for UUIDs
+    // ✅ Filter by user ID
+    const collectPublishers = await CollectionPublishers.findAll({ 
+      where: { collectpubUsersId: userId }
     });
     
     const data = collectPublishers.map(publisher => publisher.toJSON());
