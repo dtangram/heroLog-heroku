@@ -58,7 +58,7 @@ export const authenticateToken = (
 // ✅ Add optional authentication - allows requests without tokens
 export const optionalAuth = (
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void => {
   const authHeader = req.headers['authorization'];
