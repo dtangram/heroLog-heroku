@@ -5,13 +5,39 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     
     try {
-      // Get all foreign key constraints on collectpubUsersId
+      // Check both possible table names
+      const tableNames = ['CollectionPublishers', 'collectionpublishers'];
+      let actualTableName = null;
+
+      for (const name of tableNames) {
+        try {
+          const result = await queryInterface.sequelize.query(
+            `SELECT to_regclass('"${name}"')::text as exists;`,
+            { transaction, type: Sequelize.QueryTypes.SELECT }
+          );
+          
+          if (result[0] && result[0].exists) {
+            actualTableName = name;
+            console.log('Found table:', actualTableName);
+            break;
+          }
+        } catch (error) {
+          console.log('Table not found:', name);
+        }
+      }
+
+      if (!actualTableName) {
+        console.log('CollectionPublishers table not found, skipping migration');
+        await transaction.commit();
+        return;
+      }
+
+      // Get all foreign key constraints
       const constraints = await queryInterface.sequelize.query(
         `SELECT conname 
          FROM pg_constraint 
-         WHERE conrelid = 'CollectionPublishers'::regclass 
-           AND contype = 'f' 
-           AND conname LIKE '%collectpubUsersId%';`,
+         WHERE conrelid = '"${actualTableName}"'::regclass 
+           AND contype = 'f';`,
         { transaction, type: Sequelize.QueryTypes.SELECT }
       );
 
@@ -19,41 +45,29 @@ module.exports = {
 
       // Remove each constraint
       for (const constraint of constraints) {
-        console.log('Removing constraint:', constraint.conname);
-        await queryInterface.removeConstraint(
-          'CollectionPublishers',
-          constraint.conname,
-          { transaction }
-        );
-      }
-
-      // Also try removing by specific names in case query doesn't work
-      const constraintNames = [
-        'CollectionPublishers_collectpubUsersId_fkey',
-        'CollectionPublishers_collectpubUsersId_fkey1'
-      ];
-
-      for (const name of constraintNames) {
-        try {
-          await queryInterface.sequelize.query(
-            `ALTER TABLE "CollectionPublishers" DROP CONSTRAINT IF EXISTS "${name}";`,
-            { transaction }
-          );
-          console.log('Removed constraint:', name);
-        } catch (error) {
-          console.log('Constraint not found or already removed:', name);
+        if (constraint.conname.includes('collectpubUsersId')) {
+          console.log('Removing constraint:', constraint.conname);
+          try {
+            await queryInterface.sequelize.query(
+              `ALTER TABLE "${actualTableName}" DROP CONSTRAINT IF EXISTS "${constraint.conname}";`,
+              { transaction }
+            );
+          } catch (error) {
+            console.log('Error removing constraint:', constraint.conname, error.message);
+          }
         }
       }
 
       await transaction.commit();
+      console.log('Migration complete');
     } catch (error) {
       await transaction.rollback();
+      console.error('Migration failed:', error);
       throw error;
     }
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Don't recreate the constraint - leave it removed
     console.log('Down migration: leaving constraints removed');
   }
 };
