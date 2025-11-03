@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import PrivateRouteHandler from './privateRoute';
@@ -32,8 +32,22 @@ import PasswordReset from './components/forms/passwordreset';
 import Profile from './components/profile';
 import ProfileForm from './components/forms/profileform';
 import Footer from './components/footer';
+import { getAnonymousUserId } from './utils/anonymousUser';
 
 const App = () => {
+  useEffect(() => {
+    console.log('🚀 APP MOUNTED');
+    
+    // Just call it - the function handles checking if it exists
+    getAnonymousUserId();
+    
+    console.log('📊 localStorage after init:', {
+      anonymousUserId: localStorage.getItem('anonymousUserId'),
+      id: localStorage.getItem('id'),
+      token: localStorage.getItem('token')
+    });
+  }, []);
+
   return (
     <Provider store={store}>
       <Router>
