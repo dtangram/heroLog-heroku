@@ -13,6 +13,8 @@ export const getAnonymousUserId = (): string => {
     anonymousId = uuidv4();
     localStorage.setItem(ANONYMOUS_ID_KEY, anonymousId);
     console.log('📝 Created new anonymous user ID:', anonymousId);
+  } else {
+    console.log('✅ Using existing anonymous ID:', anonymousId);
   }
   
   return anonymousId;
@@ -26,19 +28,25 @@ export const getCurrentUserId = (): string => {
   const authenticatedId = localStorage.getItem('id');
   
   if (authenticatedId && authenticatedId !== 'undefined') {
+    console.log('✅ Using authenticated user ID:', authenticatedId);
     return authenticatedId;
   }
   
   // Fall back to anonymous ID
-  return getAnonymousUserId();
+  const anonymousId = getAnonymousUserId();
+  console.log('📝 Using anonymous user ID:', anonymousId);
+  return anonymousId;
 };
 
 /**
  * Clear anonymous ID when user signs in
  */
 export const clearAnonymousId = (): void => {
-  localStorage.removeItem(ANONYMOUS_ID_KEY);
-  console.log('🗑️ Cleared anonymous user ID');
+  const anonymousId = localStorage.getItem(ANONYMOUS_ID_KEY);
+  if (anonymousId) {
+    console.log('🗑️ Clearing anonymous user ID:', anonymousId);
+    localStorage.removeItem(ANONYMOUS_ID_KEY);
+  }
 };
 
 /**
