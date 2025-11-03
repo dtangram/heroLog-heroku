@@ -55,4 +55,37 @@ export const authenticateToken = (
   }
 };
 
+// ✅ Add optional authentication - allows requests without tokens
+export const optionalAuth = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  // If no token, continue without user
+  if (!token) {
+    next();
+    return;
+  }
+
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (!jwtSecret) {
+    next();
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+    req.user = decoded;
+  } catch (error) {
+    // Token invalid, continue without user
+    console.log('Invalid token, continuing without auth');
+  }
+  
+  next();
+};
+
 export type { AuthRequest };

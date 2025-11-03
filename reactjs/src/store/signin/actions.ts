@@ -1,4 +1,5 @@
 import API from '../../API';
+import { clearAnonymousId } from '../../utils/anonymousUser';
 import {
   REQ_LOGIN_PENDING,
   REQ_LOGIN_SUCCESS,
@@ -110,6 +111,7 @@ export const loginUser = (signin: SignInCredentials): APIAction => {
         
         if (response?.data) {
           storeAuthData(response.data);
+          clearAnonymousId();
         }
         
         return response;

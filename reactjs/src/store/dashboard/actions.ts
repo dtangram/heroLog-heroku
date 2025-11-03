@@ -1,5 +1,5 @@
 import API from '../../API';
-import { ANONYMOUS_USER_ID } from '../../constants';
+import { getCurrentUserId } from '../../utils/anonymousUser';
 import {
   REQ_PUBLISHERS_PENDING,
   REQ_PUBLISHERS_SUCCESS,
@@ -52,11 +52,6 @@ interface APIAction {
   payload: Record<string, string | Publisher | Partial<Publisher>>;
 }
 
-const getUserId = (): string => {
-  const userId = localStorage.getItem('id');
-  return userId || ANONYMOUS_USER_ID;  // Fallback to anonymous user
-};
-
 const isCached = (loadedAt: number): boolean => {
   return loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
 };
@@ -89,7 +84,7 @@ const validatePublisher = (publisher: Partial<Publisher>): void => {
 };
 
 export const fetchPublishers = (idUser?: string): APIAction => {
-  const userId = idUser || getUserId();
+  const userId = idUser || getCurrentUserId();
   
   return {
     types: [
@@ -97,7 +92,7 @@ export const fetchPublishers = (idUser?: string): APIAction => {
       REQ_PUBLISHERS_SUCCESS,
       REQ_PUBLISHERS_ERROR,
     ],
-    callAPI: () => API.get('/collectpub'),
+    callAPI: () => API.get(`/collectpub?userId=${userId}`),
     shouldCallAPI: (state: RootState) => shouldFetchUserPublishers(state, userId),
     payload: { userId },
   };
@@ -116,6 +111,8 @@ export const fetchPublisher = (id: string): APIAction => ({
 
 export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => {
   validatePublisher(publisher);
+
+  const userId = getCurrentUserId();
   
   return {
     types: [
@@ -125,6 +122,7 @@ export const createPublisher = (publisher: Omit<Publisher, 'id'>): APIAction => 
     ],
     callAPI: () => API.post('/collectpub/create', {
       publisherName: publisher.publisherName.trim(),
+      collectpubUsersId: userId
     }),
     payload: { 
       publisher: { 

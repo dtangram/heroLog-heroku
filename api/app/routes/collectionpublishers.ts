@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, AuthRequest  } from '../middleware/auth';
+import { optionalAuth, AuthRequest  } from '../middleware/auth';
 import * as collectionpublisherCtrl from '../controllers/collectionpublishers';
 import * as validationCtrl from '../controllers/validation';
 
@@ -13,7 +13,7 @@ console.log('🔵 Current time:', new Date().toISOString());
 const router = Router();
 
 // Apply auth middleware to all routes
-router.use(authenticateToken);
+router.use(optionalAuth);
 
 // GET /collectionpublishers
 // Get collection publishers for authenticated user
