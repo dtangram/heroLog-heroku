@@ -14,23 +14,37 @@ interface UserState {
   };
 }
 
+// ✅ Update signins interface to include all state properties
+interface SigninsState {
+  id: string | null;
+  username: string;
+  password: string;
+  isLoading: boolean;
+  error: string | null;
+}
+
 interface RootState {
-  signins: User;
-  user: UserState;
+  signins: SigninsState;  // ✅ Updated type
+  userProfile: UserState;  // ✅ Changed from 'user' to 'userProfile'
 }
 
 const mapStateToProps = (state: RootState) => {
-  const { signins, user } = state;
+  const { signins, userProfile } = state;
   
   const defaultUsers: User = {
-    id: '',
-    username: '',
-    password: ''
+    id: signins?.id || '',
+    username: signins?.username || '',
+    password: signins?.password || ''
   };
   
-  const users = signins || defaultUsers;
+  const users = signins ? defaultUsers : defaultUsers;
   
-  return { users, user };
+  return { 
+    users, 
+    user: userProfile,
+    signinId: signins?.id,  // ✅ Add this
+    signinError: signins?.error,  // ✅ Add this
+  };
 };
 
 const mapDispatchToProps = {
