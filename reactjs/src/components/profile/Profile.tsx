@@ -4,6 +4,7 @@ import Link from '../../link';
 import Empty from '../empty';
 import styles from './styles.module.css';
 import type { ConnectorProps } from './container';
+import { AccountCircle } from '@mui/icons-material';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -126,7 +127,7 @@ const Profile = ({
               <section key={profileId}>
                 <figure>
                   <img 
-                    src={profilePic} 
+                    src={!profilePic ? `${<AccountCircle />}` : profilePic} 
                     alt={`${firstname} ${lastname}'s profile`} 
                   />
                 </figure>
