@@ -273,7 +273,9 @@ const handleSubmit = useCallback(
       const token = localStorage.getItem('token');
       
       if (token && token !== 'undefined') {
-        window.location.href = '/';
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 500);
       } else {
         setTimeout(() => {
           setFormErrors({
