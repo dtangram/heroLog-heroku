@@ -65,17 +65,24 @@ useEffect(() => {
     }
   }, [deletePublisher, fetchPublishers]);
 
-  // Early return for loading state
-  if (isLoading) {
-    return (
-      <article id="cbDash" className={styles.cbWrap}>
-        <h1>
+  // Common header to avoid repetition
+  const renderHeader = () => (
+    <>
+      <h1>
           Your List of Publishers
           <figure 
             className={styles.graphic} 
             aria-label="Small burgundy rectangle graphic" 
           />
         </h1>
+    </>
+  );
+
+  // Early return for loading state
+  if (isLoading) {
+    return (
+      <article id="cbDash" className={styles.cbWrap}>
+        {renderHeader()}
         <article className={styles.cbList}>
           <section className={styles.loadWrap}>
             <p className={styles.loadMessage}>Loading</p>
@@ -90,13 +97,7 @@ useEffect(() => {
   if (!publishers || publishers.length === 0) {
     return (
       <article id="cbDash" className={styles.cbWrap}>
-        <h1>
-          Your List of Publishers
-          <figure 
-            className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
-          />
-        </h1>
+        {renderHeader()}
         <article className={styles.cbList}>
           <Empty />
         </article>
@@ -105,60 +106,55 @@ useEffect(() => {
   }
 
   // Main render with publishers list
-  return (
-    <article id="cbDash" className={styles.cbWrap}>
-      <h1>
-        Your List of Publishers
-        <figure 
-          className={styles.graphic} 
-          aria-label="Small burgundy rectangle graphic" 
-        />
-      </h1>
-      
-      <article className={styles.cbList}>
-        <section className={styles.wrapper}>
-          <article>
-            {publishers.map(({ id, publisherName }) => (
-              <section key={id}>
-                <p>
-                  <RRLink 
-                    to={`/${getDashboard()}/${userId}/${id}/${publisherName}/comicbooklist`} 
-                    className={styles.link}
-                  >
-                    {publisherName}
-                  </RRLink>
-                </p>
-                
-                <section className={styles.editStyle}>
-                  <figure>
-                    <EditIcon />
-                  </figure>
-                  <p className={styles.link}>
-                    <Link 
-                      url={`/forms/${userId}/createpublisher/edit/${id}`} 
-                      title="Edit" 
-                    />
+  if (userId) {
+    return (
+      <article id="cbDash" className={styles.cbWrap}>
+        {renderHeader()}
+        <article className={styles.cbList}>
+          <section className={styles.wrapper}>
+            <article>
+              {publishers.map(({ id, publisherName }) => (
+                <section key={id}>
+                  <p>
+                    <RRLink 
+                      to={`/${getDashboard()}/${userId}/${id}/${publisherName}/comicbooklist`} 
+                      className={styles.link}
+                    >
+                      {publisherName}
+                    </RRLink>
                   </p>
+                  
+                  <section className={styles.editStyle}>
+                    <figure>
+                      <EditIcon />
+                    </figure>
+                    <p className={styles.link}>
+                      <Link 
+                        url={`/forms/${userId}/createpublisher/edit/${id}`} 
+                        title="Edit" 
+                      />
+                    </p>
+                  </section>
+                  
+                  <button 
+                    className={styles.deleteStyle} 
+                    type="button" 
+                    onClick={() => handleDelete(id, publisherName)}
+                    aria-label={`Delete ${publisherName}`}
+                  >
+                    <figure>
+                      <DeleteIcon />
+                    </figure>
+                    <p>Delete</p>
+                  </button>
                 </section>
-                
-                <button 
-                  className={styles.deleteStyle} 
-                  type="button" 
-                  onClick={() => handleDelete(id, publisherName)}
-                  aria-label={`Delete ${publisherName}`}
-                >
-                  <figure>
-                    <DeleteIcon />
-                  </figure>
-                  <p>Delete</p>
-                </button>
-              </section>
-            ))}
-          </article>
-        </section>
+              ))}
+            </article>
+          </section>
+        </article>
       </article>
-    </article>
-  );
+    );
+  }
 };
 
 export default Dashboard;
