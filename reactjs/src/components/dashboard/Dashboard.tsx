@@ -134,7 +134,7 @@ useEffect(() => {
                   </figure>
                   <p className={styles.link}>
                     <Link 
-                      url={`/forms/createpublisher/edit/${id}`} 
+                      url={`/forms/${userId}/createpublisher/edit/${id}`} 
                       title="Edit" 
                     />
                   </p>
