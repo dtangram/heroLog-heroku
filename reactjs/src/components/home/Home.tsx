@@ -27,6 +27,7 @@ const Home = ({
   // Fetch all sales on mount
   useEffect(() => {
     window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    window.location.href = '/';
     fetchAllSales?.();  // Fixed: was fetchALLSales
   }, [fetchAllSales]);  // Fixed: was fetchALLSales
 

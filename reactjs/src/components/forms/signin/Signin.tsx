@@ -280,8 +280,6 @@ const handleSubmit = useCallback(
           });
         }, 3000);
       }
-
-      window.location.href = '/';
     } catch (error) {
       // ❌ Login failed - show error
       setFormErrors({
