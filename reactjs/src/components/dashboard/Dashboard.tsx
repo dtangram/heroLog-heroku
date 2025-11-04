@@ -103,10 +103,7 @@ useEffect(() => {
         </article>
       </article>
     );
-  }
-
-  // Main render with publishers list
-  if (userId) {
+  } else if (userId) {
     return (
       <article id="cbDash" className={styles.cbWrap}>
         {renderHeader()}
