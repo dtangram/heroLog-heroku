@@ -42,9 +42,9 @@ const App = () => {
     const userId = localStorage.getItem('id');
     
     // Check if user is authenticated
-    const isAuthenticated = token && 
-      token !== 'undefined' && 
-      userId && 
+    const isAuthenticated = token &&
+      token !== 'undefined' &&
+      userId &&
       userId !== 'undefined';
     
     if (isAuthenticated) {
