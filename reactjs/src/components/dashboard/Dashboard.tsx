@@ -140,7 +140,7 @@ const Dashboard = ({
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/dashboard}/${userId}/${id}/${publisherName}/comicbooklist`} 
+                    to={`/dashboard/${userId}/${id}/${publisherName}/comicbooklist`} 
                     className={styles.link}
                   >
                     {publisherName}

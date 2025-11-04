@@ -58,7 +58,7 @@ const ComicBookList = ({
 
   // Handle navigation back
   const handleGoToDashboard = useCallback(() => {
-    navigate(`/dashboard}/${userId}`);
+    navigate(`/dashboard/${userId}`);
   }, [navigate]);
 
   // Handle comic book title deletion
