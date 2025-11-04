@@ -15,6 +15,7 @@ interface FormErrorsType {
   username?: string;
   password?: string;
   validToken?: string;
+  form?: string;
 }
 
 interface User {
@@ -253,34 +254,40 @@ const Signin: React.FC<ConnectorProps> = ({
   );
 
   // Handle form submission
-  const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+const handleSubmit = useCallback(
+  async (event: FormEvent<HTMLFormElement>) => {  // ✅ Make it async
+    event.preventDefault();
 
-      if (!validateFields()) {
-        return;
-      }
+    if (!validateFields()) {
+      return;
+    }
 
-      loginUser({
+    try {
+      // ✅ Await the login action
+      await loginUser({
         username: formData.username,
         password: formData.password
       });
 
-      // Check token after action dispatch
-      setTimeout(() => {
-        const validToken = localStorage.getItem('token');
-
-        if (validToken && validToken !== 'undefined') {
-          navigate('/');
-        } else {
-          setFormErrors({
-            validToken: 'Incorrect username and/or password'
-          });
-        }
-      }, TOKEN_CHECK_DELAY);
-    },
-    [formData, validateFields, loginUser, navigate]
-  );
+      // ✅ Token is now in localStorage after successful login
+      const token = localStorage.getItem('token');
+      
+      if (token && token !== 'undefined') {
+        navigate('/');
+      } else {
+        setFormErrors({
+          form: 'Login failed. Please try again.'  // ✅ Changed from validToken to form
+        });
+      }
+    } catch (error) {
+      // ❌ Login failed - show error
+      setFormErrors({
+        form: error instanceof Error ? error.message : 'Incorrect username and/or password'
+      });
+    }
+  },
+  [formData, validateFields, loginUser, navigate]
+);
 
   // Redirect if user is already logged in
   if (user?.data?.id) {
