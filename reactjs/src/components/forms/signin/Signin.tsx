@@ -273,14 +273,15 @@ const handleSubmit = useCallback(
       const token = localStorage.getItem('token');
       
       if (token && token !== 'undefined') {
-        window.location.href = '/';
       } else {
         setTimeout(() => {
           setFormErrors({
             form: 'Login failed. Please try again.'  // ✅ Changed from validToken to form
           });
-        }, 500);
+        }, 3000);
       }
+
+      window.location.href = '/';
     } catch (error) {
       // ❌ Login failed - show error
       setFormErrors({
