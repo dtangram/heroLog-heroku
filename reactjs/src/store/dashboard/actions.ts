@@ -93,7 +93,6 @@ export const fetchPublishers = (idUser?: string): APIAction => {
       REQ_PUBLISHERS_ERROR,
     ],
     callAPI: () => API.get(`/collectpub?userId=${userId}`),
-    shouldCallAPI: (state: RootState) => shouldFetchUserPublishers(state, userId),
     payload: { userId },
   };
 };
