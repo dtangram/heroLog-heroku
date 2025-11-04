@@ -45,25 +45,25 @@ const Dashboard = ({
     }
   }, [fetchPublishers, user?.id]);
 
-  // useEffect(() => {
-  //   const handleStorageChange = () => {
-  //     // Check if token was removed (logout)
-  //     const token = localStorage.getItem('token');
-  //     const anonymousId = localStorage.getItem('anonymousUserId');
+  useEffect(() => {
+    const handleStorageChange = () => {
+      // Check if token was removed (logout)
+      const token = localStorage.getItem('token');
+      const anonymousId = localStorage.getItem('anonymousUserId');
       
-  //     if (!token && anonymousId) {
-  //       console.log('🔄 Token removed, refetching for anonymous user');
-  //       fetchPublishers?.(anonymousId);
-  //     }
-  //   };
+      if (!token && anonymousId) {
+        console.log('🔄 Token removed, refetching for anonymous user');
+        fetchPublishers?.(anonymousId);
+      }
+    };
     
-  //   // Listen for storage changes
-  //   window.addEventListener('storage', handleStorageChange);
+    // Listen for storage changes
+    window.addEventListener('storage', handleStorageChange);
     
-  //   return () => {
-  //     window.removeEventListener('storage', handleStorageChange);
-  //   };
-  // }, [fetchPublishers]);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [fetchPublishers]);
 
   // Handle publisher deletion with confirmation and error handling
   const handleDelete = useCallback((id: string, name: string): void => {
