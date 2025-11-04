@@ -63,7 +63,7 @@ useEffect(() => {
     localStorage?.removeItem('reloadApp');
     
     logout?.();
-    navigate('/landing');
+    window.location.href = '/landing';
   }, [logout, navigate]);
 
   // Helper to get active class name
