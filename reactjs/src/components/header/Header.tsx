@@ -114,7 +114,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/forms/createpublisher/new`}
+                  to={`/forms/createpublisher/new/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   CREATE
