@@ -6,7 +6,6 @@ import SuccessDisplay from '../success';
 import API from '../../../API';
 import { ContainerProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
-import { getDashboard } from '../../../utils/tokenLocalStorage';
 import styles from './styles.module.css';
 
 interface FormErrorsState {
@@ -201,7 +200,7 @@ const ComicBookComponent = ({
       if (coboTitleId) {
         fetchComicBooks(coboTitleId);
       }
-      navigate(`/${getDashboard()}/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
+      navigate(`/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
         state: { refetch: true, timestamp: Date.now() }
       });
     }, 1500);
@@ -373,7 +372,7 @@ const ComicBookComponent = ({
             <article>
               <p>
                 <Link 
-                  url={`/${getDashboard()}/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
+                  url={`/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
                   title="CANCEL" 
                 />
               </p>

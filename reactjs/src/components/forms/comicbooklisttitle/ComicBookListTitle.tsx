@@ -5,7 +5,6 @@ import Link from '../../../link';
 import SuccessDisplay from '../success';
 import { ContainerProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
-import { getDashboard } from '../../../utils/tokenLocalStorage';
 import styles from './styles.module.css';
 
 interface FormErrorsState {
@@ -94,7 +93,7 @@ const ComicBookListTitle = ({
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/${getDashboard()}/${userId}/${pubId}/${publisherName}/comicbooklist`);
+      navigate(`/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist`);
     }, 1500);
   };
 
@@ -137,7 +136,7 @@ const ComicBookListTitle = ({
             <article>
               <p>
                 <Link
-                  url={`/${getDashboard()}/${userId}/${pubId}/${publisherName}/comicbooklist`}
+                  url={`/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist`}
                   title="CANCEL"
                 />
               </p>

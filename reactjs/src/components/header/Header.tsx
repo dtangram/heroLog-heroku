@@ -11,7 +11,6 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
-import { getDashboard } from '../../utils/tokenLocalStorage';
 import styles from './styles.module.scss';
 
 // ============================================================================
@@ -105,7 +104,7 @@ useEffect(() => {
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                   className={getNavLinkClass}
-                  to={`/${getDashboard()}/${userId}`}
+                  to={`/dashboard/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
@@ -182,7 +181,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/${getDashboard()}/${userId}`}
+                  to={`/dashboard/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD

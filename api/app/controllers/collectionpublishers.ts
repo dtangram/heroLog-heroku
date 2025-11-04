@@ -148,33 +148,30 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
 
 // Get all collection publishers by user ID (from params or token)
 export const getCollectionPublishers = async (
-  req: AuthRequest,  // ✅ Make userId optional in params
+  req: AuthRequest,
   res: Response<ApiResponse<CollectionPublisherAttributes[]>>
 ): Promise<Response> => {
-  // ✅ Get userId from params OR from JWT token
-  const userId = req.params.userId || req.user?.id;
+  // Get from JWT token OR query param
+  const userId = req.user?.id || req.query.userId as string;
+  
+  console.log('📊 GET PUBLISHERS REQUEST');
+  console.log('  - User from token:', req.user?.id);
+  console.log('  - User from query:', req.query.userId);
+  console.log('  - Final userId:', userId);
   
   if (!userId) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'User ID is required' 
-    });
-  }
-  
-  // Validate UUID format
-  const uuidValidation = validateUUID(userId, 'User ID');
-  if (!uuidValidation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: uuidValidation.message 
+    return res.status(400).json({
+      success: false,
+      error: 'User ID is required'
     });
   }
   
   try {
-    // ✅ Filter by user ID
     const collectPublishers = await CollectionPublishers.findAll({ 
       where: { collectpubUsersId: userId }
     });
+    
+    console.log(`✅ Found ${collectPublishers.length} publishers for user ${userId}`);  // ✅ Fixed: parenthesis before backtick
     
     const data = collectPublishers.map(publisher => publisher.toJSON());
     

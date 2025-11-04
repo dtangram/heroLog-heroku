@@ -8,7 +8,6 @@ import Link from '../../../link';
 import Empty from '../../empty';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
-import { getDashboard } from '../../../utils/tokenLocalStorage';
 import styles from './styles.module.css';
 
 // ============================================================================
@@ -59,7 +58,7 @@ const ComicBookList = ({
 
   // Handle navigation back
   const handleGoToDashboard = useCallback(() => {
-    navigate(`/${getDashboard()}/${userId}`);
+    navigate(`/dashboard}/${userId}`);
   }, [navigate]);
 
   // Handle comic book title deletion
@@ -168,7 +167,7 @@ const ComicBookList = ({
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/${getDashboard()}/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
+                    to={`/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
                     className={styles.link}
                   >
                     {cbTitle}

@@ -85,7 +85,7 @@ const storeAuthData = (response: LoginResponse): void => {
 export const loginUser = (signin: SignInCredentials): APIAction => {
   const { username, password } = signin;
   
-  // Validate credentials
+  // Validation
   if (!isValidUsername(username)) {
     throw new Error('Username must be at least 3 characters long');
   }
@@ -93,9 +93,9 @@ export const loginUser = (signin: SignInCredentials): APIAction => {
   if (!isValidPassword(password)) {
     throw new Error('Password must be at least 6 characters long');
   }
-
+  
   const trimmedUsername = username.trim();
-
+  
   return {
     types: [
       REQ_LOGIN_PENDING,
@@ -111,12 +111,15 @@ export const loginUser = (signin: SignInCredentials): APIAction => {
         
         if (response?.data) {
           storeAuthData(response.data);
-          clearAnonymousId();
+          clearAnonymousId();  
+          console.log('🗑️ Cleared anonymous ID after login');
+          
+          // ✅ Clear publishers cache so Dashboard refetches
+          localStorage.removeItem('publishersCache');
         }
         
         return response;
       } catch (error) {
-        // Clear any existing auth data on login failure
         localStorage.removeItem('token');
         localStorage.removeItem('id');
         localStorage.removeItem('userData');
