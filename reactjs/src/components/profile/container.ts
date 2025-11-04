@@ -11,27 +11,28 @@ interface Signup {
   profilePic: string;
 }
 
-interface SignupsState {
-  byId: Record<string, { data: Signup }>;
-  allIds: string[];
+interface UserProfile {
+  data?: Signup;
   isLoading: boolean;
+  error: string | null;
 }
 
 interface RootState {
-  signups: SignupsState;
+  userProfile: UserProfile;  // ✅ Changed from signups to userProfile
 }
 
 function mapStateToProps(state: RootState) {
-  const {
-    signups: { byId, allIds, isLoading },
-  } = state;
+  const { userProfile } = state;
   
-  // Turn the array of ids into an array of objects
-  const signups = allIds
-    .map(id => byId[id]?.data)
-    .filter(Boolean) as Signup[];
+  console.log('📊 Profile container - userProfile state:', userProfile);
   
-  return { signups, isLoading };
+  // ✅ Convert single user object to array for component compatibility
+  const signups = userProfile?.data ? [userProfile.data] : [];
+  
+  return { 
+    signups, 
+    isLoading: userProfile?.isLoading || false 
+  };
 }
 
 const mapDispatchToProps = {
