@@ -103,54 +103,56 @@ useEffect(() => {
         </article>
       </article>
     );
-  } else if (userId) {
-    return (
-      <article id="cbDash" className={styles.cbWrap}>
-        {renderHeader()}
-        <article className={styles.cbList}>
-          <section className={styles.wrapper}>
-            <article>
-              {publishers.map(({ id, publisherName }) => (
-                <section key={id}>
-                  <p>
-                    <RRLink 
-                      to={`/${getDashboard()}/${userId}/${id}/${publisherName}/comicbooklist`} 
-                      className={styles.link}
-                    >
-                      {publisherName}
-                    </RRLink>
-                  </p>
-                  
-                  <section className={styles.editStyle}>
-                    <figure>
-                      <EditIcon />
-                    </figure>
-                    <p className={styles.link}>
-                      <Link 
-                        url={`/forms/${userId}/createpublisher/edit/${id}`} 
-                        title="Edit" 
-                      />
-                    </p>
-                  </section>
-                  
-                  <button 
-                    className={styles.deleteStyle} 
-                    type="button" 
-                    onClick={() => handleDelete(id, publisherName)}
-                    aria-label={`Delete ${publisherName}`}
-                  >
-                    <figure>
-                      <DeleteIcon />
-                    </figure>
-                    <p>Delete</p>
-                  </button>
-                </section>
-              ))}
+  } else {
+      if (userId) {
+        return (
+          <article id="cbDash" className={styles.cbWrap}>
+            {renderHeader()}
+            <article className={styles.cbList}>
+              <section className={styles.wrapper}>
+                <article>
+                  {publishers.map(({ id, publisherName }) => (
+                    <section key={id}>
+                      <p>
+                        <RRLink 
+                          to={`/${getDashboard()}/${userId}/${id}/${publisherName}/comicbooklist`} 
+                          className={styles.link}
+                        >
+                          {publisherName}
+                        </RRLink>
+                      </p>
+                      
+                      <section className={styles.editStyle}>
+                        <figure>
+                          <EditIcon />
+                        </figure>
+                        <p className={styles.link}>
+                          <Link 
+                            url={`/forms/${userId}/createpublisher/edit/${id}`} 
+                            title="Edit" 
+                          />
+                        </p>
+                      </section>
+                      
+                      <button 
+                        className={styles.deleteStyle} 
+                        type="button" 
+                        onClick={() => handleDelete(id, publisherName)}
+                        aria-label={`Delete ${publisherName}`}
+                      >
+                        <figure>
+                          <DeleteIcon />
+                        </figure>
+                        <p>Delete</p>
+                      </button>
+                    </section>
+                  ))}
+                </article>
+              </section>
             </article>
-          </section>
-        </article>
-      </article>
-    );
+          </article>
+        );
+    }
   }
 };
 
