@@ -275,9 +275,11 @@ const handleSubmit = useCallback(
       if (token && token !== 'undefined') {
         navigate('/');
       } else {
-        setFormErrors({
-          form: 'Login failed. Please try again.'  // ✅ Changed from validToken to form
-        });
+        setTimeout(() => {
+          setFormErrors({
+            form: 'Login failed. Please try again.'  // ✅ Changed from validToken to form
+          });
+        }, 500);
       }
     } catch (error) {
       // ❌ Login failed - show error
