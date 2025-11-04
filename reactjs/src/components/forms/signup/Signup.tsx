@@ -25,6 +25,9 @@ interface User {
 interface SignupProps {
   signup: User;
   fetchUser: (id: string) => void;
+  signupId: string | undefined;  // ✅ Add this
+  signupError: string | null; // ✅ Add this
+  isLoading: boolean;
   createUser: (payload: {
     firstname: string;
     lastname: string;
@@ -41,7 +44,9 @@ const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_PROFILE_PIC = 'https://dothanthorntonbucket.s3.amazonaws.com/material-design-account-icon.png';
 
-const Signup = ({ signup, fetchUser, createUser }: SignupProps) => {
+const Signup = ({ signup, signupId,  // ✅ Add this
+  signupError,  // ✅ Add this
+  isLoading, fetchUser, createUser }: SignupProps) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   
@@ -62,6 +67,24 @@ const Signup = ({ signup, fetchUser, createUser }: SignupProps) => {
     password: '',
     type: ''
   });
+
+  useEffect(() => {
+    if (signupId) {
+      console.log('✅ Signup successful, redirecting to home');
+      window.location.href = '/';  // Force reload with auth
+    }
+  }, [signupId]);
+
+  // ✅ Watch for signup errors - display them
+  useEffect(() => {
+    if (signupError) {
+      console.log('❌ Signup failed:', signupError);
+      setFormErrors(prev => ({
+        ...prev,
+        email: signupError  // Show error (usually email already exists)
+      }));
+    }
+  }, [signupError]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -126,13 +149,19 @@ const Signup = ({ signup, fetchUser, createUser }: SignupProps) => {
     const isValid = validateAllFields();
 
     if (!id && isValid) {
+      setFormErrors({
+        firstname: '',
+        lastname: '',
+        username: '',
+        email: '',
+        password: '',
+        type: ''
+      });
+
       createUser({
         ...formData,
         profilePic: DEFAULT_PROFILE_PIC
       });
-
-      // Navigate to signin after successful signup
-      navigate('/signin');
     }
 
     window.scrollTo({
@@ -245,7 +274,8 @@ const Signup = ({ signup, fetchUser, createUser }: SignupProps) => {
               id="submitQ1"
               className={styles.submit}
               type="submit"
-              value="Submit"
+              value={isLoading ? 'Creating Account...' : 'Submit'}
+              disabled={isLoading}
             />
 
             <div>

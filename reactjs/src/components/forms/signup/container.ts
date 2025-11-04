@@ -1,4 +1,4 @@
-import { connect } from 'react-redux';
+import { connect, ConnectedProps } from 'react-redux';
 import { createUser, fetchUser } from '../../../store/signup/actions';
 import Signup from './Signup';
 
@@ -22,11 +22,13 @@ interface RootState {
       [key: string]: SignupState;
     };
     currentId?: string;
+    isLoading: boolean;  // ✅ Add this
+    error: string | null;  // ✅ Add this
   };
 }
 
 const mapStateToProps = (state: RootState) => {
-  const { signups: { byId, currentId } } = state;
+  const { signups: { byId, currentId, isLoading, error } } = state;
   
   const defaultUser: User = {
     id: '',
@@ -42,7 +44,12 @@ const mapStateToProps = (state: RootState) => {
   const signupId = currentId || Object.keys(byId)[0];
   const signup = signupId && byId[signupId] ? byId[signupId].data : defaultUser;
   
-  return { signup };
+  return { 
+    signup,
+    signupId: currentId,  // ✅ Expose signup ID (will be set on success)
+    signupError: error,  // ✅ Expose error
+    isLoading,  // ✅ Expose loading state
+  };
 };
 
 const mapDispatchToProps = {
@@ -50,4 +57,8 @@ const mapDispatchToProps = {
   fetchUser
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(Signup);
+const connector = connect(mapStateToProps, mapDispatchToProps);
+
+export type ConnectorProps = ConnectedProps<typeof connector>;
+
+export default connector(Signup);
