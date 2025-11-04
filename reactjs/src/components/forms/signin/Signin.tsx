@@ -127,7 +127,9 @@ const Signin: React.FC<ConnectorProps> = ({
         localStorage.setItem('id', userId);
         localStorage.setItem('data', resData);
 
-        window.location.href = '/';
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 800);
       } catch (error) {
         console.error('Google login error:', error);
         setFormErrors({ 
@@ -275,7 +277,7 @@ const handleSubmit = useCallback(
       if (token && token !== 'undefined') {
         setTimeout(() => {
           window.location.href = '/';
-        }, 500);
+        }, 800);
       } else {
         setTimeout(() => {
           setFormErrors({
@@ -295,8 +297,10 @@ const handleSubmit = useCallback(
 
   // Redirect if user is already logged in
   if (user?.data?.id) {
-    window.location.href = '/';
-    return <Navigate to="/" replace />;
+    setTimeout(() => {
+      window.location.href = '/';
+      return <Navigate to="/" replace />;
+    }, 800);
   }
 
   // const onSignIn = (googleUser) {
