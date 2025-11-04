@@ -9,6 +9,7 @@ import Empty from '../../empty';
 import logo from '../../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import { getDashboard } from '../../../utils/tokenLocalStorage';
 import styles from './styles.module.css';
 
 // ============================================================================
@@ -70,11 +71,11 @@ const ComicBookListIssues = ({
 
   // Handle navigation back
   const handleGoToDashboard = useCallback(() => {
-    navigate(`/dashboard/${userId}`);
+    navigate(`/${getDashboard}/${userId}`);
   }, [navigate]);
 
   const handleGoToPublisher = useCallback(() => {
-    navigate(`${`/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist`}`);
+    navigate(`${`/${getDashboard}/${userId}/${pubId}/${publisherName}/comicbooklist`}`);
   }, [navigate]);
 
   // Handle comic book deletion

@@ -76,6 +76,7 @@ const App = () => {
             <Route path="/viewMessages/:userId" element={<PrivateRouteHandler><ViewMessages /></PrivateRouteHandler>} />
             <Route path="/sentMessages/:userId" element={<PrivateRouteHandler><SentMessages /></PrivateRouteHandler>} />
             <Route path="/forms/createpublisher/new/:userId" element={<CreatePublisher />} />
+            <Route path="/forms/createpublisherProfile/new/:userId" element={<PrivateRouteHandler><CreatePublisher /></PrivateRouteHandler>} />
             <Route path="/forms/:userId/createpublisher/edit/:id" element={<CreatePublisher />} />
             <Route path="/dashboard/:userId/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
             <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />

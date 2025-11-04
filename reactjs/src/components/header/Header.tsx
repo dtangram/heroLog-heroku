@@ -11,6 +11,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
+import { getDashboard } from '../../utils/tokenLocalStorage';
 import styles from './styles.module.scss';
 
 // ============================================================================
@@ -104,7 +105,7 @@ useEffect(() => {
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                   className={getNavLinkClass}
-                  to={`/dashboard/${userId}`}
+                  to={`/${getDashboard}/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
@@ -181,7 +182,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/dashboardProfile/${userId}`}
+                  to={`/${getDashboard}/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
@@ -191,7 +192,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/forms/createpublisher/new/${userId}`}
+                  to={`/forms/createpublisherProfile/new/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   CREATE

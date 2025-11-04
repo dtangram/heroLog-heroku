@@ -5,6 +5,7 @@ import Link from '../../../link';
 import SuccessDisplay from '../success';
 import { ContainerProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import { getDashboard } from '../../../utils/tokenLocalStorage';
 import styles from './styles.module.css';
 
 interface FormErrorsState {
@@ -87,7 +88,7 @@ const CreatePublisher = ({
 
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/dashboard/${userId}`);
+      navigate(`/${getDashboard}/${userId}`);
     }, 1500);
   };
 
@@ -129,7 +130,7 @@ const CreatePublisher = ({
             <article>
               <p>
                 <Link
-                  url={`/dashboard/${userId}`}
+                  url={`/${getDashboard}/${userId}`}
                   title="CANCEL"
                 />
               </p>
