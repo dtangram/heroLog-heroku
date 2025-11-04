@@ -127,7 +127,7 @@ const Signin: React.FC<ConnectorProps> = ({
         localStorage.setItem('id', userId);
         localStorage.setItem('data', resData);
 
-        navigate('/');
+        window.location.href = '/';
       } catch (error) {
         console.error('Google login error:', error);
         setFormErrors({ 
@@ -135,7 +135,7 @@ const Signin: React.FC<ConnectorProps> = ({
         });
       }
     },
-    [navigate, formatResponseData]
+    [formatResponseData]
   );
 
   // Load Google Identity Services script
@@ -274,7 +274,6 @@ const handleSubmit = useCallback(
       
       if (token && token !== 'undefined') {
         window.location.href = '/';
-        window.location.reload();
       } else {
         setTimeout(() => {
           setFormErrors({
@@ -294,6 +293,7 @@ const handleSubmit = useCallback(
 
   // Redirect if user is already logged in
   if (user?.data?.id) {
+    window.location.href = '/';
     return <Navigate to="/" replace />;
   }
 
