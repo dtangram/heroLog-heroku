@@ -181,7 +181,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/dashboardPrivate/${userId}`}
+                  to={`/dashboardProfile/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
