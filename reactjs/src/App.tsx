@@ -36,16 +36,30 @@ import { getAnonymousUserId } from './utils/anonymousUser';
 
 const App = () => {
   useEffect(() => {
-    console.log('🚀 APP MOUNTED');
+    console.log('🚀 APP MOUNTED - Initializing user session');
     
-    // Just call it - the function handles checking if it exists
-    getAnonymousUserId();
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('id');
     
-    console.log('📊 localStorage after init:', {
-      anonymousUserId: localStorage.getItem('anonymousUserId'),
-      id: localStorage.getItem('id'),
-      token: localStorage.getItem('token')
-    });
+    // Check if user is authenticated
+    const isAuthenticated = token && 
+      token !== 'undefined' && 
+      userId && 
+      userId !== 'undefined';
+    
+    if (isAuthenticated) {
+      console.log('✅ User is authenticated with ID:', userId);
+      // ✅ Clear anonymous ID if it exists
+      const anonymousId = localStorage.getItem('anonymousUserId');
+      if (anonymousId) {
+        console.log('🗑️ Removing stale anonymous ID');
+        localStorage.removeItem('anonymousUserId');
+      }
+    } else {
+      console.log('📝 No authenticated user, creating anonymous ID');
+      // ✅ Only call this if NOT authenticated
+      getAnonymousUserId();
+    }
   }, []);
 
   return (

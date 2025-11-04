@@ -1,16 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 
 const ANONYMOUS_ID_KEY = 'anonymousUserId';
-const USER_ID = 'id'
 
 /**
  * Get or create anonymous user ID
  */
 export const getAnonymousUserId = (): string => {
   let anonymousId = localStorage.getItem(ANONYMOUS_ID_KEY);
-  let userId = localStorage.getItem(USER_ID);
   
-  if (!anonymousId || !userId) {
+  if (!anonymousId) {
     // Generate new anonymous ID
     anonymousId = uuidv4();
     localStorage.setItem(ANONYMOUS_ID_KEY, anonymousId);
