@@ -59,7 +59,7 @@ const ComicBookList = ({
 
   // Handle navigation back
   const handleGoToDashboard = useCallback(() => {
-    navigate(`/${getDashboard}/${userId}`);
+    navigate(`/${getDashboard()}/${userId}`);
   }, [navigate]);
 
   // Handle comic book title deletion
@@ -168,7 +168,7 @@ const ComicBookList = ({
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/${getDashboard}/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
+                    to={`/${getDashboard()}/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
                     className={styles.link}
                   >
                     {cbTitle}

@@ -105,7 +105,7 @@ useEffect(() => {
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                   className={getNavLinkClass}
-                  to={`/${getDashboard}/${userId}`}
+                  to={`/${getDashboard()}/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
@@ -182,7 +182,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/${getDashboard}/${userId}`}
+                  to={`/${getDashboard()}/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD

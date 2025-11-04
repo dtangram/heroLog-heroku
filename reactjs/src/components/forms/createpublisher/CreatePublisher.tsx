@@ -88,7 +88,7 @@ const CreatePublisher = ({
 
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/${getDashboard}/${userId}`);
+      navigate(`/${getDashboard()}/${userId}`);
     }, 1500);
   };
 
@@ -130,7 +130,7 @@ const CreatePublisher = ({
             <article>
               <p>
                 <Link
-                  url={`/${getDashboard}/${userId}`}
+                  url={`/${getDashboard()}/${userId}`}
                   title="CANCEL"
                 />
               </p>

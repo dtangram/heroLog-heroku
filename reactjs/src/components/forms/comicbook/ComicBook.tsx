@@ -201,7 +201,7 @@ const ComicBookComponent = ({
       if (coboTitleId) {
         fetchComicBooks(coboTitleId);
       }
-      navigate(`/${getDashboard}/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
+      navigate(`/${getDashboard()}/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
         state: { refetch: true, timestamp: Date.now() }
       });
     }, 1500);
@@ -373,7 +373,7 @@ const ComicBookComponent = ({
             <article>
               <p>
                 <Link 
-                  url={`/${getDashboard}/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
+                  url={`/${getDashboard()}/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
                   title="CANCEL" 
                 />
               </p>

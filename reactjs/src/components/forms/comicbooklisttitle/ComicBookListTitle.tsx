@@ -94,7 +94,7 @@ const ComicBookListTitle = ({
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/${getDashboard}/${userId}/${pubId}/${publisherName}/comicbooklist`);
+      navigate(`/${getDashboard()}/${userId}/${pubId}/${publisherName}/comicbooklist`);
     }, 1500);
   };
 
@@ -137,7 +137,7 @@ const ComicBookListTitle = ({
             <article>
               <p>
                 <Link
-                  url={`/${getDashboard}/${userId}/${pubId}/${publisherName}/comicbooklist`}
+                  url={`/${getDashboard()}/${userId}/${pubId}/${publisherName}/comicbooklist`}
                   title="CANCEL"
                 />
               </p>

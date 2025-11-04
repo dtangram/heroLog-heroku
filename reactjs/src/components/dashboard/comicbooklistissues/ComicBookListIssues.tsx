@@ -71,11 +71,11 @@ const ComicBookListIssues = ({
 
   // Handle navigation back
   const handleGoToDashboard = useCallback(() => {
-    navigate(`/${getDashboard}/${userId}`);
+    navigate(`/${getDashboard()}/${userId}`);
   }, [navigate]);
 
   const handleGoToPublisher = useCallback(() => {
-    navigate(`${`/${getDashboard}/${userId}/${pubId}/${publisherName}/comicbooklist`}`);
+    navigate(`${`/${getDashboard()}/${userId}/${pubId}/${publisherName}/comicbooklist`}`);
   }, [navigate]);
 
   // Handle comic book deletion

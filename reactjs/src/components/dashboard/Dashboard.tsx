@@ -7,6 +7,7 @@ import Link from '../../link';
 import Empty from '../empty';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
+import { getDashboard } from '../../utils/tokenLocalStorage';
 import styles from './styles.module.css';
 
 // ============================================================================
@@ -121,7 +122,7 @@ useEffect(() => {
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/dashboard/${userId}/${id}/${publisherName}/comicbooklist`} 
+                    to={`/${getDashboard()}/${userId}/${id}/${publisherName}/comicbooklist`} 
                     className={styles.link}
                   >
                     {publisherName}
