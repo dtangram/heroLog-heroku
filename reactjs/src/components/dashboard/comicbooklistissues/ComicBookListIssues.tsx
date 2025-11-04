@@ -6,9 +6,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Link from '../../../link';
 import Empty from '../../empty';
-import styles from './styles.module.css';
 import logo from '../../../img/logo.png';
 import type { ConnectorProps } from './container';
+import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import styles from './styles.module.css';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -56,6 +57,8 @@ const ComicBookListIssues = ({
   const navigate = useNavigate();
   const location = useLocation();
 
+  const userId = localStorage.getItem('id') || getAnonymousUserId();
+
   // Fetch comic books on mount and when returning from edit
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -67,11 +70,11 @@ const ComicBookListIssues = ({
 
   // Handle navigation back
   const handleGoToDashboard = useCallback(() => {
-    navigate('/dashboard');
+    navigate(`/dashboard/${userId}`);
   }, [navigate]);
 
   const handleGoToPublisher = useCallback(() => {
-    navigate(`${`/dashboard/${pubId}/${publisherName}/comicbooklist`}`);
+    navigate(`${`/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist`}`);
   }, [navigate]);
 
   // Handle comic book deletion
@@ -133,7 +136,7 @@ const ComicBookListIssues = ({
 
       <h2>
         <section>
-          <RRLink to={`/forms/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/new`}>
+          <RRLink to={`/forms/${userId}/${pubId}/${publisherName}/${cbTitle}/comicbook/new`}>
             <figure><LibraryAddIcon /></figure>
             <p className={styles.link}>Add Comic Book</p>
           </RRLink>
@@ -221,7 +224,7 @@ const ComicBookListIssues = ({
                     <section className={styles.editStyle}>
                       <p className={styles.linkWrapper}>
                         <Link className={styles.editLink}
-                          url={`/forms/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`}
+                          url={`/forms//${userId}${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`}
                           icon={<EditIcon />}
                           title="Edit" 
                         />

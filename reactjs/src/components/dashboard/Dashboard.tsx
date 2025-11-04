@@ -6,16 +6,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Link from '../../link';
 import Empty from '../empty';
 import type { ConnectorProps } from './container';
+import { getAnonymousUserId } from '../../utils/anonymousUser';
 import styles from './styles.module.css';
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-interface Publisher {
-  id: string;
-  publisherName: string;
-}
 
 // ============================================================================
 // COMPONENT
@@ -36,13 +28,15 @@ const Dashboard = ({
     profilePic: ''
   }
 }: ConnectorProps) => {
+
+  const userId = localStorage.getItem('id') || getAnonymousUserId();
   
   // Fetch publishers on mount
 useEffect(() => {
   window?.scrollTo?.({ top: 0, behavior: 'smooth' });
   
   if (user?.id) {
-    fetchPublishers?.(user.id);  // ✅ Pass user ID
+    fetchPublishers?.(user?.id);  // ✅ Pass user ID
   }
 }, [fetchPublishers, user?.id]);
 
@@ -127,7 +121,7 @@ useEffect(() => {
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/dashboard/${id}/${publisherName}/comicbooklist`} 
+                    to={`/dashboard/${userId}/${id}/${publisherName}/comicbooklist`} 
                     className={styles.link}
                   >
                     {publisherName}

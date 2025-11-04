@@ -5,6 +5,7 @@ import Link from '../../../link';
 import SuccessDisplay from '../success';
 import API from '../../../API';
 import { ContainerProps } from './container';
+import { getAnonymousUserId } from '../../../utils/anonymousUser';
 import styles from './styles.module.css';
 
 interface FormErrorsState {
@@ -45,6 +46,7 @@ const ComicBookComponent = ({
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -198,7 +200,7 @@ const ComicBookComponent = ({
       if (coboTitleId) {
         fetchComicBooks(coboTitleId);
       }
-      navigate(`/dashboard/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
+      navigate(`/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
         state: { refetch: true, timestamp: Date.now() }
       });
     }, 1500);
@@ -370,7 +372,7 @@ const ComicBookComponent = ({
             <article>
               <p>
                 <Link 
-                  url={`/dashboard/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
+                  url={`/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
                   title="CANCEL" 
                 />
               </p>

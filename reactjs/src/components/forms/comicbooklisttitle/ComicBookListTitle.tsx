@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
 import SuccessDisplay from '../success';
-import styles from './styles.module.css';
 import { ContainerProps } from './container';
+import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import styles from './styles.module.css';
 
 interface FormErrorsState {
   cbTitle: string;
@@ -18,6 +19,8 @@ const ComicBookListTitle = ({
 }: ContainerProps) => {
   const navigate = useNavigate();
   const { id, pubId, publisherName } = useParams<{ id?: string; pubId?: string; publisherName?: string }>();
+
+  const userId = localStorage.getItem('id') || getAnonymousUserId();
   
   const [cbTitle, setCbTitle] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -90,12 +93,12 @@ const ComicBookListTitle = ({
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/dashboard/${pubId}/${publisherName}/comicbooklist`);
+      navigate(`/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist`);
     }, 1500);
   };
 
   const showSuccess = !formErrors.cbTitle && successMessage === 'success';
-  const pageTitle = id ? `Edit ${cbTitle}` : 'Add Comic Book Title to Collection';
+  const pageTitle = id ? `Edit ${cbTitle}` : `Add Comic Book Title to ${publisherName} Collection`;
 
   return (
     <article id="cbComicBookListTitle" className={styles.cbWrapper}>
@@ -133,7 +136,7 @@ const ComicBookListTitle = ({
             <article>
               <p>
                 <Link
-                  url={`/dashboard/${pubId}/${publisherName}/comicbooklist`}
+                  url={`/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist`}
                   title="CANCEL"
                 />
               </p>

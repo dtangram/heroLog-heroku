@@ -8,9 +8,10 @@ import {
   Container,
 } from 'reactstrap';
 import { NavLink, useNavigate } from 'react-router-dom';
-import styles from './styles.module.scss';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
+import { getAnonymousUserId } from '../../utils/anonymousUser';
+import styles from './styles.module.scss';
 
 // ============================================================================
 // COMPONENT
@@ -26,7 +27,7 @@ const Header = ({
   const navigate = useNavigate();
 
   const screenwidth = window?.innerWidth <= 991;
-  const userId = localStorage?.getItem('id') ?? '';
+  const userId = localStorage?.getItem('id') ?? getAnonymousUserId();
 
   // Fetch login user on mount
   useEffect(() => {
@@ -113,7 +114,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/forms/createpublisher/new/${userId}`}
+                  to={`/forms/createpublisher/new`}
                   onClick={toggleMenuItem}
                 >
                   CREATE

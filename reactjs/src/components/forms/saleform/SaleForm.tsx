@@ -453,7 +453,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
               <article>
                 <p>
-                  <Link url="/sales" title="CANCEL" />
+                  <Link url={`/sales/${userId}`} title="CANCEL" />
                 </p>
                 <input
                   id="submitSale"

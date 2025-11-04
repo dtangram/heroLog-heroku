@@ -63,7 +63,7 @@ const App = () => {
 
             {/* Private Routes */}
             <Route path="/" element={<PrivateRouteHandler><Home /></PrivateRouteHandler>} />
-            {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+            <Route path="/dashboard/:userId" element={<Dashboard />} />
             <Route path="/dashboard/:userId" element={<PrivateRouteHandler><Dashboard /></PrivateRouteHandler>} />
             <Route 
               path="/forms/messaging/:userId/:comicBookTitle/:comicIssue/:userSent/:username/:userEmail" 
@@ -77,12 +77,12 @@ const App = () => {
             <Route path="/sentMessages/:userId" element={<PrivateRouteHandler><SentMessages /></PrivateRouteHandler>} />
             <Route path="/forms/createpublisher/new" element={<CreatePublisher />} />
             <Route path="/forms/createpublisher/edit/:id" element={<CreatePublisher />} />
-            <Route path="/dashboard/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
-            <Route path="/forms/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />
-            <Route path="/forms/:pubId/:publisherName/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
-            <Route path="/dashboard/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
-            <Route path="/forms/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new" element={<ComicBook />} />
-            <Route path="/forms/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
+            <Route path="/dashboard/:userId/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
+            <Route path="/dashboard/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/:cbTitle/comicbook/new" element={<ComicBook />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
             <Route path="/fixer/:userId" element={<PrivateRouteHandler><Fixer /></PrivateRouteHandler>} />
             <Route path="/sale/:userId" element={<PrivateRouteHandler><Sale /></PrivateRouteHandler>} />
             <Route 

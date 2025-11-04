@@ -6,8 +6,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Link from '../../../link';
 import Empty from '../../empty';
-import styles from './styles.module.css';
 import type { ConnectorProps } from './container';
+import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import styles from './styles.module.css';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -44,6 +45,7 @@ const ComicBookList = ({
 }: ConnectorProps) => {
   const { pubId = '', publisherName = '' } = useParams<RouteParams>();
   const navigate = useNavigate();
+  const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   // Fetch comic book titles on mount
   useEffect(() => {
@@ -56,7 +58,7 @@ const ComicBookList = ({
 
   // Handle navigation back
   const handleGoToDashboard = useCallback(() => {
-    navigate('/dashboard');
+    navigate(`/dashboard/${userId}`);
   }, [navigate]);
 
   // Handle comic book title deletion
@@ -118,7 +120,7 @@ const ComicBookList = ({
 
       <h2>
         <section>
-          <RRLink to={`/forms/${pubId}/${publisherName}/comicbooklisttitle/new`}>
+          <RRLink to={`/forms/${userId}/${pubId}/${publisherName}/comicbooklisttitle/new`}>
             <figure><LibraryAddIcon /></figure>
             <p className={styles.link}>Add Comic Book Title</p>
           </RRLink>
@@ -165,7 +167,7 @@ const ComicBookList = ({
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/dashboard/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
+                    to={`/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
                     className={styles.link}
                   >
                     {cbTitle}
@@ -176,7 +178,7 @@ const ComicBookList = ({
                   <figure><EditIcon /></figure>
                   <p className={styles.link}>
                     <Link 
-                      url={`/forms/${pubId}/comicbooklisttitle/edit/${id}`} 
+                      url={`/forms/${userId}/${pubId}/${publisherName}/comicbooklisttitle/edit/${id}`} 
                       title="Edit" 
                     />
                   </p>

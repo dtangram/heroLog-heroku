@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
 import SuccessDisplay from '../success';
-import { ANONYMOUS_USER_ID } from '../../../constants';
 import { ContainerProps } from './container';
+import { getAnonymousUserId } from '../../../utils/anonymousUser';
 import styles from './styles.module.css';
 
 interface FormErrorsState {
@@ -19,7 +19,7 @@ const CreatePublisher = ({
 }: ContainerProps) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const userId = localStorage.getItem('id') || ANONYMOUS_USER_ID;
+  const userId = localStorage.getItem('id') || getAnonymousUserId();
  
   const [publisherName, setPublisherName] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -87,7 +87,7 @@ const CreatePublisher = ({
 
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate('/dashboard');
+      navigate(`/dashboard/${userId}`);
     }, 1500);
   };
 
@@ -129,7 +129,7 @@ const CreatePublisher = ({
             <article>
               <p>
                 <Link
-                  url='/dashboard'
+                  url={`/dashboard/${userId}`}
                   title="CANCEL"
                 />
               </p>
