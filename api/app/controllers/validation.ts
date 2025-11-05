@@ -43,7 +43,7 @@ const checks = {
     .isIn(['regular', 'fixer'])
     .withMessage('Signup must be Regular or Fixer.')
     .toLowerCase(),
-    
+  
   // Integer ID validation (for legacy tables)
   idInt: check('id')
     .exists().withMessage('ID is required.')
@@ -125,15 +125,15 @@ const checks = {
     .trim(),
     
   comicIssue: check('comicIssue')
-    .exists().withMessage('Comic issue is required.')
+    .optional({ values: 'falsy' })
     .trim(),
     
   comicBookVolume: check('comicBookVolume')
-    .exists().withMessage('Comic book volume is required.')
+    .optional({ values: 'falsy' })
     .trim(),
     
   comicBookYear: check('comicBookYear')
-    .exists().withMessage('Comic book year is required.')
+    .optional({ values: 'falsy' })
     .trim(),
     
   comicBookPublisher: check('comicBookPublisher')
@@ -141,14 +141,15 @@ const checks = {
     .trim(),
     
   comicBookCover: check('comicBookCover')
-    .exists().withMessage('Comic book cover is required.')
+    .optional({ values: 'falsy' })
     .trim(),
     
+  // ✅ FIXED: Changed from integer to UUID
   saleUsersId: check('saleUsersId')
     .exists().withMessage('Sale user ID is required.')
-    .isInt({ min: 1 })
-    .withMessage('Sale user ID must be a valid positive integer.')
-    .toInt(),
+    .isUUID()
+    .withMessage('Sale user ID must be a valid UUID.')
+    .trim(),
     
   wishUsersId: check('wishUsersId')
     .exists().withMessage('Wish user ID is required.')
@@ -267,7 +268,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editComicBookTitle': {
       return [
-        checks.idUUID,  // ✅ Changed from idInt to idUUID
+        checks.idUUID,
         checks.cbTitle,
         checkForErrors
       ];
@@ -275,7 +276,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteComicBookTitle': {
       return [
-        checks.idUUID,  // ✅ Changed from idInt to idUUID
+        checks.idUUID,
         checkForErrors
       ];
     }
@@ -290,7 +291,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editComicBook': {
       return [
-        checks.idUUID,  // ✅ Changed from idInt to idUUID
+        checks.idUUID,
         checks.title,
         checks.typeRV,
         checkForErrors
@@ -299,7 +300,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteComicBook': {
       return [
-        checks.idUUID,  // ✅ Changed from idInt to idUUID
+        checks.idUUID,
         checkForErrors
       ];
     }
@@ -334,23 +335,20 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
       ];
     }
 
+    // ✅ FIXED: Changed validation for createSaleList
     case 'createSaleList': {
       return [
         checks.comicBookTitle,
-        checks.comicIssue,
-        checks.comicBookVolume,
-        checks.comicBookYear,
         checks.comicBookPublisher,
-        checks.comicBookCover,
         checks.typeRV,
-        checks.saleUsersId,
+        checks.saleUsersId,  // Now validates UUID instead of integer
         checkForErrors
       ];
     }
 
     case 'editSaleList': {
       return [
-        checks.idInt,
+        checks.idUUID,  // ✅ Changed from idInt to idUUID
         checks.comicBookTitle,
         checks.typeRV,
         checkForErrors
@@ -359,7 +357,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteSaleList': {
       return [
-        checks.idInt,
+        checks.idUUID,  // ✅ Changed from idInt to idUUID
         checkForErrors
       ];
     }
