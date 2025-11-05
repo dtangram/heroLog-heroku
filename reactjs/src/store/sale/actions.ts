@@ -129,13 +129,28 @@ export const createSale = (sale: Omit<SaleComic, 'id'>): APIAction => {
   
   const id = uuidv4();
   
+  // ✅ Map userId to saleUsersId for the API
+  const apiData = {
+    id,
+    comicBookTitle: sale.comicBookTitle,
+    comicIssue: sale.comicIssue,
+    comicBookVolume: sale.comicBookVolume,
+    comicBookYear: sale.comicBookYear,
+    comicBookPublisher: sale.comicBookPublisher,
+    comicBookCover: sale.comicBookCover,
+    type: sale.type,
+    saleUsersId: sale.userId,  // ✅ Map userId → saleUsersId
+  };
+  
+  console.log('📤 Creating sale with data:', apiData);
+  
   return {
     types: [
       ADD_SALE_COMIC_PENDING,
       ADD_SALE_COMIC_SUCCESS,
       ADD_SALE_COMIC_ERROR,
     ],
-    callAPI: () => API.post('/salelist/', { id, ...sale }),
+    callAPI: () => API.post('/salelist/', apiData),  // ✅ Send mapped data
     payload: { 
       id,
       sale: { id, ...sale } as SaleComic,
@@ -155,7 +170,20 @@ export const updateSale = (sale: SaleComic): APIAction => {
     comicBookPublisher,
     comicBookCover,
     type,
+    userId,  // ✅ Get userId
   } = sale;
+
+  // ✅ Map userId to saleUsersId for the API
+  const apiData = {
+    comicBookTitle: comicBookTitle?.trim(),
+    comicIssue: comicIssue?.trim(),
+    comicBookVolume: comicBookVolume?.trim(),
+    comicBookYear: comicBookYear?.trim(),
+    comicBookPublisher: comicBookPublisher?.trim(),
+    comicBookCover: comicBookCover?.trim(),
+    type: type?.trim(),
+    saleUsersId: userId,  // ✅ Map userId → saleUsersId
+  };
 
   return {
     types: [
@@ -163,15 +191,7 @@ export const updateSale = (sale: SaleComic): APIAction => {
       UPDATE_SALE_COMIC_SUCCESS,
       UPDATE_SALE_COMIC_ERROR,
     ],
-    callAPI: () => API.put(`/salelist/${id}`, {
-      comicBookTitle: comicBookTitle?.trim(),
-      comicIssue: comicIssue?.trim(),
-      comicBookVolume: comicBookVolume?.trim(),
-      comicBookYear: comicBookYear?.trim(),
-      comicBookPublisher: comicBookPublisher?.trim(),
-      comicBookCover: comicBookCover?.trim(),
-      type: type?.trim(),
-    }),
+    callAPI: () => API.put(`/salelist/${id}`, apiData),  // ✅ Send mapped data
     payload: { id },
   };
 };

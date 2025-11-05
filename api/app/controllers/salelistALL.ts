@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import db from '../models';  // ✅ Import db
 
 // Sale list type literal
 type SaleListType = 'regular' | 'variant';
@@ -24,17 +25,17 @@ interface SaleListInstance {
   toJSON: () => SaleListAttributes;
 }
 
-// Fixed interface to match actual model structure (UUIDs and proper field types)
+// Fixed interface to match actual model structure
 interface SaleListAttributes {
-  id: string;  // UUID string
+  id: string;
   comicBookTitle: string;
-  comicIssue: number | null;  // INTEGER in model, not string
-  comicBookVolume: number | null;  // INTEGER in model, not string  
-  comicBookYear: number | null;  // INTEGER in model, not string
+  comicIssue: number | null;
+  comicBookVolume: number | null;
+  comicBookYear: number | null;
   comicBookPublisher: string;
   comicBookCover: string | null;
   type: SaleListType;
-  saleUsersId: string | null;  // UUID string
+  saleUsersId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,12 +55,17 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-// Import models with proper typing
-const models = require('../models') as {
-  SaleLists: SaleListModel;
+// ✅ Model getter with error handling
+const getSaleListModel = (): SaleListModel => {
+  const SaleList = (db as any).SaleLists || (db as any).SaleList || (db as any).Salelist;
+  
+  if (!SaleList) {
+    console.error('❌ SaleList model not found. Available models:', Object.keys(db));
+    throw new Error('SaleList model not loaded');
+  }
+  
+  return SaleList as SaleListModel;
 };
-
-const { SaleLists } = models;
 
 // Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
@@ -74,15 +80,15 @@ const handleError = (
   context: string = ''
 ): Response<ApiResponse<never>> => {
   console.error(`Error in ${context}:`, error);
- 
+  
   let errors: string[];
- 
+  
   if (isSequelizeError(error)) {
     errors = error.errors.map(err => err.message);
   } else {
     errors = [error.message];
   }
- 
+  
   return res.status(statusCode).json({
     success: false,
     errors
@@ -95,11 +101,12 @@ export const getAllSaleLists = async (
   res: Response<ApiResponse<SaleListAttributes[]>>
 ): Promise<Response> => {
   try {
+    const SaleLists = getSaleListModel();  // ✅ Get model with error handling
     const saleListsInstances = await SaleLists.findAll();
     
     // Convert instances to plain objects
     const saleLists = saleListsInstances.map(instance => instance.toJSON());
-   
+    
     return res.status(200).json({
       success: true,
       data: saleLists,
