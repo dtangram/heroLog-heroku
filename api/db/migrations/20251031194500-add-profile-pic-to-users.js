@@ -9,7 +9,7 @@ module.exports = {
       await queryInterface.addColumn('Users', 'profile_pic', {
         type: Sequelize.STRING(255),
         allowNull: true,
-        defaultValue: 'https://herologimages.s3.us-east-2.amazonaws.com/material-design-account-icon.png'
+        defaultValue: 'https://herologimages.s3.us-east-2.amazonaws.com/accountCircle.png'
       });
       
       console.log('✅ Added profile_pic column to Users table');

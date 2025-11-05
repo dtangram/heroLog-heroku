@@ -542,7 +542,7 @@ export const createUser = async (
       password: hashedPassword,
       accesstoken: accesstoken || null,
       type: type.toLowerCase() as UserType,
-      profilePic: 'https://herologimages.s3.us-east-2.amazonaws.com/material-design-account-icon.png',
+      profilePic: 'https://herologimages.s3.us-east-2.amazonaws.com/accountCircle.png',
     });
     
     return res.status(201).json({ 
