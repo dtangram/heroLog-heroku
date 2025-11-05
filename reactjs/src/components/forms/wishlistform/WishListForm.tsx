@@ -307,7 +307,11 @@ const WishListForm = ({ wishlist, fetchWishList, createWishList, updateWishList 
       top: 0,
       behavior: 'smooth'
     });
-  }, [id, formData, validateFields, createWishList, updateWishList]);
+
+    setTimeout(() => {
+      navigate(`/wishList/${userId}`);
+    }, 1500);
+  }, [id, userId, formData, validateFields, createWishList, updateWishList]);
 
   const handleGoBack = useCallback(() => {
     navigate(-1);

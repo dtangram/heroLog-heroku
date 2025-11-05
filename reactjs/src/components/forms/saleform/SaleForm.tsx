@@ -328,9 +328,13 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate('/sales');
+      navigate(`/sales/${userId}`);
     }, 1500);
   }, [id, formData, userId, validateAllFields, createSale, updateSale, navigate]);
+
+  const handleGoBack = useCallback(() => {
+      navigate(-1);
+    }, [navigate]);
 
   const { comicBookTitle, comicIssue, comicBookVolume, comicBookYear, comicBookPublisher, comicBookCover, type } = formData;
   const hasNoErrors = Object.values(formErrors).every(error => error.length === 0);
@@ -338,6 +342,10 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
   return (
     <>
       <article id="saleForm" className={styles.cbWrapper}>
+        <button className={styles.backLink} type="button" onClick={handleGoBack}>
+          Back
+        </button>
+        
         <h1>
           {id ? `Update ${comicBookTitle}` : 'Add New Sale Comic'}
           <figure className={styles.graphic} aria-label="Small burgundy, rectangle graphic." />
