@@ -366,6 +366,9 @@ export const createSaleList = async (
     saleUsersId,
   } = req.body;
   
+  console.log('📝 CREATE SALELIST - Received data:', req.body);
+  
+  // Validate required fields
   const validation = validateParams(req.body as Record<string, string>, [
     'comicBookTitle',
     'comicBookPublisher',
@@ -374,67 +377,78 @@ export const createSaleList = async (
   ]);
   
   if (!validation.isValid) {
+    console.log('❌ Missing required fields:', validation.message);
     return res.status(400).json({ 
       success: false, 
       error: validation.message 
     });
   }
   
+  // Validate comicBookTitle
   if (!comicBookTitle) {
     return res.status(400).json({ success: false, error: 'Comic book title is required' });
   }
   const titleValidation = validateString(comicBookTitle, 'Comic book title');
   if (!titleValidation.isValid) {
+    console.log('❌ Title validation failed:', titleValidation.message);
     return res.status(400).json({ success: false, error: titleValidation.message });
   }
   
+  // Validate comicBookPublisher
   if (!comicBookPublisher) {
     return res.status(400).json({ success: false, error: 'Comic book publisher is required' });
   }
   const publisherValidation = validateString(comicBookPublisher, 'Comic book publisher');
   if (!publisherValidation.isValid) {
+    console.log('❌ Publisher validation failed:', publisherValidation.message);
     return res.status(400).json({ success: false, error: publisherValidation.message });
   }
   
+  // Validate type
   if (!type) {
     return res.status(400).json({ success: false, error: 'Type is required' });
   }
   const typeValidation = validateType(type);
   if (!typeValidation.isValid) {
+    console.log('❌ Type validation failed:', typeValidation.message);
     return res.status(400).json({ success: false, error: typeValidation.message });
   }
   
+  // Validate saleUsersId
   if (!saleUsersId) {
     return res.status(400).json({ success: false, error: 'Sale Users ID is required' });
   }
   const userIdValidation = validateUUID(saleUsersId, 'Sale Users ID');
   if (!userIdValidation.isValid) {
+    console.log('❌ User ID validation failed:', userIdValidation.message);
     return res.status(400).json({ success: false, error: userIdValidation.message });
   }
   
-  if (comicBookCover !== undefined) {
-    const coverValidation = validateString(comicBookCover as string, 'Comic book cover');
-    if (!coverValidation.isValid) {
-      return res.status(400).json({ success: false, error: coverValidation.message });
-    }
-  }
+  // ✅ Convert string numbers to actual numbers
+  const comicIssueNum = comicIssue ? parseInt(comicIssue as any, 10) : null;
+  const comicBookVolumeNum = comicBookVolume ? parseInt(comicBookVolume as any, 10) : null;
+  const comicBookYearNum = comicBookYear ? parseInt(comicBookYear as any, 10) : null;
   
-  if (comicIssue !== undefined) {
-    const issueValidation = validateNumber(comicIssue as number, 'Comic issue', 1);
+  // Validate optional numeric fields
+  if (comicIssueNum !== null && !isNaN(comicIssueNum)) {
+    const issueValidation = validateNumber(comicIssueNum, 'Comic issue', 1);
     if (!issueValidation.isValid) {
+      console.log('❌ Issue validation failed:', issueValidation.message);
       return res.status(400).json({ success: false, error: issueValidation.message });
     }
   }
   
-  if (comicBookVolume !== undefined) {
-    const volumeValidation = validateNumber(comicBookVolume as number, 'Comic book volume', 1);
+  if (comicBookVolumeNum !== null && !isNaN(comicBookVolumeNum)) {
+    const volumeValidation = validateNumber(comicBookVolumeNum, 'Comic book volume', 1);
     if (!volumeValidation.isValid) {
+      console.log('❌ Volume validation failed:', volumeValidation.message);
       return res.status(400).json({ success: false, error: volumeValidation.message });
     }
   }
   
-  if (comicBookYear !== undefined) {
-    if (!isValidYear(comicBookYear as number)) {
+  if (comicBookYearNum !== null && !isNaN(comicBookYearNum)) {
+    if (!isValidYear(comicBookYearNum)) {
+      console.log('❌ Year validation failed');
       return res.status(400).json({ 
         success: false, 
         error: 'Comic book year must be between 1900 and current year + 1' 
@@ -442,18 +456,31 @@ export const createSaleList = async (
     }
   }
   
+  // Validate optional cover
+  if (comicBookCover !== undefined && comicBookCover) {
+    const coverValidation = validateString(comicBookCover as string, 'Comic book cover');
+    if (!coverValidation.isValid) {
+      console.log('❌ Cover validation failed:', coverValidation.message);
+      return res.status(400).json({ success: false, error: coverValidation.message });
+    }
+  }
+  
   try {
     const SaleLists = getSaleListModel();
+    
+    console.log('✅ Creating sale list...');
     const newSaleList = await SaleLists.create({
       comicBookTitle: comicBookTitle.trim(),
-      comicIssue: comicIssue || null,
-      comicBookVolume: comicBookVolume || null,
-      comicBookYear: comicBookYear || null,
+      comicIssue: comicIssueNum,
+      comicBookVolume: comicBookVolumeNum,
+      comicBookYear: comicBookYearNum,
       comicBookPublisher: comicBookPublisher.trim(),
       comicBookCover: comicBookCover?.trim() || null,
       type: type.toLowerCase() as SaleListType,
       saleUsersId: saleUsersId,
     });
+    
+    console.log('✅ Sale list created successfully:', newSaleList.id);
     
     return res.status(201).json({ 
       success: true,
@@ -461,6 +488,7 @@ export const createSaleList = async (
       message: 'Sale list created successfully'
     });
   } catch (error) {
+    console.error('❌ Create sale list error:', error);
     return handleError(res, error as Error, 400, 'createSaleList');
   }
 };
