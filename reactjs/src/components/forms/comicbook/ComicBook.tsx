@@ -200,7 +200,7 @@ const ComicBookComponent = ({
       if (coboTitleId) {
         fetchComicBooks(coboTitleId);
       }
-      navigate(`/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`, {
+      navigate(`/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`, {
         state: { refetch: true, timestamp: Date.now() }
       });
     }, 1500);
