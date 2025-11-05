@@ -8,11 +8,13 @@ import SuccessDisplay from '../success';
 import styles from './styles.module.css';
 import API from '../../../API';
 import { SaleComic } from '../../../store/sale/actions';
+import { getAnonymousUserId } from '../../../utils/anonymousUser';
 
 interface FormErrorsType {
   comicBookTitle: string;
   comicIssue: string;
   comicBookPublisher: string;
+  type: string;  // ✅ Add type validation
 }
 
 interface SaleFormProps {
@@ -58,7 +60,7 @@ const INAPPROPRIATE_DETECTION_LABELS = [
 const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const userId = localStorage.getItem('id') || '';
+  const userId = localStorage.getItem('id') || getAnonymousUserId();  // ✅ Get anonymous ID if not logged in
   
   const [formData, setFormData] = useState({
     comicBookTitle: '',
@@ -67,13 +69,14 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     comicBookYear: '',
     comicBookPublisher: '',
     comicBookCover: '',
-    type: ''
+    type: '' as string | 'regular' | 'variant'  // ✅ Strongly type
   });
   
   const [formErrors, setFormErrors] = useState<FormErrorsType>({
     comicBookTitle: '',
     comicIssue: '',
-    comicBookPublisher: ''
+    comicBookPublisher: '',
+    type: ''  // ✅ Add type error
   });
   
   const [successMessage, setSuccessMessage] = useState('');
@@ -108,7 +111,8 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     const validations = {
       comicBookTitle: value.length >= MIN_TITLE_LENGTH ? '' : 'Comic book title is required',
       comicIssue: value ? '' : 'Comic issue is required',
-      comicBookPublisher: value ? '' : 'Publisher is required'
+      comicBookPublisher: value ? '' : 'Publisher is required',
+      type: value === 'regular' || value === 'variant' ? '' : 'Please select regular or variant'  // ✅ Validate type
     };
     
     return validations[fieldName];
@@ -118,7 +122,8 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     const errors: FormErrorsType = {
       comicBookTitle: validateField('comicBookTitle', formData.comicBookTitle),
       comicIssue: validateField('comicIssue', formData.comicIssue),
-      comicBookPublisher: validateField('comicBookPublisher', formData.comicBookPublisher)
+      comicBookPublisher: validateField('comicBookPublisher', formData.comicBookPublisher),
+      type: validateField('type', formData.type)  // ✅ Validate type
     };
 
     setFormErrors(errors);
@@ -286,55 +291,55 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
+  // ✅ Add handler for type radio buttons
+  const handleTypeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, type: event.target.value as 'regular' | 'variant' }));
+  }, []);
+
   const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const isValid = validateAllFields();
 
     if (!isValid) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
+    // ✅ Map userId to saleUsersId for the backend
+    const saleData = {
+      comicBookTitle: formData.comicBookTitle,
+      comicIssue: formData.comicIssue,
+      comicBookVolume: formData.comicBookVolume,
+      comicBookYear: formData.comicBookYear,
+      comicBookPublisher: formData.comicBookPublisher,
+      comicBookCover: formData.comicBookCover,
+      type: formData.type,
+      userId,
+      saleUsersId: userId  // ✅ Changed from userId to saleUsersId
+    };
+
+    console.log('📤 Submitting sale:', saleData);
+
     if (id) {
-      // Update existing sale
-      const updatedSale: SaleComic = {
+      updateSale({
         id,
-        comicBookTitle: formData.comicBookTitle,
-        comicIssue: formData.comicIssue,
-        comicBookVolume: formData.comicBookVolume,
-        comicBookYear: formData.comicBookYear,
-        comicBookPublisher: formData.comicBookPublisher,
-        comicBookCover: formData.comicBookCover,
-        type: formData.type,
-        userId
-      };
-      updateSale(updatedSale);
+        ...saleData
+      } as SaleComic);
     } else {
-      // Create new sale
-      const newSale: Omit<SaleComic, 'id'> = {
-        comicBookTitle: formData.comicBookTitle,
-        comicIssue: formData.comicIssue,
-        comicBookVolume: formData.comicBookVolume,
-        comicBookYear: formData.comicBookYear,
-        comicBookPublisher: formData.comicBookPublisher,
-        comicBookCover: formData.comicBookCover,
-        type: formData.type,
-        userId
-      };
-      createSale(newSale);
+      createSale(saleData as Omit<SaleComic, 'id'>);
     }
     
     setSuccessMessage('success');
     
-    // Navigate back after successful submission
     setTimeout(() => {
       navigate(`/sale/${userId}`);
     }, 1500);
   }, [id, formData, userId, validateAllFields, createSale, updateSale, navigate]);
 
   const handleGoBack = useCallback(() => {
-      navigate(-1);
-    }, [navigate]);
+    navigate(-1);
+  }, [navigate]);
 
   const { comicBookTitle, comicIssue, comicBookVolume, comicBookYear, comicBookPublisher, comicBookCover, type } = formData;
   const hasNoErrors = Object.values(formErrors).every(error => error.length === 0);
@@ -357,6 +362,8 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
           <section className={styles.wrapper}>
             <form method="POST" onSubmit={handleSubmit}>
               <FormErrors formErrors={formErrors} />
+
+              <p id="forbidContent" />
 
               <article>
                 <fieldset>
@@ -443,25 +450,37 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                       required
                     />
                   </label>
-
-                  <label htmlFor="type">
-                    Type
-                    <input
-                      id="type"
-                      className={styles.inputBorder}
-                      type="text"
-                      name="type"
-                      value={type}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Trade, Single Issue"
-                    />
-                  </label>
                 </fieldset>
+              </article>
+
+              {/* ✅ Replace text input with radio buttons */}
+              <article>
+                <label className={styles.labelRadio} htmlFor="regular">
+                  <input
+                    id="regular"
+                    type="radio"
+                    value="regular"
+                    checked={type === 'regular'}
+                    onChange={handleTypeChange}
+                  />
+                  Regular
+                </label>
+
+                <label className={styles.labelRadio} htmlFor="variant">
+                  <input
+                    id="variant"
+                    type="radio"
+                    value="variant"
+                    checked={type === 'variant'}
+                    onChange={handleTypeChange}
+                  />
+                  Variant
+                </label>
               </article>
 
               <article>
                 <p>
-                  <Link url={`/sales/${userId}`} title="CANCEL" />
+                  <Link url={`/sale/${userId}`} title="CANCEL" />
                 </p>
                 <input
                   id="submitSale"
