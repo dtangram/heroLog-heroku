@@ -337,13 +337,13 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
   return (
     <>
-      <article id="saleForm" className={styles.saleWrapper}>
+      <article id="saleForm" className={styles.cbWrapper}>
         <h1>
           {id ? `Update ${comicBookTitle}` : 'Add New Sale Comic'}
           <figure className={styles.graphic} aria-label="Small burgundy, rectangle graphic." />
         </h1>
 
-        <article className={styles.saleList}>
+        <article className={styles.cbList}>
           {hasNoErrors && successMessage === 'success' && <SuccessDisplay />}
 
           <section className={styles.wrapper}>

@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
+import db from '../models';
 
-// Sale list type literal
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
 type SaleListType = 'regular' | 'variant';
 
-// Properly typed model interface
 interface SaleListModel {
   findAll: (options: { where: WhereOptions<SaleListAttributes> }) => Promise<SaleListInstance[]>;
   findByPk: (id: string) => Promise<SaleListInstance | null>;
@@ -16,7 +19,6 @@ interface SaleListModel {
   destroy: (options: { where: WhereOptions<SaleListAttributes> }) => Promise<number>;
 }
 
-// Model instance interface
 interface SaleListInstance {
   id: string;
   comicBookTitle: string;
@@ -32,22 +34,20 @@ interface SaleListInstance {
   toJSON: () => SaleListAttributes;
 }
 
-// Fixed interface to match actual model structure (UUIDs and proper field types)
 interface SaleListAttributes {
-  id: string;  // UUID string
+  id: string;
   comicBookTitle: string;
-  comicIssue: number | null;  // INTEGER in model, not string
-  comicBookVolume: number | null;  // INTEGER in model, not string  
-  comicBookYear: number | null;  // INTEGER in model, not string
+  comicIssue: number | null;
+  comicBookVolume: number | null;
+  comicBookYear: number | null;
   comicBookPublisher: string;
   comicBookCover: string | null;
   type: SaleListType;
-  saleUsersId: string | null;  // UUID string
+  saleUsersId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Creation interface
 interface SaleListCreationAttributes {
   comicBookTitle: string;
   comicIssue?: number | null;
@@ -59,7 +59,6 @@ interface SaleListCreationAttributes {
   saleUsersId: string;
 }
 
-// API response interface
 interface ApiResponse<T = SaleListAttributes | SaleListAttributes[]> {
   success: boolean;
   data?: T;
@@ -69,47 +68,52 @@ interface ApiResponse<T = SaleListAttributes | SaleListAttributes[]> {
   errors?: string[];
 }
 
-// Validation result interface
 interface ValidationResult {
   isValid: boolean;
   message?: string;
 }
 
-// Sequelize error interface
 interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-// Import models with proper typing
-const models = require('../models') as {
-  SaleLists: SaleListModel;
+// ============================================================================
+// MODEL GETTER
+// ============================================================================
+
+const getSaleListModel = (): SaleListModel => {
+  const SaleList = (db as any).SaleLists || (db as any).SaleList || (db as any).Salelist || (db as any).salelist;
+  
+  if (!SaleList) {
+    console.error('❌ SaleList model not found. Available models:', Object.keys(db));
+    throw new Error('SaleList model not loaded');
+  }
+  
+  return SaleList as SaleListModel;
 };
 
-const { SaleLists } = models;
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
-// Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
   return 'errors' in error && Array.isArray((error as SequelizeError).errors);
 };
 
-// UUID validation
 const isValidUUID = (value: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(value);
 };
 
-// Year validation
 const isValidYear = (year: number): boolean => {
   const currentYear = new Date().getFullYear();
   return year >= 1900 && year <= currentYear + 1;
 };
 
-// Sale list type validation
 const isValidSaleListType = (type: string): type is SaleListType => {
   return type === 'regular' || type === 'variant';
 };
 
-// Centralized error handler
 const handleError = (
   res: Response,
   error: Error | SequelizeError,
@@ -132,7 +136,6 @@ const handleError = (
   });
 };
 
-// Parameter validation
 const validateParams = (
   params: Record<string, string>,
   requiredFields: string[]
@@ -149,7 +152,6 @@ const validateParams = (
   return { isValid: true };
 };
 
-// String validation
 const validateString = (value: string, fieldName: string): ValidationResult => {
   if (typeof value !== 'string') {
     return {
@@ -168,7 +170,6 @@ const validateString = (value: string, fieldName: string): ValidationResult => {
   return { isValid: true };
 };
 
-// Number validation
 const validateNumber = (value: number, fieldName: string, min?: number, max?: number): ValidationResult => {
   if (typeof value !== 'number' || isNaN(value)) {
     return {
@@ -194,7 +195,6 @@ const validateNumber = (value: number, fieldName: string, min?: number, max?: nu
   return { isValid: true };
 };
 
-// UUID validation
 const validateUUID = (value: string, fieldName: string): ValidationResult => {
   if (!isValidUUID(value)) {
     return {
@@ -206,7 +206,6 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
   return { isValid: true };
 };
 
-// Sale list type validation
 const validateType = (type: string): ValidationResult => {
   if (!isValidSaleListType(type.toLowerCase() as SaleListType)) {
     return {
@@ -218,7 +217,6 @@ const validateType = (type: string): ValidationResult => {
   return { isValid: true };
 };
 
-// Generic function to find sale lists with filters
 const findSaleLists = async (
   whereClause: WhereOptions<SaleListAttributes>
 ): Promise<SaleListInstance[]> => {
@@ -226,17 +224,20 @@ const findSaleLists = async (
     throw new Error('Invalid query parameters');
   }
   
+  const SaleLists = getSaleListModel();
   return await SaleLists.findAll({ where: whereClause });
 };
 
-// Get all sale lists for a specific user
+// ============================================================================
+// CONTROLLER FUNCTIONS
+// ============================================================================
+
 export const getSaleLists = async (
   req: Request<{ userId: string }>,
   res: Response<ApiResponse<SaleListAttributes[]>>
 ): Promise<Response> => {
   const { userId } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['userId']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -245,7 +246,6 @@ export const getSaleLists = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(userId, 'User ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -256,7 +256,7 @@ export const getSaleLists = async (
   
   try {
     const saleLists = await findSaleLists({ 
-      saleUsersId: userId  // No parseInt for UUID
+      saleUsersId: userId
     });
     
     const data = saleLists.map(saleList => saleList.toJSON());
@@ -271,7 +271,6 @@ export const getSaleLists = async (
   }
 };
 
-// Get all sale lists with type 'regular'
 export const getRegular = async (
   _req: Request,
   res: Response<ApiResponse<SaleListAttributes[]>>
@@ -291,7 +290,6 @@ export const getRegular = async (
   }
 };
 
-// Get all sale lists with type 'variant'
 export const getVariant = async (
   _req: Request,
   res: Response<ApiResponse<SaleListAttributes[]>>
@@ -311,14 +309,12 @@ export const getVariant = async (
   }
 };
 
-// Find one sale list by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
   res: Response<ApiResponse<SaleListAttributes>>
 ): Promise<Response> => {
   const { id } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['id']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -327,7 +323,6 @@ export const getOneById = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(id, 'Sale list ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -337,7 +332,8 @@ export const getOneById = async (
   }
   
   try {
-    const salelist = await SaleLists.findByPk(id);  // No parseInt for UUID
+    const SaleLists = getSaleListModel();
+    const salelist = await SaleLists.findByPk(id);
     
     if (!salelist) {
       return res.status(404).json({ 
@@ -355,7 +351,6 @@ export const getOneById = async (
   }
 };
 
-// Create a new sale list
 export const createSaleList = async (
   req: Request<{}, {}, Partial<SaleListCreationAttributes>>,
   res: Response<ApiResponse<Pick<SaleListAttributes, 'id'>>>
@@ -371,7 +366,6 @@ export const createSaleList = async (
     saleUsersId,
   } = req.body;
   
-  // Validate required fields
   const validation = validateParams(req.body as Record<string, string>, [
     'comicBookTitle',
     'comicBookPublisher',
@@ -386,7 +380,6 @@ export const createSaleList = async (
     });
   }
   
-  // Validate comicBookTitle
   if (!comicBookTitle) {
     return res.status(400).json({ success: false, error: 'Comic book title is required' });
   }
@@ -395,7 +388,6 @@ export const createSaleList = async (
     return res.status(400).json({ success: false, error: titleValidation.message });
   }
   
-  // Validate comicBookPublisher
   if (!comicBookPublisher) {
     return res.status(400).json({ success: false, error: 'Comic book publisher is required' });
   }
@@ -404,7 +396,6 @@ export const createSaleList = async (
     return res.status(400).json({ success: false, error: publisherValidation.message });
   }
   
-  // Validate type
   if (!type) {
     return res.status(400).json({ success: false, error: 'Type is required' });
   }
@@ -413,7 +404,6 @@ export const createSaleList = async (
     return res.status(400).json({ success: false, error: typeValidation.message });
   }
   
-  // Validate saleUsersId
   if (!saleUsersId) {
     return res.status(400).json({ success: false, error: 'Sale Users ID is required' });
   }
@@ -422,7 +412,6 @@ export const createSaleList = async (
     return res.status(400).json({ success: false, error: userIdValidation.message });
   }
   
-  // Validate optional string fields
   if (comicBookCover !== undefined) {
     const coverValidation = validateString(comicBookCover as string, 'Comic book cover');
     if (!coverValidation.isValid) {
@@ -430,7 +419,6 @@ export const createSaleList = async (
     }
   }
   
-  // Validate optional numeric fields
   if (comicIssue !== undefined) {
     const issueValidation = validateNumber(comicIssue as number, 'Comic issue', 1);
     if (!issueValidation.isValid) {
@@ -455,6 +443,7 @@ export const createSaleList = async (
   }
   
   try {
+    const SaleLists = getSaleListModel();
     const newSaleList = await SaleLists.create({
       comicBookTitle: comicBookTitle.trim(),
       comicIssue: comicIssue || null,
@@ -476,14 +465,12 @@ export const createSaleList = async (
   }
 };
 
-// Update an existing sale list
 export const updateSaleList = async (
   req: Request<{ id: string }, {}, Partial<SaleListAttributes>>,
   res: Response<ApiResponse<SaleListAttributes>>
 ): Promise<Response> => {
   const { id } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['id']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -492,7 +479,6 @@ export const updateSaleList = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(id, 'Sale list ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -501,7 +487,6 @@ export const updateSaleList = async (
     });
   }
   
-  // Validate request body is not empty
   if (!req.body || Object.keys(req.body).length === 0) {
     return res.status(400).json({ 
       success: false,
@@ -509,10 +494,8 @@ export const updateSaleList = async (
     });
   }
   
-  // Sanitize and validate fields if present
   const updateData: Partial<SaleListAttributes> = { ...req.body };
   
-  // Validate string fields if provided
   if (updateData.comicBookTitle !== undefined) {
     const titleValidation = validateString(updateData.comicBookTitle, 'Comic book title');
     if (!titleValidation.isValid) {
@@ -537,7 +520,6 @@ export const updateSaleList = async (
     updateData.comicBookCover = updateData.comicBookCover.trim();
   }
   
-  // Validate numeric fields if provided
   if (updateData.comicIssue !== undefined && updateData.comicIssue !== null) {
     const issueValidation = validateNumber(updateData.comicIssue, 'Comic issue', 1);
     if (!issueValidation.isValid) {
@@ -561,7 +543,6 @@ export const updateSaleList = async (
     }
   }
   
-  // Validate type if provided
   if (updateData.type !== undefined) {
     const typeValidation = validateType(updateData.type);
     if (!typeValidation.isValid) {
@@ -570,7 +551,6 @@ export const updateSaleList = async (
     updateData.type = updateData.type.toLowerCase() as SaleListType;
   }
   
-  // Validate saleUsersId if provided
   if (updateData.saleUsersId !== undefined && updateData.saleUsersId !== null) {
     const userIdValidation = validateUUID(updateData.saleUsersId, 'Sale Users ID');
     if (!userIdValidation.isValid) {
@@ -579,10 +559,11 @@ export const updateSaleList = async (
   }
   
   try {
+    const SaleLists = getSaleListModel();
     const [rowsUpdated, updatedRecords] = await SaleLists.update(
       updateData,
       {
-        where: { id },  // No parseInt for UUID
+        where: { id },
         returning: true,
       }
     );
@@ -594,7 +575,6 @@ export const updateSaleList = async (
       });
     }
     
-    // Handle different database dialects
     let updatedSaleList: SaleListAttributes;
     
     if (updatedRecords && updatedRecords.length > 0) {
@@ -620,14 +600,12 @@ export const updateSaleList = async (
   }
 };
 
-// Delete a sale list
 export const removeSaleList = async (
   req: Request<{ id: string }>,
   res: Response<ApiResponse<never>>
 ): Promise<Response> => {
   const { id } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['id']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -636,7 +614,6 @@ export const removeSaleList = async (
     });
   }
   
-  // Validate UUID format
   const uuidValidation = validateUUID(id, 'Sale list ID');
   if (!uuidValidation.isValid) {
     return res.status(400).json({ 
@@ -646,7 +623,7 @@ export const removeSaleList = async (
   }
   
   try {
-    // Check if record exists before attempting deletion
+    const SaleLists = getSaleListModel();
     const existingRecord = await SaleLists.findByPk(id);
     
     if (!existingRecord) {
@@ -657,7 +634,7 @@ export const removeSaleList = async (
     }
     
     const rowsDeleted = await SaleLists.destroy({ 
-      where: { id }  // No parseInt for UUID
+      where: { id }
     });
     
     if (rowsDeleted === 0) {

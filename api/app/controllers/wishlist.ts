@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
-import { WhereOptions, Model, ModelStatic } from 'sequelize';
+import { WhereOptions } from 'sequelize';
+import db from '../models';
 
-/**
- * Interface for WishList attributes
- */
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
 interface WishListAttributes {
   id?: number;
   comicBookTitle: string;
@@ -18,28 +20,32 @@ interface WishListAttributes {
   updatedAt?: Date;
 }
 
-/**
- * Interface for WishList model instance
- */
-interface WishListInstance extends Model<WishListAttributes>, WishListAttributes {}
+interface WishListInstance {
+  id?: number;
+  comicBookTitle: string;
+  comicIssue: string;
+  comicBookVolume: string;
+  comicBookYear: string;
+  comicBookPublisher: string;
+  comicBookCover: string;
+  type: 'regular' | 'variant';
+  wishUsersId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  toJSON: () => WishListAttributes;
+}
 
-/**
- * Type for WishList model
- */
-type WishListModel = ModelStatic<WishListInstance>;
+interface WishListModel {
+  findAll: (options: { where: WhereOptions<WishListAttributes> }) => Promise<WishListInstance[]>;
+  findByPk: (id: number) => Promise<WishListInstance | null>;
+  create: (data: Partial<WishListAttributes>) => Promise<WishListInstance>;
+  update: (
+    data: Partial<WishListAttributes>,
+    options: { where: WhereOptions<WishListAttributes>; returning: boolean }
+  ) => Promise<[number, WishListInstance[]]>;
+  destroy: (options: { where: WhereOptions<WishListAttributes> }) => Promise<number>;
+}
 
-/**
- * Import models with proper typing
- */
-const models = require('../models') as {
-  WishLists: WishListModel;
-};
-
-const { WishLists } = models;
-
-/**
- * Interface for API response structure
- */
 interface ApiResponse<T = null> {
   success: boolean;
   data?: T;
@@ -49,31 +55,38 @@ interface ApiResponse<T = null> {
   errors?: string[];
 }
 
-/**
- * Interface for validation result
- */
 interface ValidationResult {
   isValid: boolean;
   message?: string;
 }
 
-/**
- * Interface for Sequelize validation error
- */
 interface SequelizeValidationError extends Error {
   errors: Array<{ message: string }>;
 }
 
-/**
- * Type guard to check if error has errors array (Sequelize validation errors)
- */
+// ============================================================================
+// MODEL GETTER
+// ============================================================================
+
+const getWishListModel = (): WishListModel => {
+  const WishList = (db as any).WishLists || (db as any).Wishlist || (db as any).wishlist;
+  
+  if (!WishList) {
+    console.error('❌ WishList model not found. Available models:', Object.keys(db));
+    throw new Error('WishList model not loaded');
+  }
+  
+  return WishList as WishListModel;
+};
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
 const isSequelizeError = (error: Error): error is SequelizeValidationError => {
   return 'errors' in error && Array.isArray((error as SequelizeValidationError).errors);
 };
 
-/**
- * Centralized error handler for consistent error responses
- */
 const handleError = (
   res: Response,
   error: Error,
@@ -96,16 +109,8 @@ const handleError = (
   });
 };
 
-/**
- * Type for request body/params that can be validated
- */
-type ValidatableObject = Record<string, string | number | boolean | null | undefined>;
-
-/**
- * Validates that required parameters exist
- */
 const validateParams = (
-  params: ValidatableObject,
+  params: Record<string, string | number | boolean | null | undefined>,
   requiredFields: string[]
 ): ValidationResult => {
   const missing = requiredFields.filter(field => !params[field]);
@@ -120,10 +125,10 @@ const validateParams = (
   return { isValid: true };
 };
 
-/**
- * Validates string input
- */
-const validateString = (value: string | number | boolean | null | undefined, fieldName: string): ValidationResult => {
+const validateString = (
+  value: string | number | boolean | null | undefined,
+  fieldName: string
+): ValidationResult => {
   if (typeof value !== 'string') {
     return {
       isValid: false,
@@ -141,9 +146,6 @@ const validateString = (value: string | number | boolean | null | undefined, fie
   return { isValid: true };
 };
 
-/**
- * Validates numeric ID
- */
 const validateNumericId = (id: string, fieldName: string = 'ID'): ValidationResult => {
   const numericId = parseInt(id, 10);
   
@@ -157,9 +159,6 @@ const validateNumericId = (id: string, fieldName: string = 'ID'): ValidationResu
   return { isValid: true };
 };
 
-/**
- * Validates wish list type
- */
 const validateType = (type: string): ValidationResult => {
   const validTypes = ['regular', 'variant'];
   
@@ -173,9 +172,6 @@ const validateType = (type: string): ValidationResult => {
   return { isValid: true };
 };
 
-/**
- * Generic function to find wish lists with filters
- */
 const findWishLists = async (
   whereClause: WhereOptions<WishListAttributes>
 ): Promise<WishListAttributes[]> => {
@@ -183,20 +179,21 @@ const findWishLists = async (
     throw new Error('Invalid query parameters');
   }
   
+  const WishLists = getWishListModel();
   const results = await WishLists.findAll({ where: whereClause });
-  return results.map(item => item.toJSON() as WishListAttributes);
+  return results.map(item => item.toJSON());
 };
 
-/**
- * Get all wish lists for a specific user
- */
+// ============================================================================
+// CONTROLLER FUNCTIONS
+// ============================================================================
+
 export const getWishLists = async (
   req: Request<{ userId: string }>,
   res: Response<ApiResponse<WishListAttributes[]>>
 ): Promise<Response> => {
   const { userId } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['userId']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -205,7 +202,6 @@ export const getWishLists = async (
     });
   }
   
-  // Validate userId is numeric
   const idValidation = validateNumericId(userId, 'User ID');
   if (!idValidation.isValid) {
     return res.status(400).json({ 
@@ -229,9 +225,6 @@ export const getWishLists = async (
   }
 };
 
-/**
- * Get all wish lists with type 'regular'
- */
 export const getRegular = async (
   _req: Request,
   res: Response<ApiResponse<WishListAttributes[]>>
@@ -249,9 +242,6 @@ export const getRegular = async (
   }
 };
 
-/**
- * Get all wish lists with type 'variant'
- */
 export const getVariant = async (
   _req: Request,
   res: Response<ApiResponse<WishListAttributes[]>>
@@ -269,16 +259,12 @@ export const getVariant = async (
   }
 };
 
-/**
- * Find one wish list by ID
- */
 export const getOneById = async (
   req: Request<{ id: string }>,
   res: Response<ApiResponse<WishListAttributes>>
 ): Promise<Response> => {
   const { id } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['id']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -287,7 +273,6 @@ export const getOneById = async (
     });
   }
   
-  // Validate id is numeric
   const idValidation = validateNumericId(id);
   if (!idValidation.isValid) {
     return res.status(400).json({ 
@@ -297,6 +282,7 @@ export const getOneById = async (
   }
   
   try {
+    const WishLists = getWishListModel();
     const wishlist = await WishLists.findByPk(parseInt(id, 10));
     
     if (!wishlist) {
@@ -308,16 +294,13 @@ export const getOneById = async (
     
     return res.status(200).json({
       success: true,
-      data: wishlist.toJSON() as WishListAttributes
+      data: wishlist.toJSON()
     });
   } catch (error) {
     return handleError(res, error as Error, 500, 'getOneById');
   }
 };
 
-/**
- * Create a new wish list
- */
 export const createWishList = async (
   req: Request<Record<string, never>, Record<string, never>, Partial<WishListAttributes>>,
   res: Response<ApiResponse<{ id: number }>>
@@ -333,8 +316,7 @@ export const createWishList = async (
     wishUsersId,
   } = req.body;
   
-  // Validate required fields
-  const validation = validateParams(req.body as ValidatableObject, [
+  const validation = validateParams(req.body as Record<string, string | number>, [
     'comicBookTitle',
     'comicIssue',
     'comicBookVolume',
@@ -352,7 +334,6 @@ export const createWishList = async (
     });
   }
   
-  // Validate string fields
   const stringFields = [
     { value: comicBookTitle, name: 'Comic book title' },
     { value: comicIssue, name: 'Comic issue' },
@@ -372,7 +353,6 @@ export const createWishList = async (
     }
   }
   
-  // Validate type
   const typeValidation = validateType(type!);
   if (!typeValidation.isValid) {
     return res.status(400).json({ 
@@ -381,7 +361,6 @@ export const createWishList = async (
     });
   }
   
-  // Validate wishUsersId
   if (typeof wishUsersId !== 'number' || isNaN(wishUsersId) || wishUsersId <= 0) {
     return res.status(400).json({ 
       success: false,
@@ -390,6 +369,7 @@ export const createWishList = async (
   }
   
   try {
+    const WishLists = getWishListModel();
     const newWishList = await WishLists.create({
       comicBookTitle: comicBookTitle!.trim(),
       comicIssue: comicIssue!.trim(),
@@ -411,16 +391,12 @@ export const createWishList = async (
   }
 };
 
-/**
- * Update an existing wish list
- */
 export const updateWishList = async (
   req: Request<{ id: string }, Record<string, never>, Partial<WishListAttributes>>,
   res: Response<ApiResponse<WishListAttributes>>
 ): Promise<Response> => {
   const { id } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['id']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -429,7 +405,6 @@ export const updateWishList = async (
     });
   }
   
-  // Validate id is numeric
   const idValidation = validateNumericId(id);
   if (!idValidation.isValid) {
     return res.status(400).json({ 
@@ -438,7 +413,6 @@ export const updateWishList = async (
     });
   }
   
-  // Validate request body is not empty
   if (!req.body || Object.keys(req.body).length === 0) {
     return res.status(400).json({ 
       success: false,
@@ -446,10 +420,8 @@ export const updateWishList = async (
     });
   }
   
-  // Sanitize and validate fields if present
   const updateData: Partial<WishListAttributes> = { ...req.body };
   
-  // Validate string fields if provided
   const stringFields = [
     'comicBookTitle',
     'comicIssue',
@@ -471,11 +443,10 @@ export const updateWishList = async (
           error: stringValidation.message 
         });
       }
-      updateData[field] = (updateData[field] as string).trim();
+      updateData[field] = (updateData[field] as string).trim() as any;
     }
   }
   
-  // Validate type if provided
   if (updateData.type !== undefined) {
     const typeValidation = validateType(updateData.type);
     if (!typeValidation.isValid) {
@@ -487,7 +458,6 @@ export const updateWishList = async (
     updateData.type = updateData.type.toLowerCase() as 'regular' | 'variant';
   }
   
-  // Validate wishUsersId if provided
   if (updateData.wishUsersId !== undefined) {
     if (typeof updateData.wishUsersId !== 'number' || isNaN(updateData.wishUsersId) || updateData.wishUsersId <= 0) {
       return res.status(400).json({ 
@@ -498,6 +468,7 @@ export const updateWishList = async (
   }
   
   try {
+    const WishLists = getWishListModel();
     const [rowsUpdated, updatedRecords] = await WishLists.update(
       updateData,
       {
@@ -513,11 +484,10 @@ export const updateWishList = async (
       });
     }
     
-    // Handle different database dialects (some don't support returning)
     let updatedWishList: WishListAttributes;
     
     if (updatedRecords && updatedRecords.length > 0) {
-      updatedWishList = updatedRecords[0].toJSON() as WishListAttributes;
+      updatedWishList = updatedRecords[0].toJSON();
     } else {
       const record = await WishLists.findByPk(parseInt(id, 10));
       if (!record) {
@@ -526,7 +496,7 @@ export const updateWishList = async (
           error: 'Wish list not found after update' 
         });
       }
-      updatedWishList = record.toJSON() as WishListAttributes;
+      updatedWishList = record.toJSON();
     }
     
     return res.status(200).json({
@@ -539,16 +509,12 @@ export const updateWishList = async (
   }
 };
 
-/**
- * Delete a wish list
- */
 export const removeWishList = async (
   req: Request<{ id: string }>,
   res: Response<ApiResponse>
 ): Promise<Response> => {
   const { id } = req.params;
   
-  // Validate required parameters
   const paramValidation = validateParams(req.params, ['id']);
   if (!paramValidation.isValid) {
     return res.status(400).json({ 
@@ -557,7 +523,6 @@ export const removeWishList = async (
     });
   }
   
-  // Validate id is numeric
   const idValidation = validateNumericId(id);
   if (!idValidation.isValid) {
     return res.status(400).json({ 
@@ -567,7 +532,7 @@ export const removeWishList = async (
   }
   
   try {
-    // Check if record exists before attempting deletion
+    const WishLists = getWishListModel();
     const existingRecord = await WishLists.findByPk(parseInt(id, 10));
     
     if (!existingRecord) {
