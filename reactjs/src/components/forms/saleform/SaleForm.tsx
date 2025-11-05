@@ -328,7 +328,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     
     // Navigate back after successful submission
     setTimeout(() => {
-      navigate(`/sales/${userId}`);
+      navigate(`/sale/${userId}`);
     }, 1500);
   }, [id, formData, userId, validateAllFields, createSale, updateSale, navigate]);
 
