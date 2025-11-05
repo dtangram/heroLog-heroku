@@ -8,10 +8,67 @@ import { ContainerProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
 import styles from './styles.module.css';
 
-interface FormErrorsState {
-  title: string;
-  type: string;
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+interface RouteParams extends Record<string, string | undefined> {
+  id?: string;
+  coboTitleId?: string;
+  cbTitle?: string;
+  pubId?: string;
+  publisherName?: string;
 }
+
+interface FormState {
+  title: string;
+  comicIssue: string;
+  author: string;
+  penciler: string;
+  coverartist: string;
+  inker: string;
+  volume: string;
+  year: string;
+  comicBookCover: string;
+  type: 'regular' | 'variant' | '';
+}
+
+interface FormErrorsState {
+  title?: string;
+  type?: string;
+  titleID?: string;
+}
+
+interface ComicBookFormData extends FormState {
+  titleID: string;
+  comicBookTitle: string;
+}
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const INITIAL_FORM_STATE: FormState = {
+  title: '',
+  comicIssue: '',
+  author: '',
+  penciler: '',
+  coverartist: '',
+  inker: '',
+  volume: '',
+  year: '',
+  comicBookCover: '',
+  type: '',
+};
+
+const VALID_IMAGE_EXTENSIONS = ['jpg', 'png', 'jpeg'];
+const MAX_FILE_SIZE = 1e6; // 1MB
+const MAX_YEAR_LENGTH = 4;
+const REDIRECT_DELAY = 1500;
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 const ComicBookComponent = ({
   comicbook,
@@ -21,75 +78,103 @@ const ComicBookComponent = ({
   updateComicBook,
 }: ContainerProps) => {
   const navigate = useNavigate();
-  const { id, coboTitleId, cbTitle, pubId, publisherName } = useParams<{ 
-    id?: string;
-    coboTitleId?: string;
-    cbTitle?: string;
-    pubId?: string;
-    publisherName?: string;
-  }>();
-
-  const [title, setTitle] = useState('');
-  const [comicIssue, setComicIssue] = useState('');
-  const [author, setAuthor] = useState('');
-  const [penciler, setPenciler] = useState('');
-  const [coverartist, setCoverartist] = useState('');
-  const [inker, setInker] = useState('');
-  const [volume, setVolume] = useState('');
-  const [year, setYear] = useState('');
-  const [comicBookCover, setComicBookCover] = useState('');
-  const [type, setType] = useState<'regular' | 'variant' | ''>('');
+  const { id, coboTitleId, cbTitle, pubId, publisherName } = useParams<RouteParams>();
+  
+  // ============================================================================
+  // STATE
+  // ============================================================================
+  
+  const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
+  const [formErrors, setFormErrors] = useState<FormErrorsState>({});
   const [successMessage, setSuccessMessage] = useState('');
-  const [formErrors, setFormErrors] = useState<FormErrorsState>({
-    title: '',
-    type: '',
-  });
-
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const inputRef = useRef<HTMLInputElement>(null);
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
+
+  // Log route params for debugging
   useEffect(() => {
-    window.scrollTo({ top: 0 });
+    console.log('📋 Comic Book Form Loaded');
+    console.log('  - Edit Mode:', !!id);
+    console.log('  - Comic ID:', id);
+    console.log('  - Title ID:', coboTitleId);
+    console.log('  - Title Name:', cbTitle);
+    console.log('  - Publisher ID:', pubId);
+    console.log('  - Publisher Name:', publisherName);
+    
+    if (!coboTitleId && !id) {
+      console.warn('⚠️ Warning: coboTitleId is missing. Form may fail on submit.');
+    }
+  }, [id, coboTitleId, cbTitle, pubId, publisherName]);
+
+  // Initial setup
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     
     if (id) {
+      console.log('📖 Fetching comic book:', id);
       fetchComicBook(id);
     }
 
     inputRef.current?.focus();
   }, [id, fetchComicBook]);
 
+  // Populate form when editing
   useEffect(() => {
     if (comicbook && comicbook.id) {
-      setTitle(comicbook.title || '');
-      setComicIssue(String(comicbook.comicIssue || ''));
-      setAuthor(comicbook.author || '');
-      setPenciler(comicbook.penciler || '');
-      setCoverartist(comicbook.coverartist || '');
-      setInker(comicbook.inker || '');
-      setVolume(String(comicbook.volume || ''));
-      setYear(String(comicbook.year || ''));
-      setComicBookCover(comicbook.comicBookCover || '');
-      setType(comicbook.type || '');
+      console.log('✏️ Populating form with comic book data:', comicbook);
+      setFormState({
+        title: comicbook.title || '',
+        comicIssue: String(comicbook.comicIssue || ''),
+        author: comicbook.author || '',
+        penciler: comicbook.penciler || '',
+        coverartist: comicbook.coverartist || '',
+        inker: comicbook.inker || '',
+        volume: String(comicbook.volume || ''),
+        year: String(comicbook.year || ''),
+        comicBookCover: comicbook.comicBookCover || '',
+        type: comicbook.type || '',
+      });
     }
   }, [comicbook]);
 
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    const setters: Record<string, (value: string) => void> = {
-      title: setTitle,
-      author: setAuthor,
-      penciler: setPenciler,
-      coverartist: setCoverartist,
-      inker: setInker,
-    };
-    setters[name]?.(value);
+    setFormState(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error for this field
+    if (formErrors[name as keyof FormErrorsState]) {
+      setFormErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  const handleNumberChange = (event: ChangeEvent<HTMLInputElement>, setter: (value: string) => void) => {
+  const handleNumberChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    fieldName: keyof FormState
+  ) => {
     const { value } = event.target;
-    const regex = /^[0-9]*$/;
-    if (value === '' || regex.test(value)) {
-      setter(value);
+    const numericRegex = /^[0-9]*$/;
+    
+    if (value === '' || numericRegex.test(value)) {
+      setFormState(prev => ({ ...prev, [fieldName]: value }));
+    }
+  };
+
+  const handleTypeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value as 'regular' | 'variant';
+    setFormState(prev => ({ ...prev, type: value }));
+    
+    if (formErrors.type) {
+      setFormErrors(prev => ({ ...prev, type: undefined }));
     }
   };
 
@@ -102,26 +187,31 @@ const ComicBookComponent = ({
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
     const fileSize = file.size;
 
-    const validExtensions = ['jpg', 'png', 'jpeg'];
-    if (!validExtensions.includes(fileExtension)) {
-      alert('Image needs to have a .jpeg, .jpg or .png file extension.');
+    // Validate file extension
+    if (!VALID_IMAGE_EXTENSIONS.includes(fileExtension)) {
+      alert(`Image must have one of these extensions: ${VALID_IMAGE_EXTENSIONS.join(', ')}`);
       return;
     }
 
-    if (fileSize > 1e6) {
-      alert('Image size needs to be smaller than 1MB');
+    // Validate file size
+    if (fileSize > MAX_FILE_SIZE) {
+      alert('Image size must be smaller than 1MB');
       return;
     }
 
+    setIsUploading(true);
     const coverButton = document.getElementById('comicBookCover') as HTMLButtonElement;
 
     try {
       if (coverButton) coverButton.disabled = true;
 
+      console.log('📤 Uploading image:', fileName);
+
+      // Get signed URL from backend
       const response = await API.post('/s3/sign', { fileName, fileType });
       const { signedRequest, url } = response.data;
 
-      // ✅ Use fetch instead of axios for S3 upload
+      // Upload to S3
       const uploadResponse = await fetch(signedRequest, {
         method: 'PUT',
         body: file,
@@ -134,84 +224,139 @@ const ComicBookComponent = ({
         throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
       }
 
-      setComicBookCover(url);
+      console.log('✅ Image uploaded successfully:', url);
+      setFormState(prev => ({ ...prev, comicBookCover: url }));
 
+      // Show the image preview
       const figure = document.querySelector('form > figure') as HTMLElement;
       if (figure) figure.style.display = 'inline-block';
-
-      if (coverButton) coverButton.disabled = false;
       
     } catch (error) {
-      console.error('Upload error:', error);
-      if (coverButton) coverButton.disabled = false;
+      console.error('❌ Upload error:', error);
       alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+      if (coverButton) coverButton.disabled = false;
     }
   };
 
   const validateFields = (): boolean => {
-    const isTitleValid = title.trim().length >= 1;
-    const isTypeValid = type.length > 0;
+    const errors: FormErrorsState = {};
 
-    setFormErrors({
-      title: isTitleValid ? '' : 'Comic Book issue title is required',
-      type: isTypeValid ? '' : 'Please select regular or variant',
-    });
+    // Validate title
+    if (!formState.title.trim()) {
+      errors.title = 'Comic book title is required';
+    }
 
-    return isTitleValid && isTypeValid;
+    // Validate type
+    if (!formState.type) {
+      errors.type = 'Please select regular or variant';
+    }
+
+    // Validate titleID (only for new comics, not edits)
+    if (!id && !coboTitleId) {
+      errors.titleID = 'Comic book title ID is missing';
+      console.error('❌ Validation failed: Missing coboTitleId');
+      console.error('URL Params:', { id, coboTitleId, cbTitle, pubId, publisherName });
+    }
+
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      console.log('❌ Validation errors:', errors);
+      return false;
+    }
+
+    console.log('✅ Validation passed');
+    return true;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (isSubmitting) {
+      console.log('⏳ Already submitting...');
+      return;
+    }
 
     const isValid = validateFields();
     
     if (!isValid) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    const comicBookData = {
-      title: title.trim(),
-      comicIssue,
-      author: author.trim(),
-      penciler: penciler.trim(),
-      coverartist: coverartist.trim(),
-      inker: inker.trim(),
-      volume,
-      year,
-      comicBookCover,
-      type,
-      titleID: coboTitleId || '',
-      comicBookTitle: cbTitle || '',
-    };
+    setIsSubmitting(true);
 
-    if (id) {
-      updateComicBook({
-        id,
-        ...comicBookData,
-      });
-    } else {
-      createComicBook(comicBookData);
-    }
-    
-    setSuccessMessage('success');
-    
-    // Refetch the list and then navigate
-    setTimeout(() => {
-      if (coboTitleId) {
-        fetchComicBooks(coboTitleId);
+    try {
+      const comicBookData: ComicBookFormData = {
+        ...formState,
+        title: formState.title.trim(),
+        author: formState.author.trim(),
+        penciler: formState.penciler.trim(),
+        coverartist: formState.coverartist.trim(),
+        inker: formState.inker.trim(),
+        titleID: coboTitleId!,
+        comicBookTitle: cbTitle || '',
+      };
+
+      console.log('📤 Submitting comic book:', comicBookData);
+
+      if (id) {
+        console.log('✏️ Updating existing comic book:', id);
+        await updateComicBook({
+          id,
+          ...comicBookData,
+        });
+      } else {
+        console.log('➕ Creating new comic book');
+        await createComicBook(comicBookData);
       }
-      navigate(`/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`, {
-        state: { refetch: true, timestamp: Date.now() }
+      
+      setSuccessMessage('success');
+      console.log('✅ Comic book saved successfully');
+      
+      // Refetch the list and navigate back
+      setTimeout(() => {
+        if (coboTitleId) {
+          console.log('🔄 Refetching comic books for title:', coboTitleId);
+          fetchComicBooks(coboTitleId);
+        }
+        
+        const targetUrl = `/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`;
+        console.log('🔄 Navigating to:', targetUrl);
+        
+        navigate(targetUrl, {
+          state: { refetch: true, timestamp: Date.now() }
+        });
+      }, REDIRECT_DELAY);
+      
+    } catch (error) {
+      console.error('❌ Submit error:', error);
+      setFormErrors({ 
+        titleID: error instanceof Error ? error.message : 'Failed to save comic book' 
       });
-    }, 1500);
+      setIsSubmitting(false);
+    }
   };
 
+  // ============================================================================
+  // DERIVED STATE
+  // ============================================================================
+
   const showSuccess = !formErrors.title && !formErrors.type && successMessage === 'success';
+  const isEditMode = !!id;
+  const pageTitle = isEditMode ? `Edit ${formState.title || 'Comic Book'}` : 'Add Comic Book';
+  const cancelUrl = `/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`;
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
 
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
       <h1>
-        {id ? `Edit ${title}` : 'Add Comic Book'}
+        {pageTitle}
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
 
@@ -222,10 +367,11 @@ const ComicBookComponent = ({
           <form method="POST" onSubmit={handleSubmit}>
             <FormErrors formErrors={formErrors} />
 
-            <p id="forbidContent" />
-
-            <figure>
-              <img src={comicBookCover} alt={title || 'Comic book cover'} />
+            <figure style={{ display: formState.comicBookCover ? 'inline-block' : 'none' }}>
+              <img 
+                src={formState.comicBookCover} 
+                alt={formState.title || 'Comic book cover'} 
+              />
             </figure>
 
             <article>
@@ -239,19 +385,22 @@ const ComicBookComponent = ({
                     name="comicBookCover"
                     accept="image/jpeg,image/jpg,image/png"
                     onChange={handleFileInputChange}
+                    disabled={isUploading || isSubmitting}
                   />
+                  {isUploading && <span> Uploading...</span>}
                 </label>
 
                 <label htmlFor="title">
-                  Title
+                  Title *
                   <input
                     ref={inputRef}
                     id="title"
                     className={styles.inputBorder}
                     type="text"
                     name="title"
-                    value={title}
+                    value={formState.title}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                     required
                   />
                 </label>
@@ -261,10 +410,11 @@ const ComicBookComponent = ({
                   <input
                     id="comicIssue"
                     className={styles.inputBorder}
-                    type="number"
+                    type="text"
                     name="comicIssue"
-                    value={comicIssue}
-                    onChange={(e) => handleNumberChange(e, setComicIssue)}
+                    value={formState.comicIssue}
+                    onChange={(e) => handleNumberChange(e, 'comicIssue')}
+                    disabled={isSubmitting}
                   />
                 </label>
 
@@ -275,8 +425,9 @@ const ComicBookComponent = ({
                     className={styles.inputBorder}
                     type="text"
                     name="author"
-                    value={author}
+                    value={formState.author}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                   />
                 </label>
 
@@ -287,8 +438,9 @@ const ComicBookComponent = ({
                     className={styles.inputBorder}
                     type="text"
                     name="penciler"
-                    value={penciler}
+                    value={formState.penciler}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                   />
                 </label>
 
@@ -299,8 +451,9 @@ const ComicBookComponent = ({
                     className={styles.inputBorder}
                     type="text"
                     name="coverartist"
-                    value={coverartist}
+                    value={formState.coverartist}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                   />
                 </label>
               </fieldset>
@@ -313,8 +466,9 @@ const ComicBookComponent = ({
                     className={styles.inputBorder}
                     type="text"
                     name="inker"
-                    value={inker}
+                    value={formState.inker}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                   />
                 </label>
 
@@ -323,10 +477,11 @@ const ComicBookComponent = ({
                   <input
                     id="volume"
                     className={styles.inputBorder}
-                    type="number"
+                    type="text"
                     name="volume"
-                    value={volume}
-                    onChange={(e) => handleNumberChange(e, setVolume)}
+                    value={formState.volume}
+                    onChange={(e) => handleNumberChange(e, 'volume')}
+                    disabled={isSubmitting}
                   />
                 </label>
 
@@ -336,10 +491,11 @@ const ComicBookComponent = ({
                     id="year"
                     className={styles.inputBorder}
                     type="text"
-                    maxLength={4}
+                    maxLength={MAX_YEAR_LENGTH}
                     name="year"
-                    value={year}
-                    onChange={(e) => handleNumberChange(e, setYear)}
+                    value={formState.year}
+                    onChange={(e) => handleNumberChange(e, 'year')}
+                    disabled={isSubmitting}
                   />
                 </label>
               </fieldset>
@@ -351,8 +507,9 @@ const ComicBookComponent = ({
                   id="regularcover"
                   type="radio"
                   value="regular"
-                  checked={type === 'regular'}
-                  onChange={(e) => setType(e.target.value as 'regular' | 'variant')}
+                  checked={formState.type === 'regular'}
+                  onChange={handleTypeChange}
+                  disabled={isSubmitting}
                 />
                 Regular Cover
               </label>
@@ -362,8 +519,9 @@ const ComicBookComponent = ({
                   id="variantcover"
                   type="radio"
                   value="variant"
-                  checked={type === 'variant'}
-                  onChange={(e) => setType(e.target.value as 'regular' | 'variant')}
+                  checked={formState.type === 'variant'}
+                  onChange={handleTypeChange}
+                  disabled={isSubmitting}
                 />
                 Variant Cover
               </label>
@@ -371,17 +529,15 @@ const ComicBookComponent = ({
 
             <article>
               <p>
-                <Link 
-                  url={`/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
-                  title="CANCEL" 
-                />
+                <Link url={cancelUrl} title="CANCEL" />
               </p>
 
               <input
                 id="submitQ1"
                 className={styles.submit}
                 type="submit"
-                value="SUBMIT"
+                value={isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}
+                disabled={isSubmitting || isUploading}
               />
             </article>
           </form>
