@@ -32,6 +32,7 @@ interface ComicBook {
   type: string;
   comicBookCover: string;
   titleID: string;
+  coboTitleId?: string;  // ✅ Alternative field name from URL
 }
 
 interface ComicBookState {
@@ -85,14 +86,20 @@ const shouldFetchComicBook = (state: RootState, id: string): boolean => {
 };
 
 const validateComicBook = (comicBook: Partial<ComicBook>): void => {
+  console.log('🔍 Validating comic book:', comicBook);
+  
   if (!comicBook.title?.trim()) {
     throw new Error('Comic book title is required');
   }
   if (!comicBook.type) {
     throw new Error('Comic book type is required');
   }
-  if (!comicBook.titleID?.trim()) {
-    throw new Error('Title ID is required');
+  
+  // ✅ Check both titleID and coboTitleId
+  const titleId = comicBook.titleID || comicBook.coboTitleId;
+  if (!titleId?.trim()) {
+    console.error('❌ Missing titleID. Received:', comicBook);
+    throw new Error('Title ID is required. Make sure coboTitleId is passed from the form.');
   }
 };
 
@@ -102,7 +109,7 @@ const transformComicBookResponse = (response: any): ComicBook => {
   
   return {
     ...data,
-    titleID: data.titleID || data.comicbooktitlerelId, // Map API field to store field
+    titleID: data.titleID || data.comicbooktitlerelId,
   };
 };
 
@@ -143,7 +150,10 @@ export const fetchComicBook = (id: string): APIAction => ({
 export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIAction => {
   validateComicBook(comicbooklistissue);
   
-  console.log('Creating comic book:', comicbooklistissue);
+  // ✅ Use titleID or coboTitleId
+  const titleID = comicbooklistissue.titleID || comicbooklistissue.coboTitleId;
+  
+  console.log('📝 Creating comic book with titleID:', titleID);
   
   return {
     types: [
@@ -162,10 +172,10 @@ export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIA
       year: comicbooklistissue.year,
       type: comicbooklistissue.type,
       comicBookCover: comicbooklistissue.comicBookCover,
-      titleID: comicbooklistissue.titleID,
+      titleID: titleID,  // ✅ Use the resolved titleID
     }),
     payload: { 
-      titleID: comicbooklistissue.titleID,
+      titleID: titleID!,
       comicbooklistissue: {
         title: comicbooklistissue.title,
         type: comicbooklistissue.type,
@@ -220,7 +230,7 @@ export const updateComicBook = (comicbook: ComicBook): APIAction => {
       id,
       comicbooklistissue: {
         id,
-        titleID, // Include titleID so reducer knows where to update
+        titleID,
       } as Partial<ComicBook>,
     },
     transformResponse: transformComicBookResponse,
