@@ -96,8 +96,8 @@ const App = () => {
             <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />
             <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
             <Route path="/dashboard/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
-            <Route path="/forms/:userId/:pubId/:publisherName/:cbTitle/comicbook/new" element={<ComicBook />} />
-            <Route path="/forms/:userId/:pubId/:publisherName/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new" element={<ComicBook />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
             <Route path="/fixer/:userId" element={<PrivateRouteHandler><Fixer /></PrivateRouteHandler>} />
             <Route path="/sale/:userId" element={<PrivateRouteHandler><Sale /></PrivateRouteHandler>} />
             <Route 

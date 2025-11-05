@@ -136,7 +136,7 @@ const ComicBookListIssues = ({
 
       <h2>
         <section>
-          <RRLink to={`/forms/${userId}/${pubId}/${publisherName}/${cbTitle}/comicbook/new`}>
+          <RRLink to={`/forms/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/new`}>
             <figure><LibraryAddIcon /></figure>
             <p className={styles.link}>Add Comic Book</p>
           </RRLink>

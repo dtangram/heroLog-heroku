@@ -43,7 +43,7 @@ const ComicBookList = ({
   comicbooklists = {},
   deleteComicBookTitle,
 }: ConnectorProps) => {
-  const { pubId = '', publisherName = '', coboTitleId = '' } = useParams<RouteParams>();
+  const { pubId = '', publisherName = '' } = useParams<RouteParams>();
   const navigate = useNavigate();
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
@@ -167,7 +167,7 @@ const ComicBookList = ({
               <section key={id}>
                 <p>
                   <RRLink 
-                    to={`/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`} 
+                    to={`/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
                     className={styles.link}
                   >
                     {cbTitle}
