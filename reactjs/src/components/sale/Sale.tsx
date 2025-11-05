@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { Link as RRLink, useParams } from 'react-router-dom';
+import { Link as RRLink } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,6 +8,7 @@ import Link from '../../link';
 import Empty from '../empty';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
+import { getAnonymousUserId } from '../../utils/anonymousUser';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -30,10 +31,6 @@ interface SaleData {
   isLoading: boolean;
 }
 
-interface RouteParams extends Record<string, string | undefined> {
-  userId: string;
-}
-
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -43,12 +40,18 @@ const Sale = ({
   sales = {},
   deleteSale,
 }: ConnectorProps) => {
-  const { userId = '' } = useParams<RouteParams>();
-  const localUserId = localStorage?.getItem('id') ?? '';
+  // ✅ Get userId from localStorage or anonymous
+  const userId = localStorage?.getItem('id') || getAnonymousUserId();
+
+  console.log('📊 Sale Component');
+  console.log('  - User ID:', userId);
+  console.log('  - Sales state keys:', Object.keys(sales));
+  console.log('  - Current sales data:', sales[userId]);
 
   // Fetch sales on mount
   useEffect(() => {
     window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    console.log('🔄 Fetching sales...');
     fetchSales?.();
   }, [fetchSales]);
 
@@ -65,7 +68,9 @@ const Sale = ({
     try {
       deleteSale?.(id);
       // Refetch data after deletion
-      fetchSales?.();
+      setTimeout(() => {
+        fetchSales?.();
+      }, 500);
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 
@@ -76,14 +81,22 @@ const Sale = ({
     }
   }, [deleteSale, fetchSales]);
 
-  // Extract current sales data
+  // ✅ Extract current sales data using the correct userId
   const currentSalesData = sales[userId] || {};
   const { allIds = [], byId = {}, isLoading = false } = currentSalesData;
+
+  console.log('📋 Sales data:', {
+    allIds,
+    byIdKeys: Object.keys(byId),
+    isLoading
+  });
 
   // Transform ids into array of sale objects
   const currentSales = allIds
     .map(id => byId[id]?.data)
     .filter(Boolean) as SaleItem[];
+
+  console.log('📦 Current sales:', currentSales.length);
 
   // Early return for loading state
   if (isLoading) {
@@ -96,7 +109,7 @@ const Sale = ({
 
         <h2>
           <section>
-            <RRLink to={`/forms/saleform/new/${localUserId}`}>
+            <RRLink to={`/forms/saleform/new/${userId}`}>
               <figure><LibraryAddIcon /></figure>
               <p className="link">Add Comic to Sale</p>
             </RRLink>
@@ -134,7 +147,7 @@ const Sale = ({
 
         <h2>
           <section>
-            <RRLink to={`/forms/saleform/new/${localUserId}`}>
+            <RRLink to={`/forms/saleform/new/${userId}`}>
               <figure><LibraryAddIcon /></figure>
               <p className="link">Add Comic to Sale</p>
             </RRLink>
@@ -162,7 +175,7 @@ const Sale = ({
 
       <h2>
         <section>
-          <RRLink to={`/forms/saleform/new/${localUserId}`}>
+          <RRLink to={`/forms/saleform/new/${userId}`}>
             <figure><LibraryAddIcon /></figure>
             <p className="link">Add Comic to Sale</p>
           </RRLink>
@@ -186,7 +199,7 @@ const Sale = ({
                 <article className="comicWrap">
                   <section className="comicImgWrap">
                     <img 
-                      src={comicBookCover} 
+                      src={comicBookCover || logo} 
                       alt={`${comicBookTitle} Issue ${comicIssue} cover`} 
                     />
                   </section>
@@ -198,23 +211,29 @@ const Sale = ({
                       {comicBookTitle}
                     </p>
 
-                    <p>
-                      <span>Issue:</span>
-                      &nbsp;
-                      {comicIssue}
-                    </p>
+                    {comicIssue && (
+                      <p>
+                        <span>Issue:</span>
+                        &nbsp;
+                        {comicIssue}
+                      </p>
+                    )}
 
-                    <p>
-                      <span>Volume:</span>
-                      &nbsp;
-                      {comicBookVolume}
-                    </p>
+                    {comicBookVolume && (
+                      <p>
+                        <span>Volume:</span>
+                        &nbsp;
+                        {comicBookVolume}
+                      </p>
+                    )}
 
-                    <p>
-                      <span>Year:</span>
-                      &nbsp;
-                      {comicBookYear}
-                    </p>
+                    {comicBookYear && (
+                      <p>
+                        <span>Year:</span>
+                        &nbsp;
+                        {comicBookYear}
+                      </p>
+                    )}
 
                     <p>
                       <span>Publisher:</span>
