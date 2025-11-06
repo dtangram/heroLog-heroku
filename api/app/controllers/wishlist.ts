@@ -7,29 +7,29 @@ import db from '../models';
 // ============================================================================
 
 interface WishListAttributes {
-  id?: number;
+  id?: string;  // ✅ Changed to UUID
   comicBookTitle: string;
-  comicIssue: string;
-  comicBookVolume: string;
-  comicBookYear: string;
+  comicIssue: number | null;  // ✅ Changed to number
+  comicBookVolume: number | null;  // ✅ Changed to number
+  comicBookYear: number | null;  // ✅ Changed to number
   comicBookPublisher: string;
-  comicBookCover: string;
+  comicBookCover: string | null;
   type: 'regular' | 'variant';
-  wishUsersId: number;
+  wishUsersId: string;  // ✅ Changed to UUID
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface WishListInstance {
-  id?: number;
+  id?: string;  // ✅ Changed to UUID
   comicBookTitle: string;
-  comicIssue: string;
-  comicBookVolume: string;
-  comicBookYear: string;
+  comicIssue: number | null;
+  comicBookVolume: number | null;
+  comicBookYear: number | null;
   comicBookPublisher: string;
-  comicBookCover: string;
+  comicBookCover: string | null;
   type: 'regular' | 'variant';
-  wishUsersId: number;
+  wishUsersId: string;  // ✅ Changed to UUID
   createdAt: Date;
   updatedAt: Date;
   toJSON: () => WishListAttributes;
@@ -37,7 +37,7 @@ interface WishListInstance {
 
 interface WishListModel {
   findAll: (options: { where: WhereOptions<WishListAttributes> }) => Promise<WishListInstance[]>;
-  findByPk: (id: number) => Promise<WishListInstance | null>;
+  findByPk: (id: string) => Promise<WishListInstance | null>;  // ✅ Changed to UUID
   create: (data: Partial<WishListAttributes>) => Promise<WishListInstance>;
   update: (
     data: Partial<WishListAttributes>,
@@ -146,13 +146,14 @@ const validateString = (
   return { isValid: true };
 };
 
-const validateNumericId = (id: string, fieldName: string = 'ID'): ValidationResult => {
-  const numericId = parseInt(id, 10);
+// ✅ Added UUID validation
+const validateUUID = (value: string, fieldName: string = 'ID'): ValidationResult => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   
-  if (isNaN(numericId) || numericId <= 0) {
+  if (!uuidRegex.test(value)) {
     return {
       isValid: false,
-      message: `${fieldName} must be a valid positive number`
+      message: `${fieldName} must be a valid UUID`
     };
   }
   
@@ -202,17 +203,18 @@ export const getWishLists = async (
     });
   }
   
-  const idValidation = validateNumericId(userId, 'User ID');
-  if (!idValidation.isValid) {
+  // ✅ Validate UUID instead of numeric
+  const uuidValidation = validateUUID(userId, 'User ID');
+  if (!uuidValidation.isValid) {
     return res.status(400).json({ 
       success: false, 
-      error: idValidation.message 
+      error: uuidValidation.message 
     });
   }
   
   try {
     const wishLists = await findWishLists({ 
-      wishUsersId: parseInt(userId, 10) 
+      wishUsersId: userId  // ✅ No parseInt
     });
     
     return res.status(200).json({
@@ -273,17 +275,18 @@ export const getOneById = async (
     });
   }
   
-  const idValidation = validateNumericId(id);
-  if (!idValidation.isValid) {
+  // ✅ Validate UUID instead of numeric
+  const uuidValidation = validateUUID(id, 'Wish list ID');
+  if (!uuidValidation.isValid) {
     return res.status(400).json({ 
       success: false, 
-      error: idValidation.message 
+      error: uuidValidation.message 
     });
   }
   
   try {
     const WishLists = getWishListModel();
-    const wishlist = await WishLists.findByPk(parseInt(id, 10));
+    const wishlist = await WishLists.findByPk(id);  // ✅ No parseInt
     
     if (!wishlist) {
       return res.status(404).json({ 
@@ -303,7 +306,7 @@ export const getOneById = async (
 
 export const createWishList = async (
   req: Request<Record<string, never>, Record<string, never>, Partial<WishListAttributes>>,
-  res: Response<ApiResponse<{ id: number }>>
+  res: Response<ApiResponse<{ id: string }>>  // ✅ Changed to string
 ): Promise<Response> => {
   const {
     comicBookTitle,
@@ -316,13 +319,10 @@ export const createWishList = async (
     wishUsersId,
   } = req.body;
   
+  // ✅ Only validate required fields
   const validation = validateParams(req.body as Record<string, string | number>, [
     'comicBookTitle',
-    'comicIssue',
-    'comicBookVolume',
-    'comicBookYear',
     'comicBookPublisher',
-    'comicBookCover',
     'type',
     'wishUsersId'
   ]);
@@ -334,25 +334,25 @@ export const createWishList = async (
     });
   }
   
-  const stringFields = [
-    { value: comicBookTitle, name: 'Comic book title' },
-    { value: comicIssue, name: 'Comic issue' },
-    { value: comicBookVolume, name: 'Comic book volume' },
-    { value: comicBookYear, name: 'Comic book year' },
-    { value: comicBookPublisher, name: 'Comic book publisher' },
-    { value: comicBookCover, name: 'Comic book cover' }
-  ];
-  
-  for (const field of stringFields) {
-    const stringValidation = validateString(field.value, field.name);
-    if (!stringValidation.isValid) {
-      return res.status(400).json({ 
-        success: false,
-        error: stringValidation.message 
-      });
-    }
+  // Validate comicBookTitle
+  const titleValidation = validateString(comicBookTitle, 'Comic book title');
+  if (!titleValidation.isValid) {
+    return res.status(400).json({ 
+      success: false,
+      error: titleValidation.message 
+    });
   }
   
+  // Validate comicBookPublisher
+  const publisherValidation = validateString(comicBookPublisher, 'Comic book publisher');
+  if (!publisherValidation.isValid) {
+    return res.status(400).json({ 
+      success: false,
+      error: publisherValidation.message 
+    });
+  }
+  
+  // Validate type
   const typeValidation = validateType(type!);
   if (!typeValidation.isValid) {
     return res.status(400).json({ 
@@ -361,24 +361,31 @@ export const createWishList = async (
     });
   }
   
-  if (typeof wishUsersId !== 'number' || isNaN(wishUsersId) || wishUsersId <= 0) {
+  // ✅ Validate UUID
+  const userIdValidation = validateUUID(wishUsersId!, 'Wish Users ID');
+  if (!userIdValidation.isValid) {
     return res.status(400).json({ 
       success: false,
-      error: 'wishUsersId must be a valid positive number' 
+      error: userIdValidation.message 
     });
   }
+  
+  // ✅ Convert string numbers to integers
+  const comicIssueNum = comicIssue ? parseInt(comicIssue as any, 10) : null;
+  const comicBookVolumeNum = comicBookVolume ? parseInt(comicBookVolume as any, 10) : null;
+  const comicBookYearNum = comicBookYear ? parseInt(comicBookYear as any, 10) : null;
   
   try {
     const WishLists = getWishListModel();
     const newWishList = await WishLists.create({
       comicBookTitle: comicBookTitle!.trim(),
-      comicIssue: comicIssue!.trim(),
-      comicBookVolume: comicBookVolume!.trim(),
-      comicBookYear: comicBookYear!.trim(),
+      comicIssue: comicIssueNum,
+      comicBookVolume: comicBookVolumeNum,
+      comicBookYear: comicBookYearNum,
       comicBookPublisher: comicBookPublisher!.trim(),
-      comicBookCover: comicBookCover!.trim(),
+      comicBookCover: comicBookCover?.trim() || null,
       type: type!.toLowerCase() as 'regular' | 'variant',
-      wishUsersId: wishUsersId!,
+      wishUsersId: wishUsersId!,  // ✅ UUID string
     });
     
     return res.status(201).json({ 
@@ -405,11 +412,12 @@ export const updateWishList = async (
     });
   }
   
-  const idValidation = validateNumericId(id);
-  if (!idValidation.isValid) {
+  // ✅ Validate UUID
+  const uuidValidation = validateUUID(id, 'Wish list ID');
+  if (!uuidValidation.isValid) {
     return res.status(400).json({ 
       success: false, 
-      error: idValidation.message 
+      error: uuidValidation.message 
     });
   }
   
@@ -424,15 +432,12 @@ export const updateWishList = async (
   
   const stringFields = [
     'comicBookTitle',
-    'comicIssue',
-    'comicBookVolume',
-    'comicBookYear',
     'comicBookPublisher',
     'comicBookCover'
   ] as const;
   
   for (const field of stringFields) {
-    if (updateData[field] !== undefined) {
+    if (updateData[field] !== undefined && updateData[field] !== null) {
       const stringValidation = validateString(
         updateData[field], 
         field.replace(/([A-Z])/g, ' $1').trim()
@@ -458,11 +463,13 @@ export const updateWishList = async (
     updateData.type = updateData.type.toLowerCase() as 'regular' | 'variant';
   }
   
+  // ✅ Validate UUID if provided
   if (updateData.wishUsersId !== undefined) {
-    if (typeof updateData.wishUsersId !== 'number' || isNaN(updateData.wishUsersId) || updateData.wishUsersId <= 0) {
+    const userIdValidation = validateUUID(updateData.wishUsersId, 'Wish Users ID');
+    if (!userIdValidation.isValid) {
       return res.status(400).json({ 
         success: false,
-        error: 'wishUsersId must be a valid positive number' 
+        error: userIdValidation.message 
       });
     }
   }
@@ -472,7 +479,7 @@ export const updateWishList = async (
     const [rowsUpdated, updatedRecords] = await WishLists.update(
       updateData,
       {
-        where: { id: parseInt(id, 10) },
+        where: { id },  // ✅ No parseInt
         returning: true,
       }
     );
@@ -489,7 +496,7 @@ export const updateWishList = async (
     if (updatedRecords && updatedRecords.length > 0) {
       updatedWishList = updatedRecords[0].toJSON();
     } else {
-      const record = await WishLists.findByPk(parseInt(id, 10));
+      const record = await WishLists.findByPk(id);  // ✅ No parseInt
       if (!record) {
         return res.status(404).json({ 
           success: false,
@@ -523,17 +530,18 @@ export const removeWishList = async (
     });
   }
   
-  const idValidation = validateNumericId(id);
-  if (!idValidation.isValid) {
+  // ✅ Validate UUID
+  const uuidValidation = validateUUID(id, 'Wish list ID');
+  if (!uuidValidation.isValid) {
     return res.status(400).json({ 
       success: false, 
-      error: idValidation.message 
+      error: uuidValidation.message 
     });
   }
   
   try {
     const WishLists = getWishListModel();
-    const existingRecord = await WishLists.findByPk(parseInt(id, 10));
+    const existingRecord = await WishLists.findByPk(id);  // ✅ No parseInt
     
     if (!existingRecord) {
       return res.status(404).json({ 
@@ -543,7 +551,7 @@ export const removeWishList = async (
     }
     
     const rowsDeleted = await WishLists.destroy({ 
-      where: { id: parseInt(id, 10) } 
+      where: { id }  // ✅ No parseInt
     });
     
     if (rowsDeleted === 0) {
