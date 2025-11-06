@@ -153,11 +153,9 @@ const checks = {
     
   wishUsersId: check('wishUsersId')
     .exists().withMessage('Wish user ID is required.')
-    .isInt({ min: 1 })
-    .isUUID()
-    .withMessage('Wish user ID must be a valid positive integer.')
-    .trim(),
-    
+    .isUUID()  // ✅ Remove the .isInt() line
+    .withMessage('Wish user ID must be a valid UUID.')  // ✅ Fix the message
+    .trim(),   
   messageUsersId: check('messageUsersId')
     .exists().withMessage('Message user ID is required.')
     .isInt({ min: 1 })
@@ -379,7 +377,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'editWishList': {
       return [
-        checks.idInt,
+        checks.idUUID,
         checks.comicBookTitle,
         checks.typeRV,
         checkForErrors
@@ -388,7 +386,7 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
 
     case 'deleteWishList': {
       return [
-        checks.idInt,
+        checks.idUUID,
         checkForErrors
       ];
     }
