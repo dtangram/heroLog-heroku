@@ -154,6 +154,7 @@ const checks = {
   wishUsersId: check('wishUsersId')
     .exists().withMessage('Wish user ID is required.')
     .isInt({ min: 1 })
+    .isUUID()
     .withMessage('Wish user ID must be a valid positive integer.')
     .toInt(),
     

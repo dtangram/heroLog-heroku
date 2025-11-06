@@ -5,6 +5,7 @@ import {
   getVariant,
   getWishLists,
   getOneById,
+  createWishList,  // ✅ Import createWishList
   updateWishList,
   removeWishList
 } from '../controllers/wishlist';
@@ -208,55 +209,61 @@ const findWishListHandler = async (
 
 const router = Router();
 
-// GET /wishlists/regular
+// GET /wishlist/regular
 // Get all regular (non-variant) wish list items
 router.get(
   '/regular',
   getRegular
 );
 
-// GET /wishlists/variant
+// GET /wishlist/variant
 // Get all variant wish list items
 router.get(
   '/variant',
   getVariant
 );
 
-// GET /wishlists/signups/:userId
+// GET /wishlist/signups/:userId
 // Get all wish lists for a specific user
 router.get(
   '/signups/:userId',
   getWishLists
 );
 
-// POST /wishlists
-// Find a wish list item by comic book title (search endpoint)
+// ✅ FIXED: POST /wishlist/ - Create a new wishlist (not search)
 router.post(
   '/',
-  validate('createWishLists'),
+  validate('createWishList'),
+  createWishList as unknown as RequestHandler  // Changed from findWishListHandler to createWishList
+);
+
+// POST /wishlist/search - Search for wishlist by title (if needed)
+// Keeping this as a separate endpoint if you need search functionality
+router.post(
+  '/search',
   findWishListHandler
 );
 
-// GET /wishlists/:id
+// GET /wishlist/:id
 // Get a single wish list item by ID
 router.get(
   '/:id',
   getOneById
 );
 
-// PUT /wishlists/:id
+// PUT /wishlist/:id
 // Update a wish list item
 router.put(
   '/:id',
-  validate('editWishLists') as unknown as RequestHandler,
+  validate('editWishList') as unknown as RequestHandler,
   updateWishList as unknown as RequestHandler
 );
 
-// DELETE /wishlists/:id
+// DELETE /wishlist/:id
 // Delete a wish list item
 router.delete(
   '/:id',
-  validate('deleteWishLists'),
+  validate('deleteWishList'),
   removeWishList
 );
 
