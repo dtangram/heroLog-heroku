@@ -198,7 +198,7 @@ useEffect(() => {
                 </NavLink>
               </NavItem>
 
-              <NavItem className={styles.slideUnder}>
+              {/* <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
                   to={`/fixer/${userId}`}
@@ -206,7 +206,7 @@ useEffect(() => {
                 >
                   FIXER
                 </NavLink>
-              </NavItem>
+              </NavItem> */}
 
               <NavItem className={styles.slideUnder}>
                 <NavLink
