@@ -1,8 +1,25 @@
-.scanContainer {
-  margin: 1rem 0;
+.scanContainer{
+  background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
+  font-size: 1.5rem;
   gap: 0.5rem;
+  margin: 10px auto 3rem;
+  padding: 5px 0;
+  text-align: center;
+  width: 100px;
+}
+
+.scanContainer:hover, .scanButton:hover p{
+  color: #AECEAB;
+}
+
+.scanButton:hover{
+  background: #2B2B2B;
 }
 
 .scanButton {
@@ -12,10 +29,10 @@
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: #770422;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.5rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
