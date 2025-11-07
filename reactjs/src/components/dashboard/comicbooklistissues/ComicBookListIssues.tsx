@@ -224,7 +224,7 @@ const ComicBookListIssues = ({
                     <section className={styles.editStyle}>
                       <p className={styles.linkWrapper}>
                         <Link className={styles.editLink}
-                          url={`/forms//${userId}${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`}
+                          url={`/forms/${userId}${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`}
                           icon={<EditIcon />}
                           title="Edit" 
                         />
