@@ -22,7 +22,6 @@ import ComicBookListIssues from './components/dashboard/comicbooklistissues';
 import CreatePublisher from './components/forms/createpublisher';
 import ComicBookListTitle from './components/forms/comicbooklisttitle';
 import ComicBook from './components/forms/comicbook';
-import Fixer from './components/fixer';
 import Sale from './components/sale';
 import SaleForm from './components/forms/saleform';
 import WishList from './components/wishlist';
@@ -33,7 +32,7 @@ import Profile from './components/profile';
 import ProfileForm from './components/forms/profileform';
 import Footer from './components/footer';
 import { getAnonymousUserId } from './utils/anonymousUser';
-import CollectionInsights from './components/collectionInsights/collectionInsights';
+import CollectionInsights from './components/collectionInsights';
 
 const App = () => {
   useEffect(() => {
