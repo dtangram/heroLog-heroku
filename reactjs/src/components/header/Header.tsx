@@ -198,15 +198,15 @@ useEffect(() => {
                 </NavLink>
               </NavItem>
 
-              {/* <NavItem className={styles.slideUnder}>
+              <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to={`/fixer/${userId}`}
+                  to="/insights"
                   onClick={toggleMenuItem}
                 >
-                  FIXER
+                  INSIGHTS
                 </NavLink>
-              </NavItem> */}
+              </NavItem>
 
               <NavItem className={styles.slideUnder}>
                 <NavLink
