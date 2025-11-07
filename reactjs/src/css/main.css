@@ -1035,8 +1035,8 @@ while in CSS Module */
   #cbVeiwMessage .comicWrap .paraWrap > section .deleteStyle figure {
     margin: 0 10px 0 0;
     padding: 0; }
-  #cbComBookListIssues section:nth-child(4), #cbSale section:nth-child(4), #cbWishList section:nth-child(4), #cbVeiwMessage section:nth-child(4) {
-    background: transparent; }
+  /* #cbComBookListIssues section:nth-child(4), #cbSale section:nth-child(4), #cbWishList section:nth-child(4), #cbVeiwMessage section:nth-child(4) {
+    background: transparent; } */
   #cbComBookListIssues .cbList > h3, #cbSale .cbList > h3, #cbWishList .cbList > h3, #cbVeiwMessage .cbList > h3 {
     font-size: 2rem;
     margin-bottom: 20px;
