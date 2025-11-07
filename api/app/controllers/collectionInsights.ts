@@ -193,32 +193,21 @@ export const getCollectionInsights = async (
   try {
     const ComicBooks = getComicBookModel();
     const ComicBookTitles = getComicBookTitleModel();
+    const CollectionPublishers = (db as any).CollectionPublishers || (db as any).CollectionPublisher;
     
-    if (!ComicBooks || !ComicBookTitles) {
+    if (!ComicBooks || !ComicBookTitles || !CollectionPublishers) {
       throw new Error('Comic book models not loaded');
     }
     
-    // Fetch all comics for this user
-    const comicBooks = await ComicBooks.findAll({
-      include: [{
-        model: ComicBookTitles,
-        as: 'ComicBookTitle',
-        attributes: ['cbTitle']
-      }],
-      where: {
-        // Match by user's publishers
-        comicbooktitlerelId: {
-          [Op.in]: await ComicBookTitles.findAll({
-            attributes: ['id'],
-            where: {
-              collectpubUsersId: userId
-            }
-          }).then((titles: any[]) => titles.map(t => t.id))
-        }
-      }
+    // Step 1: Get user's publishers
+    const userPublishers = await CollectionPublishers.findAll({
+      where: { collectpubUsersId: userId },
+      attributes: ['id']
     });
     
-    if (comicBooks.length === 0) {
+    console.log(`📚 Found ${userPublishers.length} publishers for user`);
+    
+    if (userPublishers.length === 0) {
       return res.status(200).json({
         success: true,
         data: {
@@ -232,12 +221,65 @@ export const getCollectionInsights = async (
       });
     }
     
+    const publisherIds = userPublishers.map((p: any) => p.id);
+    
+    // Step 2: Get titles for those publishers
+    const userTitles = await ComicBookTitles.findAll({
+      where: { collectpubId: { [Op.in]: publisherIds } },
+      attributes: ['id', 'cbTitle']
+    });
+    
+    console.log(`📖 Found ${userTitles.length} titles`);
+    
+    if (userTitles.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalComics: 0,
+          uniqueSeries: 0,
+          seriesBreakdown: [],
+          topSeries: [],
+          recommendations: ['Start building your collection by adding your first comic!'],
+          aiInsights: 'Your collection is just beginning! Add some comics to get personalized insights.'
+        }
+      });
+    }
+    
+    const titleIds = userTitles.map((t: any) => t.id);
+    
+    // Step 3: Get all comics for those titles
+    const comicBooks = await ComicBooks.findAll({
+      where: {
+        comicbooktitlerelId: { [Op.in]: titleIds }
+      }
+    });
+    
     console.log(`📚 Found ${comicBooks.length} comics`);
     
-    // Convert to plain objects
+    if (comicBooks.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalComics: 0,
+          uniqueSeries: 0,
+          seriesBreakdown: [],
+          topSeries: [],
+          recommendations: ['Start adding issues to your comic book titles!'],
+          aiInsights: 'You have publishers and titles set up. Now add some comic book issues to see insights!'
+        }
+      });
+    }
+    
+    // Create a map of title IDs to title names
+    const titleMap = new Map<string, string>();
+    userTitles.forEach((t: any) => {
+      titleMap.set(t.id, t.cbTitle);
+    });
+    
+    // Convert to plain objects with proper title names
     const comics: Comic[] = comicBooks.map((cb: any) => ({
       id: cb.id,
-      title: cb.ComicBookTitle?.cbTitle || cb.title,
+      title: titleMap.get(cb.comicbooktitlerelId) || cb.title || 'Unknown',
       comicIssue: cb.comicIssue,
       comicBookVolume: cb.comicBookVolume,
       comicBookYear: cb.comicBookYear,
