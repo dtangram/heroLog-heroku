@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
+import axios from 'axios';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -43,6 +44,45 @@ const getAnthropicClient = (): Anthropic => {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string; mediaType: string }> => {
+  console.log('📥 Downloading image:', imageUrl);
+  
+  try {
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    const buffer = Buffer.from(response.data, 'binary');
+    const base64 = buffer.toString('base64');
+    
+    // Determine media type from content-type header or URL
+    let mediaType = response.headers['content-type'] || 'image/jpeg';
+    
+    // Map content types to Anthropic-supported formats
+    if (mediaType.includes('png')) {
+      mediaType = 'image/png';
+    } else if (mediaType.includes('gif')) {
+      mediaType = 'image/gif';
+    } else if (mediaType.includes('webp')) {
+      mediaType = 'image/webp';
+    } else {
+      // Default to jpeg for jpg, jpeg, or unknown
+      mediaType = 'image/jpeg';
+    }
+    
+    console.log('✅ Image downloaded, size:', buffer.length, 'bytes, type:', mediaType);
+    
+    return { base64, mediaType };
+  } catch (error) {
+    console.error('❌ Error downloading image:', error);
+    throw new Error('Failed to download image from URL');
+  }
+};
 
 const parseComicMetadata = (text: string): ComicMetadata | null => {
   try {
@@ -101,11 +141,14 @@ export const scanComicCover = async (
   }
   
   try {
+    // Download image and convert to base64
+    const { base64, mediaType } = await downloadImageAsBase64(imageUrl);
+    
     const anthropic = getAnthropicClient();
     
     console.log('🤖 Calling Claude Vision API...');
     
-    // Call Claude Vision API
+    // Call Claude Vision API with base64 image
     const message = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
       max_tokens: 1024,
@@ -116,8 +159,9 @@ export const scanComicCover = async (
             {
               type: 'image',
               source: {
-                type: 'url',
-                url: imageUrl
+                type: 'base64',
+                media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+                data: base64
               }
             },
             {
@@ -170,41 +214,6 @@ export const scanComicCover = async (
   "publisher": "publisher name",
   "type": "regular or variant",
   "confidence": 0.85
-}
-
-**Examples:**
-
-Example 1 - Clear cover:
-{
-  "title": "The Amazing Spider-Man",
-  "issue": "300",
-  "volume": "",
-  "year": "1988",
-  "publisher": "Marvel Comics",
-  "type": "regular",
-  "confidence": 0.95
-}
-
-Example 2 - Variant cover:
-{
-  "title": "Batman",
-  "issue": "50",
-  "volume": "",
-  "year": "2018",
-  "publisher": "DC Comics",
-  "type": "variant",
-  "confidence": 0.90
-}
-
-Example 3 - Partial information:
-{
-  "title": "Saga",
-  "issue": "1",
-  "volume": "",
-  "year": "",
-  "publisher": "Image Comics",
-  "type": "regular",
-  "confidence": 0.75
 }
 
 **Important rules:**
