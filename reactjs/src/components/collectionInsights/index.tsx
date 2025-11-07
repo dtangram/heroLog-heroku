@@ -51,19 +51,18 @@ const CollectionInsights: React.FC = () => {
     try {
       console.log('📊 Fetching collection insights...');
       
-      const response = await API.get<InsightsResponse>(`/insights/${userId}`);
+      const response = await API.get<CollectionInsights>(`/insights/${userId}`);
       
-      console.log('📦 Full response:', response);  // ✅ Add this
-      console.log('📦 Response data:', response.data);  // ✅ Add this
-      console.log('📦 Success:', response.data?.success);  // ✅ Add this
-      console.log('📦 Data field:', response.data?.data);  // ✅ Add this
+      console.log('📦 Full response:', response);
+      console.log('📦 Response data:', response.data);
 
-      if (response.data.success && response.data.data) {
-        console.log('✅ Insights loaded:', response.data.data);
-        setInsights(response.data.data);
+      // ✅ The data is already unwrapped - response.data IS the insights
+      if (response.data && typeof response.data === 'object') {
+        console.log('✅ Insights loaded:', response.data);
+        setInsights(response.data);
       } else {
-        const errorMsg = response.data.error || 'Failed to load insights';
-        console.log('❌ No insights data:', errorMsg);  // ✅ Add this
+        const errorMsg = 'Failed to load insights';
+        console.log('❌ No insights data:', errorMsg);
         setError(errorMsg);
       }
     } catch (err) {
