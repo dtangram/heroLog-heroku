@@ -54,7 +54,7 @@
 
 .statCard {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: #770422;
   padding: 2rem;
   border-radius: 12px;
   text-align: center;
@@ -74,7 +74,7 @@
 
 /* AI Insights */
 .aiInsights {
-  background: #f7fafc;
+  background: #770422;
   border-left: 4px solid #667eea;
   padding: 2rem;
   border-radius: 8px;

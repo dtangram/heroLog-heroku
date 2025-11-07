@@ -44,31 +44,38 @@ const CollectionInsights: React.FC = () => {
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   useEffect(() => {
-    const fetchInsights = async () => {
-      setIsLoading(true);
-      setError('');
+  const fetchInsights = async () => {
+    setIsLoading(true);
+    setError('');
 
-      try {
-        console.log('📊 Fetching collection insights...');
-        
-        const response = await API.get<InsightsResponse>(`/insights/${userId}`);
+    try {
+      console.log('📊 Fetching collection insights...');
+      
+      const response = await API.get<InsightsResponse>(`/insights/${userId}`);
+      
+      console.log('📦 Full response:', response);  // ✅ Add this
+      console.log('📦 Response data:', response.data);  // ✅ Add this
+      console.log('📦 Success:', response.data?.success);  // ✅ Add this
+      console.log('📦 Data field:', response.data?.data);  // ✅ Add this
 
-        if (response.data.success && response.data.data) {
-          console.log('✅ Insights loaded:', response.data.data);
-          setInsights(response.data.data);
-        } else {
-          setError(response.data.error || 'Failed to load insights');
-        }
-      } catch (err) {
-        console.error('❌ Error loading insights:', err);
-        setError('Failed to load collection insights. Please try again.');
-      } finally {
-        setIsLoading(false);
+      if (response.data.success && response.data.data) {
+        console.log('✅ Insights loaded:', response.data.data);
+        setInsights(response.data.data);
+      } else {
+        const errorMsg = response.data.error || 'Failed to load insights';
+        console.log('❌ No insights data:', errorMsg);  // ✅ Add this
+        setError(errorMsg);
       }
-    };
+    } catch (err) {
+      console.error('❌ Error loading insights:', err);
+      setError('Failed to load collection insights. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchInsights();
-  }, [userId]);
+  fetchInsights();
+}, [userId]);
 
   // Loading state
   if (isLoading) {
