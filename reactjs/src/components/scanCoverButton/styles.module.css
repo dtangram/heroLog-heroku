@@ -8,7 +8,6 @@
   flex-direction: column;
   font-size: 1.5rem;
   gap: 0.5rem;
-  margin: 10px auto 3rem;
   padding: 5px 0;
   text-align: center;
   width: 350px;
@@ -36,11 +35,6 @@
   cursor: pointer;
   transition: all 0.3s ease;
   width: inherit;
-}
-
-.scanButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .scanButton:active:not(:disabled) {
