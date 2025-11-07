@@ -21,6 +21,7 @@ import emailPasswordResetRouter from './routes/emailpasswordreset';
 
 // Import utility routes
 import s3Router from './routes/s3upload';
+import aiScanner from './routes/aiScanner';
 
 // ============================================================================
 // CONFIGURATION
@@ -147,6 +148,7 @@ app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/passwordreset', passwordresetRouter);
 app.use('/emailpasswordreset', emailPasswordResetRouter);
+app.use('/ai', aiScanner);
 
 // Utility routes
 app.use('/s3', s3Router);

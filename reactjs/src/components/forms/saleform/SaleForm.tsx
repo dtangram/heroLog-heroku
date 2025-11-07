@@ -9,6 +9,8 @@ import styles from './styles.module.css';
 import API from '../../../API';
 import { SaleComic } from '../../../store/sale/actions';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import { useComicScanner } from '../../../hooks/useComicScanner';
+import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
 
 interface FormErrorsType {
   comicBookTitle: string;
@@ -296,6 +298,31 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     setFormData(prev => ({ ...prev, type: event.target.value as 'regular' | 'variant' }));
   }, []);
 
+  const { scanCover, isScanning, scanError, clearError } = useComicScanner();
+  const handleScanCover = useCallback(async () => {
+  if (!formData.comicBookCover) {
+    alert('Please upload a cover image first');
+    return;
+  }
+
+  const result = await scanCover(formData.comicBookCover);
+  
+  if (result) {
+    // Auto-fill form with scanned data
+    setFormData(prev => ({
+      ...prev,
+      comicBookTitle: result.comicBookTitle || prev.comicBookTitle,
+      comicIssue: result.comicIssue || prev.comicIssue,
+      comicBookVolume: result.comicBookVolume || prev.comicBookVolume,
+      comicBookYear: result.comicBookYear || prev.comicBookYear,
+      comicBookPublisher: result.comicBookPublisher || prev.comicBookPublisher,
+      type: result.type || prev.type
+    }));
+
+    alert(`✅ Cover scanned! Confidence: ${Math.round(result.confidence * 100)}%\n\nPlease review and edit the auto-filled information.`);
+  }
+}, [formData.comicBookCover, scanCover]);
+
   const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -384,6 +411,14 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                       onChange={handleFileInputChange}
                     />
                   </label>
+
+                  {comicBookCover && (
+                    <ScanCoverButton
+                      onScan={handleScanCover}
+                      isScanning={isScanning}
+                      error={scanError}
+                    />
+                  )}
 
                   <label htmlFor="comicBookTitle">
                     Comic Book Title *

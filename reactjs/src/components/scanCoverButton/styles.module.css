@@ -1,0 +1,59 @@
+.scanContainer {
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.scanButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.scanButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.scanButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.scanButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.scanButton span:first-child {
+  font-size: 1.2rem;
+}
+
+.scanError {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  margin: 0;
+  padding: 0.5rem;
+  background: #fff5f5;
+  border-left: 3px solid #e53e3e;
+  border-radius: 4px;
+}
+
+.scanInfo {
+  color: #667eea;
+  font-size: 0.875rem;
+  margin: 0;
+  font-style: italic;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent, FormEvent, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
@@ -7,6 +7,8 @@ import API from '../../../API';
 import { ContainerProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
 import styles from './styles.module.css';
+import { useComicScanner } from '../../../hooks/useComicScanner';
+import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -240,6 +242,30 @@ const ComicBookComponent = ({
     }
   };
 
+  const { scanCover, isScanning, scanError } = useComicScanner();
+
+const handleScanCover = useCallback(async () => {
+  if (!formState.comicBookCover) {
+    alert('Please upload a cover image first');
+    return;
+  }
+
+  const result = await scanCover(formState.comicBookCover);
+  
+  if (result) {
+    setFormState(prev => ({
+      ...prev,
+      title: result.title || result.comicBookTitle || prev.title,
+      comicIssue: result.comicIssue || prev.comicIssue,
+      volume: result.volume || result.comicBookVolume || prev.volume,
+      year: result.year || result.comicBookYear || prev.year,
+      type: result.type || prev.type
+    }));
+
+    alert(`✅ Cover scanned! Confidence: ${Math.round(result.confidence * 100)}%\n\nPlease review the auto-filled information.`);
+  }
+}, [formState.comicBookCover, scanCover]);
+
   const validateFields = (): boolean => {
     const errors: FormErrorsState = {};
 
@@ -389,6 +415,15 @@ const ComicBookComponent = ({
                   />
                   {isUploading && <span> Uploading...</span>}
                 </label>
+
+                {formState.comicBookCover && (
+                  <ScanCoverButton
+                    onScan={handleScanCover}
+                    isScanning={isScanning}
+                    disabled={isSubmitting || isUploading}
+                    error={scanError}
+                  />
+                )}
 
                 <label htmlFor="title">
                   Title *
