@@ -124,7 +124,7 @@ useEffect(() => {
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                     className={getNavLinkClass}
-                    to="/insights"
+                    to={`/insights/${userId}`}
                     onClick={toggleMenuItem}
                   >
                     INSIGHTS
@@ -211,7 +211,7 @@ useEffect(() => {
               <NavItem className={styles.slideUnder}>
                 <NavLink
                   className={getNavLinkClass}
-                  to="/insights"
+                  to={`/insights/${userId}`}
                   onClick={toggleMenuItem}
                 >
                   INSIGHTS

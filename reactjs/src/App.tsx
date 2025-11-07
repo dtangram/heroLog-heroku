@@ -33,6 +33,7 @@ import Profile from './components/profile';
 import ProfileForm from './components/forms/profileform';
 import Footer from './components/footer';
 import { getAnonymousUserId } from './utils/anonymousUser';
+import CollectionInsights from './components/collectionInsights/collectionInsights';
 
 const App = () => {
   useEffect(() => {
@@ -78,7 +79,6 @@ const App = () => {
             {/* Private Routes */}
             <Route path="/" element={<PrivateRouteHandler><Home /></PrivateRouteHandler>} />
             <Route path="/dashboard/:userId" element={<Dashboard />} />
-            <Route path="/dashboardProfile/:userId" element={<PrivateRouteHandler><Dashboard /></PrivateRouteHandler>} />
             <Route 
               path="/forms/messaging/:userId/:comicBookTitle/:comicIssue/:userSent/:username/:userEmail" 
               element={<PrivateRouteHandler><ModalMessage /></PrivateRouteHandler>} 
@@ -98,7 +98,7 @@ const App = () => {
             <Route path="/dashboard/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
             <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new" element={<ComicBook />} />
             <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
-            <Route path="/fixer/:userId" element={<PrivateRouteHandler><Fixer /></PrivateRouteHandler>} />
+            <Route path="/insights/:userId" element={<CollectionInsights />} />
             <Route path="/sale/:userId" element={<PrivateRouteHandler><Sale /></PrivateRouteHandler>} />
             <Route 
               path="/forms/saleform/new/:userId" 
