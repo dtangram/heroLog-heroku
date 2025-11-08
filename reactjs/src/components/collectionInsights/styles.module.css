@@ -1,7 +1,6 @@
 .container {
     margin: 150px auto;
     min-height: 950px;
-    padding: 2rem;
 }
 
 .cbWrap{
@@ -52,7 +51,7 @@
   height: auto;
 	margin: 0 auto 50px;
   min-height: inherit;
-	padding: 40px 3%;
+	padding: 0 3%;
   position: relative;
 	width: 80%;
 }
