@@ -81,7 +81,7 @@ const CollectionInsights: React.FC = () => {
   //   return (
   //     <div className={styles.container}>
   //       <h1>
-  //         Collection Insights
+  //         AI Collection Insights
   //         <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
   //       </h1>
         
@@ -97,7 +97,7 @@ const CollectionInsights: React.FC = () => {
     return (
       <article id="cbComicForm" className={styles.cbWrap}>
         <h1>
-          Collection Insights
+          AI Collection Insights
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
         </h1>
 
@@ -116,7 +116,7 @@ const CollectionInsights: React.FC = () => {
     return (
       <div className={styles.container}>
         <h1>
-          Collection Insights
+          AI Collection Insights
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
         </h1>
         
@@ -132,7 +132,7 @@ const CollectionInsights: React.FC = () => {
     return (
       <article id="cbComicForm" className={styles.cbWrap}>
       <h1>
-        Collection Insights
+        AI Collection Insights
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
       
@@ -148,7 +148,7 @@ const CollectionInsights: React.FC = () => {
   return (
     <article id="cbComicForm" className={styles.cbWrap}>
       <h1>
-        Collection Insights
+        AI Collection Insights
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
 
