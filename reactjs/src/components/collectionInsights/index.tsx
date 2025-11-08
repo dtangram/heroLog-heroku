@@ -79,7 +79,7 @@ const CollectionInsights: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className={styles.container}>
+      <article id="cbComicForm" className={styles.cbWrap}>
         <h1>
           Collection Insights
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
@@ -91,7 +91,7 @@ const CollectionInsights: React.FC = () => {
             <BeatLoader size={10} color="#FFF" />
           </section>
         </article>
-      </div>
+      </article>
     );
   }
 
