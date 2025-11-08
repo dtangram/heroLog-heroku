@@ -41,7 +41,7 @@ const CollectionInsights: React.FC = () => {
     setError('');
 
     try {
-      console.log('📊 Fetching collection insights...');
+      console.log('Fetching collection insights...');
       
       const response = await API.get<CollectionInsights>(`/api/insights/${userId}`);
       
@@ -79,7 +79,7 @@ const CollectionInsights: React.FC = () => {
 
         <article className={styles.cbList}>
           <section className={styles.loadWrap}>
-            <p className={styles.loadMessage}>Analyzing your collection...</p>
+            <p className={styles.loadMessage}>Analyzing your collection</p>
             <BeatLoader size={10} color="#770422" />
           </section>
         </article>
