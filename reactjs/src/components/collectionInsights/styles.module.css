@@ -40,7 +40,7 @@
   width: 70px;
 }
 
-.cbWrap .cbList .wrapper article .loadWrap{
+.cbWrap .cbList .loadWrap{
   align-items: baseline;
   display: flex;
   flex-direction: row;
@@ -49,7 +49,7 @@
   padding: 0;
 }
 
-.cbWrap .cbList .wrapper article .loadWrap p.loadMessage{
+.cbWrap .cbList .loadWrap p.loadMessage{
   color: #FFF;
   font-size: 4rem !important;
   padding: 3% 0;
