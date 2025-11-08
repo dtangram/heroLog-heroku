@@ -84,11 +84,13 @@ const CollectionInsights: React.FC = () => {
           Collection Insights
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
         </h1>
-        
-        <div className={styles.loading}>
-          <BeatLoader size={15} color="#770422" />
-          <p>Analyzing your collection...</p>
-        </div>
+
+        <article className={styles.cbList}>
+          <section className={styles.loadWrap}>
+            <p className={styles.loadMessage}>Analyzing your collection...</p>
+            <BeatLoader size={10} color="#FFF" />
+          </section>
+        </article>
       </div>
     );
   }
