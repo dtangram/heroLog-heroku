@@ -135,12 +135,8 @@ const CollectionInsights: React.FC = () => {
         Collection Insights
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
+      
       <div className={styles.container}>
-        <h1>
-          Collection Insights
-          <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
-        </h1>
-        
         <div className={styles.empty}>
           <p>Start building your collection to see insights!</p>
         </div>
