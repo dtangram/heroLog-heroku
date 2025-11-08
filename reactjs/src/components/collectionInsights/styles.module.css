@@ -28,6 +28,10 @@
   width: 70px;
 }
 
+.cbWrap .cbList .loadWrap p.loadMessage, .cbWrap .cbList .wrapper, .empty p, .statLabel {
+  font-family: "Lato", Arial, sans-serif;
+}
+
 .cbWrap .cbList .loadWrap{
   align-items: baseline;
   display: flex;
@@ -39,7 +43,6 @@
 
 .cbWrap .cbList .loadWrap p.loadMessage{
   color: #2B2B2B;
-  font-family: "Lato", Arial, sans-serif;
   font-size: 4rem !important;
   padding: 3% 0;
   text-align: center;
@@ -47,7 +50,6 @@
 
 .cbWrap .cbList .wrapper{
   border-radius: 15px;
-	font-family: "Lato", Arial, sans-serif;
 	font-size: 1.1rem;
   height: auto;
 	margin: 0 auto 50px;
@@ -79,7 +81,6 @@
 
 .empty p {
   color: #2B2B2B;
-  font-family: "Lato", Arial, sans-serif;
   font-size: 4rem;
 }
 
@@ -107,7 +108,7 @@
 }
 
 .statLabel {
-  font-size: 1rem;
+  font-size: 1.5rem;
   opacity: 0.9;
 }
 
