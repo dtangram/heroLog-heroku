@@ -39,6 +39,7 @@
 
 .cbWrap .cbList .loadWrap p.loadMessage{
   color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
   font-size: 4rem !important;
   padding: 3% 0;
   text-align: center;
@@ -76,8 +77,10 @@
   color: #e53e3e;
 }
 
-.empty {
+.empty p {
   color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 4rem;
 }
 
 /* Stats Grid */
