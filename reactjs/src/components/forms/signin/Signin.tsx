@@ -318,7 +318,7 @@ const handleSubmit = useCallback(
           <FormErrors formErrors={formErrors} />
 
           <fieldset>
-            {/* <div className={styles.googleBTN}>
+            <div className={styles.googleBTN}>
               <div id="googleSignInButton" style={{ width: '100%' }} />
             </div>
 
@@ -326,7 +326,7 @@ const handleSubmit = useCallback(
               <hr />
               <span>or</span>
               <hr />
-            </section> */}
+            </section>
 
             <label htmlFor="username">
               Username
