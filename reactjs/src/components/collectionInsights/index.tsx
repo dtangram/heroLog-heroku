@@ -79,21 +79,37 @@ const CollectionInsights: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <article id="cbComicForm" className={styles.cbWrap}>
+      <div className={styles.container}>
         <h1>
           Collection Insights
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
         </h1>
-
-        <article className={styles.cbList}>
-          <section className={styles.loadWrap}>
-            <p className={styles.loadMessage}>Analyzing your collection...</p>
-            <BeatLoader size={10} color="#FFF" />
-          </section>
-        </article>
-      </article>
+        
+        <div className={styles.loading}>
+          <BeatLoader size={15} color="#770422" />
+          <p>Analyzing your collection...</p>
+        </div>
+      </div>
     );
   }
+
+  // if (isLoading) {
+  //   return (
+  //     <article id="cbComicForm" className={styles.cbWrap}>
+  //       <h1>
+  //         Collection Insights
+  //         <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
+  //       </h1>
+
+  //       <article className={styles.cbList}>
+  //         <section className={styles.loadWrap}>
+  //           <p className={styles.loadMessage}>Analyzing your collection...</p>
+  //           <BeatLoader size={10} color="#FFF" />
+  //         </section>
+  //       </article>
+  //     </article>
+  //   );
+  // }
 
   // Error state
   if (error) {
