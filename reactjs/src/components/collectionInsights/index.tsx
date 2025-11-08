@@ -161,7 +161,7 @@ const CollectionInsights: React.FC = () => {
 
               {/* AI Insights */}
               <div className={styles.aiInsights}>
-                <h2>🤖 AI Analysis</h2>
+                <h2>Analysis</h2>
                 <div className={styles.insightsText}>
                   {insights.aiInsights.split('\n').map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>

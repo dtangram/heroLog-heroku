@@ -30,7 +30,6 @@ const ScanCoverButton: React.FC<ScanCoverButtonProps> = ({
           </>
         ) : (
           <>
-            <span>🤖</span>
             <span>Scan Cover with AI</span>
           </>
         )}
