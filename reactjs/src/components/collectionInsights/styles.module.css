@@ -45,6 +45,19 @@
   text-align: center;
 }
 
+.cbWrap .cbList .wrapper{
+  background: #AECEAB;
+  border-radius: 15px;
+	font-family: "Lato", Arial, sans-serif;
+	font-size: 1.1rem;
+  height: auto;
+	margin: 0 auto 50px;
+  min-height: inherit;
+	padding: 40px 3%;
+  position: relative;
+	width: 80%;
+}
+
 /* Loading & Error States */
 .loading,
 .error,
