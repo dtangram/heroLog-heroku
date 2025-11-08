@@ -150,7 +150,7 @@ app.use('/auth', authRouter);
 app.use('/passwordreset', passwordresetRouter);
 app.use('/emailpasswordreset', emailPasswordResetRouter);
 app.use('/ai', aiScanner);
-app.use('/insights', collectionInsights);
+app.use('/api/insights', collectionInsights);
 
 // Utility routes
 app.use('/s3', s3Router);

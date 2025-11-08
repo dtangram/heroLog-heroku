@@ -4,10 +4,6 @@ import API from '../../API';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import styles from './styles.module.css';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface SeriesAnalysis {
   seriesName: string;
   totalIssues: number;
@@ -32,10 +28,6 @@ interface InsightsResponse {
   error?: string;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
 const CollectionInsights: React.FC = () => {
   const [insights, setInsights] = useState<CollectionInsights | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,22 +43,22 @@ const CollectionInsights: React.FC = () => {
     try {
       console.log('📊 Fetching collection insights...');
       
-      const response = await API.get<CollectionInsights>(`/insights/${userId}`);
+      const response = await API.get<CollectionInsights>(`/api/insights/${userId}`);
       
-      console.log('📦 Full response:', response);
-      console.log('📦 Response data:', response.data);
+      console.log('Full response:', response);
+      console.log('Response data:', response.data);
 
-      // ✅ The data is already unwrapped - response.data IS the insights
+      // The data is already unwrapped - response.data IS the insights
       if (response.data && typeof response.data === 'object') {
-        console.log('✅ Insights loaded:', response.data);
+        console.log('Insights loaded:', response.data);
         setInsights(response.data);
       } else {
         const errorMsg = 'Failed to load insights';
-        console.log('❌ No insights data:', errorMsg);
+        console.log('No insights data:', errorMsg);
         setError(errorMsg);
       }
     } catch (err) {
-      console.error('❌ Error loading insights:', err);
+      console.error('Error loading insights:', err);
       setError('Failed to load collection insights. Please try again.');
     } finally {
       setIsLoading(false);
@@ -77,22 +69,6 @@ const CollectionInsights: React.FC = () => {
 }, [userId]);
 
   // Loading state
-  // if (isLoading) {
-  //   return (
-  //     <div className={styles.container}>
-  //       <h1>
-  //         AI Collection Insights
-  //         <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
-  //       </h1>
-        
-  //       <div className={styles.loading}>
-  //         <BeatLoader size={15} color="#770422" />
-  //         <p>Analyzing your collection...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   if (isLoading) {
     return (
       <article id="cbComicForm" className={styles.cbWrap}>

@@ -2,10 +2,6 @@ import { Request, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import axios from 'axios';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface ScanRequest {
   imageUrl: string;
 }
@@ -27,10 +23,7 @@ interface ScanResponse {
   rawResponse?: string;
 }
 
-// ============================================================================
 // ANTHROPIC CLIENT
-// ============================================================================
-
 const getAnthropicClient = (): Anthropic => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   
@@ -41,12 +34,9 @@ const getAnthropicClient = (): Anthropic => {
   return new Anthropic({ apiKey });
 };
 
-// ============================================================================
 // HELPER FUNCTIONS
-// ============================================================================
-
 const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string; mediaType: string }> => {
-  console.log('📥 Downloading image:', imageUrl);
+  console.log('Downloading image:', imageUrl);
   
   try {
     const response = await axios.get(imageUrl, {
@@ -75,11 +65,11 @@ const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string
       mediaType = 'image/jpeg';
     }
     
-    console.log('✅ Image downloaded, size:', buffer.length, 'bytes, type:', mediaType);
+    console.log('Image downloaded, size:', buffer.length, 'bytes, type:', mediaType);
     
     return { base64, mediaType };
   } catch (error) {
-    console.error('❌ Error downloading image:', error);
+    console.error('Error downloading image:', error);
     throw new Error('Failed to download image from URL');
   }
 };
@@ -110,17 +100,15 @@ const parseComicMetadata = (text: string): ComicMetadata | null => {
   }
 };
 
-// ============================================================================
-// CONTROLLER
-// ============================================================================
 
+// CONTROLLER
 export const scanComicCover = async (
   req: Request<{}, ScanResponse, ScanRequest>,
   res: Response<ScanResponse>
 ): Promise<Response> => {
   const { imageUrl } = req.body;
   
-  console.log('📸 Scanning comic cover:', imageUrl);
+  console.log('Scanning comic cover:', imageUrl);
   
   // Validate input
   if (!imageUrl || typeof imageUrl !== 'string') {
@@ -146,7 +134,7 @@ export const scanComicCover = async (
     
     const anthropic = getAnthropicClient();
     
-    console.log('🤖 Calling Claude Vision API...');
+    console.log('Calling Claude Vision API...');
     
     // Call Claude Vision API with base64 image
     const message = await anthropic.messages.create({
@@ -233,7 +221,7 @@ export const scanComicCover = async (
       .map(block => (block as any).text)
       .join('\n');
     
-    console.log('📝 Claude response:', responseText);
+    console.log('Claude response:', responseText);
     
     // Parse the metadata
     const metadata = parseComicMetadata(responseText);
@@ -255,7 +243,7 @@ export const scanComicCover = async (
       });
     }
     
-    console.log('✅ Extracted metadata:', metadata);
+    console.log('Extracted metadata:', metadata);
     
     return res.status(200).json({
       success: true,
@@ -263,7 +251,7 @@ export const scanComicCover = async (
     });
     
   } catch (error) {
-    console.error('❌ Error scanning comic cover:', error);
+    console.error('Error scanning comic cover:', error);
     
     if (error instanceof Error) {
       return res.status(500).json({

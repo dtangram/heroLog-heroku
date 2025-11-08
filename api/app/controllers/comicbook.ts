@@ -2,10 +2,6 @@ import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 // Comic book type literal
 type ComicBookType = 'regular' | 'variant';
 
@@ -127,10 +123,7 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-// ============================================================================
 // HELPERS
-// ============================================================================
-
 const ComicBooks = db.ComicBooks as ComicBookModel;
 
 // Type guard for Sequelize errors
@@ -233,7 +226,7 @@ export const getComicBooks = async (
 ): Promise<Response> => {
   const { coboTitleId } = req.params;
   
-  console.log('📨 GET /comicbook/titles/:coboTitleId');
+  console.log('GET /comicbook/titles/:coboTitleId');
   console.log('Comic book title ID:', coboTitleId);
   
   const validation = validateParams(req.params, ['coboTitleId']);
@@ -260,7 +253,7 @@ export const getComicBooks = async (
     
     const data = comicbookIssues.map(comic => comic.toJSON());
     
-    console.log(`✅ Found ${data.length} comic books`);
+    console.log(`Found ${data.length} comic books`);
     
     return res.status(200).json({
       success: true,
@@ -277,7 +270,7 @@ export const getComicBookRegular = async (
   _req: Request,
   res: Response<ApiResponse<ComicBookAttributes[]>>
 ): Promise<Response> => {
-  console.log('📨 GET /comicbook/regular');
+  console.log('GET /comicbook/regular');
   
   try {
     const regularComicBooks = await ComicBooks.findAll({ 
@@ -287,7 +280,7 @@ export const getComicBookRegular = async (
     
     const data = regularComicBooks.map(comic => comic.toJSON());
     
-    console.log(`✅ Found ${data.length} regular comic books`);
+    console.log(`Found ${data.length} regular comic books`);
     
     return res.status(200).json({
       success: true,
@@ -304,7 +297,7 @@ export const getComicBookVariant = async (
   _req: Request,
   res: Response<ApiResponse<ComicBookAttributes[]>>
 ): Promise<Response> => {
-  console.log('📨 GET /comicbook/variant');
+  console.log('GET /comicbook/variant');
   
   try {
     const variantComicBooks = await ComicBooks.findAll({ 
@@ -314,7 +307,7 @@ export const getComicBookVariant = async (
     
     const data = variantComicBooks.map(comic => comic.toJSON());
     
-    console.log(`✅ Found ${data.length} variant comic books`);
+    console.log(`Found ${data.length} variant comic books`);
     
     return res.status(200).json({
       success: true,
@@ -333,7 +326,7 @@ export const getOneById = async (
 ): Promise<Response> => {
   const { id } = req.params;
   
-  console.log('📨 GET /comicbook/:id');
+  console.log('GET /comicbook/:id');
   console.log('Comic book ID:', id);
   
   const validation = validateParams(req.params, ['id']);
@@ -356,14 +349,14 @@ export const getOneById = async (
     const comicbook = await ComicBooks.findByPk(id);
     
     if (!comicbook) {
-      console.log('❌ Comic book not found');
+      console.log('Comic book not found');
       return res.status(404).json({ 
         success: false,
         error: 'Comic book not found' 
       });
     }
     
-    console.log('✅ Comic book found');
+    console.log('Comic book found');
     
     return res.status(200).json({
       success: true,
@@ -379,8 +372,8 @@ export const createComicBook = async (
   req: Request<Record<string, never>, Record<string, never>, ComicBookCreateRequest>,
   res: Response<ApiResponse<ComicBookAttributes>>
 ): Promise<Response> => {
-  console.log('📨 POST /comicbook');
-  console.log('📨 Body:', req.body);
+  console.log('POST /comicbook');
+  console.log('Body:', req.body);
   
   const {
     title,
@@ -405,7 +398,7 @@ export const createComicBook = async (
     ['title', 'comicIssue', 'type', 'titleID']
   );
   if (!validation.isValid) {
-    console.log('❌ Validation failed:', validation.message);
+    console.log('Validation failed:', validation.message);
     return res.status(400).json({ 
       success: false, 
       error: validation.message 
@@ -462,7 +455,7 @@ export const createComicBook = async (
   
   const titleIdValidation = validateUUID(titleID, 'Title ID');
   if (!titleIdValidation.isValid) {
-    console.log('❌ Invalid UUID:', titleID);
+    console.log('Invalid UUID:', titleID);
     return res.status(400).json({ 
       success: false,
       error: titleIdValidation.message 
@@ -499,7 +492,7 @@ export const createComicBook = async (
     }
   }
   
-  console.log('✅ All validations passed, attempting to create...');
+  console.log('All validations passed, attempting to create...');
   
   try {
     const newComicBook = await ComicBooks.create({
@@ -518,7 +511,7 @@ export const createComicBook = async (
     
     const createdData = newComicBook.toJSON();
     
-    console.log('✅ Comic book created successfully');
+    console.log('Comic book created successfully');
     console.log('Created data:', createdData);
     
     return res.status(201).json({ 
@@ -527,7 +520,7 @@ export const createComicBook = async (
       message: 'Comic book created successfully'
     });
   } catch (error) {
-    console.log('❌ ERROR IN CREATE:', error);
+    console.log('ERROR IN CREATE:', error);
     return handleError(res, error as Error, 400, 'createComicBook');
   }
 };
@@ -539,9 +532,9 @@ export const updateComicBook = async (
 ): Promise<Response> => {
   const { id } = req.params;
   
-  console.log('📨 PUT /comicbook/:id');
+  console.log('PUT /comicbook/:id');
   console.log('Comic book ID:', id);
-  console.log('📨 Body:', req.body);
+  console.log('Body:', req.body);
   
   const validation = validateParams(req.params, ['id']);
   if (!validation.isValid) {
@@ -635,7 +628,7 @@ export const updateComicBook = async (
     updateData.comicbooktitlerelId = req.body.comicbooktitlerelId;
   }
   
-  console.log('📝 Sanitized update data:', updateData);
+  console.log('Sanitized update data:', updateData);
   
   try {
     const [rowsUpdated, updatedRecords] = await ComicBooks.update(
@@ -647,7 +640,7 @@ export const updateComicBook = async (
     );
     
     if (rowsUpdated === 0) {
-      console.log('❌ No rows updated');
+      console.log('No rows updated');
       return res.status(404).json({ 
         success: false,
         error: 'Comic book not found or no changes made' 
@@ -669,7 +662,7 @@ export const updateComicBook = async (
       updatedComicBook = record.toJSON();
     }
     
-    console.log('✅ Comic book updated successfully');
+    console.log('Comic book updated successfully');
     
     return res.status(200).json({
       success: true,
@@ -677,7 +670,7 @@ export const updateComicBook = async (
       message: 'Comic book updated successfully'
     });
   } catch (error) {
-    console.log('❌ ERROR IN UPDATE:', error);
+    console.log('ERROR IN UPDATE:', error);
     return handleError(res, error as Error, 400, 'updateComicBook');
   }
 };
@@ -689,7 +682,7 @@ export const removeComicBook = async (
 ): Promise<Response> => {
   const { id } = req.params;
   
-  console.log('📨 DELETE /comicbook/:id');
+  console.log('DELETE /comicbook/:id');
   console.log('Comic book ID:', id);
   
   const validation = validateParams(req.params, ['id']);
@@ -712,7 +705,7 @@ export const removeComicBook = async (
     const existingRecord = await ComicBooks.findByPk(id);
     
     if (!existingRecord) {
-      console.log('❌ Comic book not found');
+      console.log('Comic book not found');
       return res.status(404).json({ 
         success: false,
         error: 'Comic book not found' 
@@ -730,7 +723,7 @@ export const removeComicBook = async (
       });
     }
     
-    console.log('✅ Comic book deleted successfully');
+    console.log('Comic book deleted successfully');
     
     return res.status(200).json({ 
       success: true,

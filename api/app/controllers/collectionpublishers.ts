@@ -154,7 +154,7 @@ export const getCollectionPublishers = async (
   // Get from JWT token OR query param
   const userId = req.user?.id || req.query.userId as string;
   
-  console.log('📊 GET PUBLISHERS REQUEST');
+  console.log('GET PUBLISHERS REQUEST');
   console.log('  - User from token:', req.user?.id);
   console.log('  - User from query:', req.query.userId);
   console.log('  - Final userId:', userId);
@@ -171,7 +171,7 @@ export const getCollectionPublishers = async (
       where: { collectpubUsersId: userId }
     });
     
-    console.log(`✅ Found ${collectPublishers.length} publishers for user ${userId}`);  // ✅ Fixed: parenthesis before backtick
+    console.log(`Found ${collectPublishers.length} publishers for user ${userId}`);
     
     const data = collectPublishers.map(publisher => publisher.toJSON());
     
@@ -237,7 +237,7 @@ export const createCollectionPublisher = async (
   const { publisherName, collectpubUsersId } = req.body;
   
   // ADD DETAILED LOGGING
-  console.log('📝 CREATE PUBLISHER REQUEST RECEIVED');
+  console.log('CREATE PUBLISHER REQUEST RECEIVED');
   console.log('Request body:', JSON.stringify(req.body, null, 2));
   console.log('publisherName:', publisherName);
   console.log('collectpubUsersId:', collectpubUsersId);
@@ -246,7 +246,7 @@ export const createCollectionPublisher = async (
   // Validate required fields
   const validation = validateParams(req.body as Record<string, string>, ['publisherName', 'collectpubUsersId']);
   if (!validation.isValid) {
-    console.log('❌ Validation failed:', validation.message);
+    console.log('Validation failed:', validation.message);
     return res.status(400).json({ 
       success: false, 
       error: validation.message 
@@ -255,7 +255,7 @@ export const createCollectionPublisher = async (
   
   // Additional validation for publisherName
   if (!publisherName) {
-    console.log('❌ Publisher name missing');
+    console.log('Publisher name missing');
     return res.status(400).json({ 
       success: false,
       error: 'Publisher name is required' 
@@ -264,7 +264,7 @@ export const createCollectionPublisher = async (
   
   const stringValidation = validateString(publisherName, 'Publisher name');
   if (!stringValidation.isValid) {
-    console.log('❌ String validation failed:', stringValidation.message);
+    console.log('String validation failed:', stringValidation.message);
     return res.status(400).json({ 
       success: false,
       error: stringValidation.message 
@@ -273,24 +273,24 @@ export const createCollectionPublisher = async (
   
   // Validate collectpubUsersId is a valid UUID
   if (!collectpubUsersId) {
-    console.log('❌ collectpubUsersId missing');
+    console.log('collectpubUsersId missing');
     return res.status(400).json({ 
       success: false,
       error: 'collectpubUsersId is required' 
     });
   }
   
-  console.log('🔍 Validating UUID:', collectpubUsersId);
+  console.log('Validating UUID:', collectpubUsersId);
   const uuidValidation = validateUUID(collectpubUsersId, 'User ID');
   if (!uuidValidation.isValid) {
-    console.log('❌ UUID validation failed:', uuidValidation.message);
+    console.log('UUID validation failed:', uuidValidation.message);
     return res.status(400).json({ 
       success: false,
       error: uuidValidation.message 
     });
   }
   
-  console.log('✅ All validations passed, attempting to create...');
+  console.log('All validations passed, attempting to create...');
   
   try {
     const newCollectionPublisher = await CollectionPublishers.create({
@@ -298,7 +298,7 @@ export const createCollectionPublisher = async (
       collectpubUsersId: collectpubUsersId,
     });
     
-    console.log('✅ Publisher created successfully:', newCollectionPublisher.id);
+    console.log('Publisher created successfully:', newCollectionPublisher.id);
     
     return res.status(201).json({ 
       success: true,
@@ -310,7 +310,7 @@ export const createCollectionPublisher = async (
       message: 'Collection publisher created successfully'
     });
   } catch (error) {
-    console.error('❌ ERROR IN CREATE:');
+    console.error('ERROR IN CREATE:');
     console.error('Error type:', error?.constructor?.name);
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');

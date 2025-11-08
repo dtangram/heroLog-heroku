@@ -3,10 +3,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import db from '../models';
 import { Op } from 'sequelize';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface Comic {
   id: string;
   title: string;
@@ -42,10 +38,7 @@ interface InsightsResponse {
   error?: string;
 }
 
-// ============================================================================
 // HELPER FUNCTIONS
-// ============================================================================
-
 const getAnthropicClient = (): Anthropic => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   
@@ -171,17 +164,14 @@ Keep it concise, encouraging, and actionable. Write in 2nd person ("You have..."
   }
 };
 
-// ============================================================================
 // CONTROLLER
-// ============================================================================
-
 export const getCollectionInsights = async (
   req: Request<{ userId: string }>,
   res: Response<InsightsResponse>
 ): Promise<Response> => {
   const { userId } = req.params;
   
-  console.log('📊 Analyzing collection for user:', userId);
+  console.log('Analyzing collection for user:', userId);
   
   if (!userId) {
     return res.status(400).json({
@@ -205,7 +195,7 @@ export const getCollectionInsights = async (
       attributes: ['id']
     });
     
-    console.log(`📚 Found ${userPublishers.length} publishers for user`);
+    console.log(`Found ${userPublishers.length} publishers for user`);
     
     if (userPublishers.length === 0) {
       return res.status(200).json({
@@ -229,7 +219,7 @@ export const getCollectionInsights = async (
       attributes: ['id', 'cbTitle']
     });
     
-    console.log(`📖 Found ${userTitles.length} titles`);
+    console.log(`Found ${userTitles.length} titles`);
     
     if (userTitles.length === 0) {
       return res.status(200).json({
@@ -254,7 +244,7 @@ export const getCollectionInsights = async (
       }
     });
     
-    console.log(`📚 Found ${comicBooks.length} comics`);
+    console.log(`Found ${comicBooks.length} comics`);
     
     if (comicBooks.length === 0) {
       return res.status(200).json({
@@ -291,7 +281,7 @@ export const getCollectionInsights = async (
     const seriesAnalyses = analyzeSeriesCompleteness(comics);
     const topSeries = seriesAnalyses.slice(0, 10);
     
-    console.log(`🔍 Analyzed ${seriesAnalyses.length} unique series`);
+    console.log(`Analyzed ${seriesAnalyses.length} unique series`);
     
     // Generate recommendations
     const recommendations: string[] = [];
@@ -312,7 +302,7 @@ export const getCollectionInsights = async (
     }
     
     // Generate AI insights
-    console.log('🤖 Generating AI insights...');
+    console.log('Generating AI insights...');
     const aiInsights = await generateAIInsights(seriesAnalyses, comics.length);
     
     const insights: CollectionInsights = {
@@ -324,7 +314,7 @@ export const getCollectionInsights = async (
       aiInsights
     };
     
-    console.log('✅ Insights generated successfully');
+    console.log('Insights generated successfully');
     
     return res.status(200).json({
       success: true,
@@ -332,7 +322,7 @@ export const getCollectionInsights = async (
     });
     
   } catch (error) {
-    console.error('❌ Error generating insights:', error);
+    console.error('Error generating insights:', error);
     
     return res.status(500).json({
       success: false,

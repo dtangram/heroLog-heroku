@@ -60,8 +60,7 @@ body {
 /* TYPOGRAPHY ================================== */
 h1, h2 {
   font-weight: bold;
-  line-height: 70px;
-  text-transform: capitalize; }
+  line-height: 70px; }
 
 h1 {
   color: #FFF;
