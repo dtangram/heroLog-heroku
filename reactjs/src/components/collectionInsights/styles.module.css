@@ -118,7 +118,7 @@
   margin-bottom: 3rem;
 }
 
-.aiInsights h2 {
+.aiInsights h2, .recommendations h2, .seriesBreakdown h2 {
   color: #770422;
   font-size: 3rem;
   margin-bottom: 1rem;
@@ -144,22 +144,17 @@
   margin-bottom: 3rem;
 }
 
-.recommendations h2 {
-  color: #770422;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-}
-
 .recommendations ul {
   list-style: none;
   padding: 0;
 }
 
 .recommendations li {
-  padding: 0.75rem 0;
   border-bottom: 1px solid #fed7d7;
-  color: #2d3748;
+  color: #2B2B2B;
+  font-size: 1.3rem;
   line-height: 1.6;
+  padding: 0.75rem 0;
 }
 
 .recommendations li:last-child {
@@ -167,12 +162,6 @@
 }
 
 /* Series Breakdown */
-.seriesBreakdown h2 {
-  font-size: 1.8rem;
-  color: #2d3748;
-  margin-bottom: 2rem;
-}
-
 .seriesCard {
   background: white;
   border: 1px solid #e2e8f0;
@@ -196,8 +185,8 @@
 }
 
 .seriesHeader h3 {
-  font-size: 1.3rem;
-  color: #2d3748;
+  font-size: 1.5rem;
+  color: #2B2B2B;
   margin: 0;
 }
 
@@ -233,7 +222,13 @@
   flex-wrap: wrap;
   margin-bottom: 0.75rem;
   font-size: 0.95rem;
-  color: #4a5568;
+  color: #2B2B2B;
+}
+
+.seriesStats span {
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.2rem;
 }
 
 /* Missing Issues */
@@ -241,7 +236,7 @@
   background: #fff5f5;
   padding: 0.75rem;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: #c53030;
   margin-top: 0.75rem;
 }
