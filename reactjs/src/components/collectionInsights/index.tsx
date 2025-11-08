@@ -77,39 +77,39 @@ const CollectionInsights: React.FC = () => {
 }, [userId]);
 
   // Loading state
-  if (isLoading) {
-    return (
-      <div className={styles.container}>
-        <h1>
-          Collection Insights
-          <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
-        </h1>
-        
-        <div className={styles.loading}>
-          <BeatLoader size={15} color="#770422" />
-          <p>Analyzing your collection...</p>
-        </div>
-      </div>
-    );
-  }
-
   // if (isLoading) {
   //   return (
-  //     <article id="cbComicForm" className={styles.cbWrap}>
+  //     <div className={styles.container}>
   //       <h1>
   //         Collection Insights
   //         <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
   //       </h1>
-
-  //       <article className={styles.cbList}>
-  //         <section className={styles.loadWrap}>
-  //           <p className={styles.loadMessage}>Analyzing your collection...</p>
-  //           <BeatLoader size={10} color="#FFF" />
-  //         </section>
-  //       </article>
-  //     </article>
+        
+  //       <div className={styles.loading}>
+  //         <BeatLoader size={15} color="#770422" />
+  //         <p>Analyzing your collection...</p>
+  //       </div>
+  //     </div>
   //   );
   // }
+
+  if (isLoading) {
+    return (
+      <article id="cbComicForm" className={styles.cbWrap}>
+        <h1>
+          Collection Insights
+          <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
+        </h1>
+
+        <article className={styles.cbList}>
+          <section className={styles.loadWrap}>
+            <p className={styles.loadMessage}>Analyzing your collection...</p>
+            <BeatLoader size={10} color="#770422" />
+          </section>
+        </article>
+      </article>
+    );
+  }
 
   // Error state
   if (error) {
@@ -121,7 +121,7 @@ const CollectionInsights: React.FC = () => {
         </h1>
         
         <div className={styles.error}>
-          <p>⚠️ {error}</p>
+          <p>{error}</p>
         </div>
       </div>
     );
@@ -130,6 +130,11 @@ const CollectionInsights: React.FC = () => {
   // No data state
   if (!insights || insights.totalComics === 0) {
     return (
+      <article id="cbComicForm" className={styles.cbWrap}>
+      <h1>
+        Collection Insights
+        <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
+      </h1>
       <div className={styles.container}>
         <h1>
           Collection Insights
@@ -137,9 +142,10 @@ const CollectionInsights: React.FC = () => {
         </h1>
         
         <div className={styles.empty}>
-          <p>📚 Start building your collection to see insights!</p>
+          <p>Start building your collection to see insights!</p>
         </div>
       </div>
+    </article>
     );
   }
 
@@ -190,7 +196,7 @@ const CollectionInsights: React.FC = () => {
               {/* Recommendations */}
               {insights.recommendations.length > 0 && (
                 <div className={styles.recommendations}>
-                  <h2>💡 Smart Recommendations</h2>
+                  <h2>Smart Recommendations</h2>
                   <ul>
                     {insights.recommendations.map((rec, index) => (
                       <li key={index}>{rec}</li>
@@ -201,7 +207,7 @@ const CollectionInsights: React.FC = () => {
 
               {/* Top Series Breakdown */}
               <div className={styles.seriesBreakdown}>
-                <h2>📊 Your Top Series</h2>
+                <h2>Your Top Series</h2>
                 
                 {insights.topSeries.map((series, index) => (
                   <div key={index} className={styles.seriesCard}>
@@ -220,10 +226,10 @@ const CollectionInsights: React.FC = () => {
                     </div>
                     
                     <div className={styles.seriesStats}>
-                      <span>✅ Owned: {series.ownedIssues.length} issues</span>
-                      <span>❌ Missing: {series.missingIssues.length} issues</span>
+                      <span>Owned: {series.ownedIssues.length} issues</span>
+                      <span>Missing: {series.missingIssues.length} issues</span>
                       {series.variants > 0 && (
-                        <span>🎨 Variants: {series.variants}</span>
+                        <span>Variants: {series.variants}</span>
                       )}
                     </div>
                     
