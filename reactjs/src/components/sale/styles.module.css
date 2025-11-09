@@ -1,0 +1,286 @@
+.cbWrap{
+  background: #FFF;
+  margin-top: 150px;
+  /* height: 950px; */
+  min-height: 950px;
+  display: inline-block;
+  margin-bottom: 150px;
+  width: 100%;
+}
+
+.cbWrap h1{
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 50px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+
+.cbWrap h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbWrap > h2{
+  margin-top: 0;
+}
+
+.cbWrap section:nth-child(2), .cbWrap section:nth-child(3){
+  background: #AECEAB;
+  color: #FFF;
+}
+
+.cbWrap .cbList section{
+  color: #000;
+  display: inline-block;
+  height: auto;
+  margin-bottom: 50px;
+  padding-top: 0;
+}
+
+.cbWrap .cbList section h2 a{
+  color: #000;
+}
+
+.cbWrap .cbList section > article{
+  align-items: center;
+  /* background: #770422; */
+  border-radius: 15px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  height: auto;
+  justify-content: space-evenly;
+  margin: auto;
+  padding: 20px 2%;
+  width: 80%;
+}
+
+.cbWrap .cbList > section > article p.loadMessage{
+  color: #2B2B2B;
+  font-size: 4rem;
+  padding: 3% 0;
+  text-align: center;
+  width: 100%;
+}
+
+.cbWrap .cbList > section > article .comicSec{
+  background: transparent;
+  /* margin-bottom: 0; */
+  margin-bottom: 30px;
+  /* width: 200px; */
+  width: 500px;
+}
+
+.cbWrap .cbList > section > article .comicSec .comicWrap{
+  /* background: #770422; */
+  /* border-radius: 15px; */
+  display: block;
+  /* flex-direction: row; */
+  height: auto;
+  /* justify-content: space-evenly; */
+  margin: 0 auto;
+  padding: 0 2%;
+  position: relative;
+  width: auto;
+}
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .comicImgWrap{
+  background: #AECEAB;
+  /* border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px; */
+  border-radius: 15px;
+  height: 300px;
+  left: 5%;
+  margin-bottom: 0;
+  padding: 30px;
+  position: absolute;
+  top: -27px;
+  /* width: 90%; */
+  /* width: 200px; */
+  width: 215px;
+  z-index: 10;
+}
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .comicImgWrap img{
+  /* left: 0; */
+  margin: auto;
+  /* position: absolute; */
+  /* right: 0; */
+  /* top: 30px; */
+  /* transform: translate(0, 15%); */
+  width: 100%;
+}
+
+/* .cbWrap .cbList > section > article img{
+  height: 500px;
+  width: 700px;
+} */
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap{
+  background: #770422;
+  border-radius: 15px;
+  /* color: #2B2B2B; */
+  display: inline-block;
+  font-size: 1.6rem;
+  height: 250px;
+  line-height: 40px;
+  margin-bottom: 30px;
+  overflow: scroll;
+  padding: 16px 1% 0 55%;
+  /* text-align: center; */
+  width: 100%;
+}
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p{
+  font-size: 1.6rem;
+  line-height: initial;
+  margin-bottom: 1.2rem;
+  /* line-height: 40px; */
+}
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p > span{
+  font-size: 1.7rem;
+  font-weight: bold;
+  margin-right: 2%;
+}
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p a{
+  color: #AECEAB;
+  font-size: 1.5rem;
+  /* margin: 0 6% 0 0; */
+}
+
+/* .cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p a:nth-child(1){
+  color: #000;
+} */
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p a:hover{
+  color: #AECEAB;
+}
+
+.cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p button{
+  color: #AECEAB;
+  /* background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.5rem;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  width: 50px; */
+}
+
+
+
+.cbWrap .cbList > h3{
+  font-size: 2rem;
+  margin-bottom: 20px;
+	text-align: center;
+  text-transform: capitalize;
+}
+
+/* .cbWrap .cbList form{
+  background: #D0D2D3;
+	border: 1px solid #000;
+  display: block;
+	margin: 0 auto 3%;
+	padding: 2.2rem 2rem .5rem;
+  position: relative;
+  top: auto;
+	text-align: left;
+	width: 80%;
+}
+
+.cbWrap .cbList form > fieldset label{
+  color: #2B2B2B;
+  float: none;
+  font-size: 2rem;
+  margin-bottom: 25px;
+}
+
+.cbWrap .cbList form fieldset label:nth-child(1), .cbWrap .cbList form fieldset label:nth-child(3){
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.cbWrap .cbList form fieldset input{
+  background: rgba(236, 236, 236, .5);
+  font-size: 1.5rem;
+  padding: .4rem;
+  width: 100%;
+  margin-bottom: .5% 0 2%;
+  color: #404041;
+  border-radius: 8px;
+  border: 1px solid #000;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out;
+}
+
+.cbWrap .cbList form fieldset input[type='radio']{
+  height: auto;
+  margin-right: 15px;
+  width: auto;
+}
+
+.cbWrap .cbList form fieldset label.labelRadio{
+  font-size: 1.5rem;
+  margin-right: 15px;
+  width: auto;
+}
+
+.cbWrap .cbList form input.submit{
+  font-size: 1.5rem;
+	padding: 5px 4%;
+	border-radius: 4px;
+	background: #404041;
+	color: #FFF;
+	width: auto;
+	border: 1px solid #D0D2D3;
+	cursor: pointer;
+	display: inline-block;
+  text-align: center;
+}
+
+.cbWrap > article{
+  text-align: center;
+}
+
+.cbWrap > article textarea{
+	background: #AECEAB;
+	border-radius: 4px;
+  font-size: 2rem;
+  height: 300px;
+  margin: 0 auto;
+  overflow-y: scroll;
+	padding: 5px 4%;
+  text-align: center;
+  width: 600px;
+} */
+
+
+
+/* @media (max-width 640px){
+  .cbWrap .cbList > section > article .comicSec, .cbWrap .cbList > section > article .comicSec .comicWrap{
+    width: 100%;
+  }
+
+  .cbWrap .cbList > section > article .comicSec .comicWrap{
+    padding: 0 1%;
+  }
+
+  .cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p,
+  .cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p > span,
+  .cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p a,
+  .cbWrap .cbList > section > article .comicSec .comicWrap .paraWrap p button{
+    font-size: 1.5rem;
+  }
+} */

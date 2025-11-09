@@ -1,0 +1,304 @@
+.homeSection{
+  background: rgba(0, 0, 0, .8);
+  overflow: hidden;
+}
+
+.homeSection > section{
+  /* height: 950px; */
+}
+
+.homeSection section h1{
+  font-family: "Source Sans Pro", Arial, sans-serif;
+  font-size: 5em;
+  left: 50%;
+  line-height: 105px;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.homeSection section h1 .graphic, .comicSaleWrapper .graphic{
+  background: #770422;
+  left: 0;
+  height: 10px;
+  right: 0;
+  width: 70px;
+}
+
+.homeSection section h1 .graphic{
+  margin: 30px auto 0;
+  position: fixed;
+}
+
+#bck{
+  background: url(../../img/comicsHeader.jpg) fixed no-repeat 0 0 / cover;
+  height: 950px;
+  min-height: 950px;
+  /* position: fixed; */
+  top: 0;
+  /* width: 2050px; */
+  width: 100%;
+}
+
+.comicSaleWrapper{
+  padding-bottom: 120px;
+}
+
+.comicSaleWrapper .graphic{
+  margin: 30px auto 50px;
+}
+
+.comicSaleWrapper{
+  background: #FFF;
+  padding-top: 1%;
+}
+
+.comicSaleWrapper .logo_graphic{
+  margin: 0 auto;
+  height: 70px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: -36px;
+  width: 70px;
+}
+
+.comicSaleWrapper .logo_graphic img{
+  height: 100%;
+  width: 100%;
+}
+
+/* .row{
+  flex-wrap: nowrap;
+} */
+
+.comicSaleWrapper h2{
+  color: #2B2B2B;
+  margin-top: 5%;
+}
+
+.comicSaleWrapper .viewMess a{
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  margin: 0 auto 50px;
+  text-align: center;
+  width: 250px;
+}
+
+.comicSaleWrapper .viewMess a figure, .comicSaleWrapper .viewMess a p{
+  margin: 0;
+  padding: 0;
+}
+
+.comicSaleWrapper .viewMess a figure :nth-child(1){
+  color: #770422;
+  font-size: 2.5rem;
+}
+
+.comicSaleWrapper .viewMess a p{
+  color: #2B2B2B;
+}
+
+.comicSaleWrapper .viewMess a p:hover{
+  color: #770422;
+}
+
+.comicSaleWrapper > .container{
+  /* height: 253px; */
+  max-width: 90%;
+}
+
+.comicSaleWrapper > .container p{
+  color: #2B2B2B;
+  font-size: 1.1em;
+  line-height: 30px;
+  margin-bottom: 40px;
+}
+
+.comicSaleWrapper > .container .row{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.comicSaleWrapper > .container .row .loadMessageWrap{
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.comicSaleWrapper > .container .row .loadMessageWrap > section{
+  width: 200px;
+}
+
+.comicSaleWrapper > .container .row .loadMessageWrap > section img{
+  opacity: .2;
+  width: 100%;
+}
+
+.comicSaleWrapper > .container .row .loadMessageWrap > .loadWrap{
+  align-items: baseline;
+  display: flex;
+  flex-direction: row;
+}
+
+.comicSaleWrapper > .container .row .loadMessageWrap p.loadMessage{
+  color: #2B2B2B;
+  font-size: 4rem;
+  padding: 3% 0;
+}
+
+.comicSaleWrapper > .container .row .issueWrap{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  margin-bottom: 40px;
+  margin-right: 1%;
+  position: relative;
+}
+
+.comicSaleWrapper > .container .row .issueWrap:last-child{
+  margin-right: 0;
+}
+
+.comicSaleWrapper > .container .row .issueWrap figure{
+  display: inline-block;
+  max-height: 580px;
+  margin: 0 0 20px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.comicSaleWrapper > .container .row .issueWrap figure img{
+  width: 100%;
+}
+
+.comicSaleWrapper > .container .row .issueWrap h3{
+  color: #2B2B2B;
+  font-size: 2.3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.comicSaleWrapper > .container .row .issueWrap > article{
+  display: flex;
+  flex-direction: row;
+  height: auto;
+  justify-content: space-evenly;
+}
+
+.comicSaleWrapper > .container .row .issueWrap > article a{
+  background: transparent;
+  margin: 0 20px 0 0;
+  min-height: auto;
+  padding: 0;
+  /* width: 100px; */
+}
+
+.comicSaleWrapper > .container .row .issueWrap > article a figure{
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
+
+.comicSaleWrapper > .container .row .issueWrap > article a figure :nth-child(1){
+  color: #770422;
+  font-size: 4rem;
+}
+
+.comicSaleWrapper > .container .row .issueWrap > article p{
+  margin-bottom: 0;
+}
+
+@media (max-width: 1440px){
+  .homeSection section h1{
+    top: 40%;
+  }
+}
+
+@media (max-width: 1199px){
+  .homeSection section h1{
+    font-size: 3.5em;
+    line-height: 80px;
+  }
+}
+
+@media (max-width: 991px){
+  .homeSection > section:nth-child(1){
+    height: 600px;
+    min-height: 600px;
+  }
+
+  .homeSection section h1{
+    top: 50%;
+  }
+}
+
+@media (max-width: 800px){
+  .homeSection section h1{
+    font-size: 2.5em;
+    line-height: 50px;
+  }
+
+  .homeSection > section:nth-child(2){
+    height: auto;
+    min-height: auto;
+
+    /* height: 1800px;
+    min-height: 1800px; */
+  }
+
+  /* .comicSaleWrapper > .container .row{
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+  } */
+
+  .comicSaleWrapper > .container .row .loadMessageWrap{
+    margin-top: 100px;
+  }
+
+  .comicSaleWrapper > .container .row .issueWrap{
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 50px;
+    margin-right: 0;
+  }
+
+  .comicSaleWrapper > .container .row .issueWrap figure{
+    margin: 0 auto;
+    width: 70%;
+  }
+
+  .comicSaleWrapper > .container .row .issueWrap > article a img{
+    width: 50%;
+  }
+}
+
+@media (max-width: 767px){
+  /* .homeSection > section:nth-child(2){
+    height: 2700px;
+    min-height: 2700px;
+  } */
+
+  .comicSaleWrapper > .container .row .issueWrap figure{
+    width: 300px;
+  }
+}
+
+@media (max-width: 500px){
+  .homeSection section h1{
+    font-size: 2em;
+  }
+}
+
+@media (max-width: 370px){
+  .comicSaleWrapper > .container .row .issueWrap figure{
+    margin: 0;
+    width: 100%;
+  }
+}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+  <head>
+    <meta property="og:title" content="Hero-Log" />
+    <meta name="image" property="og:image" content="%PUBLIC_URL%/HeroLogBCK.jpg" />
+    <meta name="author" content="Douglas T. Angram" />
+    <meta property="og:description" content="Hero-Log" />
+    <meta property="og:url" content="https://hero-log.herokuapp.com/" />
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-8030RDCHHY"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-8030RDCHHY');
+    </script> -->
+    <!--  -->
+
+    <meta charset="utf-8" />
+    <meta content="Hero-Log is a cataloging application for comic book collectors to digitally log their comic book collection so they can access their collection from anywhere." itemprop="description" name="description">
+    <meta content="comic books, books, comic book collecting, comic book collection, digital comic book cataloging, comic book cataloging" itemprop="keywords" name="keywords">
+    <link rel="shortcut icon" href="%PUBLIC_URL%/HL-Icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="google-signin-client_id" content="412984876713-dtfsfmug0tu1856q13s5c4ho45rm289m.apps.googleusercontent.com">
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>Hero Log</title>
+
+    <style media="screen">
+      @-webkit-keyframes fadeInImg{
+        0% {
+          opacity: .2;
+        }
+
+        50% {
+          opacity: 1;
+        }
+
+        100% {
+          opacity: .2;
+        }
+      }
+
+      @-moz-keyframes fadeInImg{
+        0% {
+          opacity: .2;
+        }
+
+        50% {
+          opacity: 1;
+        }
+
+        100% {
+          opacity: .2;
+        }
+      }
+
+      @-o-keyframes fadeInImg{
+        0% {
+          opacity: .2;
+        }
+
+        50% {
+          opacity: 1;
+        }
+
+        100% {
+          opacity: .2;
+        }
+      }
+
+      @-keyframes fadeInImg{
+        0% {
+          opacity: .2;
+        }
+
+        50% {
+          opacity: 1;
+        }
+
+        100% {
+          opacity: .2;
+        }
+      }
+
+      .loader{
+        text-align: center;
+        background: #2B2B2B;
+        color: #FFF;
+        font-family: 'Lato', Arial, sans-serif;
+        font-size: 1.25rem;
+        height: 3000px;
+        margin: 0;
+        left: 0;
+        padding-top: 400px;
+        position: fixed;
+        text-align: center;
+        top: 0;
+        width: 100%;
+        z-index: 2000;
+      }
+
+      .loader > section{
+        display: inline-block;
+        height: 100px;
+        margin: 0 0 5px;
+        /* margin: 0 auto; */
+        padding: 0;
+        width: 100px;
+      }
+
+      .loader > section img{
+        margin: 0;
+        /* opacity: .2; */
+        width: 100%;
+        -webkit-animation: fadeInImg 4000ms ease-in-out infinite;
+        -moz-animation: fadeInImg 4000ms ease-in-out infinite;
+        -o-animation: fadeInImg 4000ms ease-in-out infinite;
+        animation: fadeInImg 4000ms ease-in-out infinite;
+      }
+
+      .loader p{
+        padding: 0;
+        margin: 0;
+      }
+
+      @media (max-width: 1440px){
+        .loader{
+          padding-top: 300px;
+        }
+      }
+    </style>
+
+    <link href="../src/css/bootstrap.min.css" type='text/css'>
+    <link href="../src/css/reset.css" type='text/css'>
+    <link href="../src/css/main.css" media="screen" type='text/css'>
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700,900&display=swap" type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Lato:400,400italic,700,700italic' type='text/css'>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/validate.js/0.13.1/validate.min.js"></script>
+    <!-- GOOGLE OAUTH -->
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+
+    <article id="newLoader" class="loader">
+      <section>
+        <img src="/static/media/logo.658f832bbd10e0b79e19.png" alt="HeroLog Logo" style="opacity: .2">
+      </section>
+      <p>Loading...</p>
+    </article>
+
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+
+    <!--JavaScript at end of body for optimized loading-->
+    <script src="../src/js/bootstrap.js" type="text/jsx"></script>
+    <script src="../src/js/index.tsx" type="text/jsx"></script>
+  </body>
+</html>

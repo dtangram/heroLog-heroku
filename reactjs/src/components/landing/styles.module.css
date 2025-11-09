@@ -1,0 +1,97 @@
+.nav{
+  float: right;
+  margin-right: 0;
+}
+
+.link{
+  color: #FFF !important;
+  font-size: .9em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.active{
+  background-color: transparent;
+  color: #AECEAB !important;
+}
+
+.link:hover{
+  color: #AECEAB !important;
+}
+
+.link.active::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 80%;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.link{
+  display: inline-block;
+  position: relative;
+  /* height: 1px; */
+}
+
+.link::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 0px;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.link:hover::after{
+  background: #770422;
+  width: 80%;
+}
+
+.digitizeCollection {
+  background: rgba(0, 0, 0, 0.8);
+  height: 950px; }
+  @media (max-width: 991px) {
+    .digitizeCollection {
+      height: 600px;
+      min-height: 600px; } }
+  .digitizeCollection h1 {
+    font-size: 5em;
+    left: 50%;
+    line-height: 105px;
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1; }
+    @media (max-width: 1440px) {
+      .digitizeCollection h1 {
+        top: 40%; } }
+    @media (max-width: 1199px) {
+      .digitizeCollection h1 {
+        font-size: 3.5em;
+        line-height: 80px; } }
+    @media (max-width: 991px) {
+      .digitizeCollection h1 {
+        top: 50%; } }
+    @media (max-width: 800px) {
+      .digitizeCollection h1 {
+        font-size: 2.5em;
+        line-height: 50px; } }
+    @media (max-width: 500px) {
+      .digitizeCollection h1 {
+        font-size: 2em; } }
+    .digitizeCollection h1 .graphic {
+      left: 0;
+      margin-top: 20px;
+      position: fixed;
+      right: 0; }

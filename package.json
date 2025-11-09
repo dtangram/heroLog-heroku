@@ -1,0 +1,65 @@
+{
+  "name": "herolog",
+  "version": "1.0.0",
+  "description": "[DESCRIPTION OF YOUR PROJECT]",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "main": ".eslintrc.js",
+  "proxy": "http://localhost:5000",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently --raw \"npm run dev --prefix api\" \"npm start --prefix reactjs\"",
+    "dev:api": "npm run dev --prefix api",
+    "dev:react": "npm start --prefix reactjs",
+    "build": "npm run build-api && npm run build-reactjs && npm run copy-react-build",
+    "build-api": "npm run build --prefix api",
+    "build-reactjs": "npm run build --prefix reactjs",
+    "copy-react-build": "cp -r reactjs/build api/dist/build",
+    "start": "npm start --prefix api",
+    "start:prod": "npm run build && concurrently \"npm start --prefix api\" \"npm run serve --prefix reactjs\"",
+    "install-reactjs": "npm install --prefix reactjs",
+    "install-api": "npm install --prefix api",
+    "install:all": "npm install && npm run install-api && npm run install-reactjs",
+    "migrate": "npm run db:migrate --prefix api",
+    "seed": "npm run db:seed --prefix api",
+    "heroku-postbuild": "npm run install:all && npm run build && npm run migrate && npm run seed"
+  },
+  "repository": {
+    "type": "git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.9.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "husky": "^9.1.4",
+    "lint-staged": "^15.2.7",
+    "nodemon": "^3.1.4"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
+  },
+  "dependencies": {
+    "babel-eslint": "^10.1.0",
+    "body-parser": "^1.20.2",
+    "debug": "^4.3.5",
+    "express": "^4.19.2",
+    "react": "^18.3.1"
+  }
+}

@@ -1,0 +1,259 @@
+.cbWrapper{
+  background: #FFF;
+  margin-top: 150px;
+  /* height: 950px; */
+  min-height: 950px;
+  display: inline-block;
+  margin-bottom: 150px;
+  width: 100%;
+}
+
+.cbWrapper h1{
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 50px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+
+.cbWrapper h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbList .wrapper{
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-family: "Lato", Arial, sans-serif;
+  height: auto;
+  margin: 0 auto 50px;
+  background: #770422;
+  width: 40%;
+  padding: 10px 1%;
+  position: relative;
+}
+
+.wrapper h2{
+  margin-top: 5px;
+}
+
+.wrapper h3{
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.backLink{
+  color: #333;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 0 10px 28%;
+}
+
+.backLink:hover{
+  color: #770422;
+}
+
+.backLink::after{
+  content: '';
+  display: block;
+  margin: auto;
+  height: 2px;
+  width: 0px;
+  background-color: #770422;
+  -webkit-transition: width .5s ease, background-color .5s ease;
+  -moz-transition: width .5s ease, background-color .5s ease;
+  -o-transition: width .5s ease, background-color .5s ease;
+  transition: width .5s ease, background-color .5s ease;
+}
+
+.backLink:hover::after{
+  background: #770422;
+  width: 50%;
+}
+
+.wrapper form{
+  background: #FFF;
+  /* border: 1px solid #2B2B2B; */
+  display: block;
+  margin: 0 auto;
+  padding: 2.2rem 2rem 2rem;
+  position: relative;
+  top: auto;
+  text-align: left;
+  width: auto;
+}
+
+.wrapper form div:nth-child(1) p, .wrapper form > p:nth-child(2){
+  background: #770422;
+  color: #FFF;
+}
+
+.wrapper form > article > fieldset{
+  padding: 0 5%;
+}
+
+.wrapper form > article > fieldset{
+  padding: 0 5%;
+}
+
+.wrapper form > article > fieldset figure{
+  display: none;
+  height: auto;
+  margin: 0 0 20px;
+  padding: 0;
+  text-align: center;
+  width: 100%;
+}
+
+.wrapper form > article > fieldset figure img{
+  width: 300px;
+}
+
+.wrapper form > article > fieldset > label{
+  color: #770422;
+  float: none;
+  font-size: 1.5rem;
+  margin-bottom: 25px;
+}
+
+.wrapper form > article > fieldset > label:nth-child(1), .wrapper form > article > fieldset > label:nth-child(3){
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.wrapper form > article > fieldset > label input{
+  background: transparent;
+  font-size: 1.5rem;
+  padding: .4rem;
+  width: 100%;
+  margin: .5% 0 2%;
+  color: #2B2B2B;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #770422;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out;
+}
+
+.wrapper form > article > fieldset > label input.inputBorder:focus{
+  border: 2px solid #AECEAB;
+}
+
+.wrapper form > article label.labelRadio{
+  color: #770422;
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  width: auto;
+}
+
+.wrapper form > article label.labelRadio input[type='radio']{
+  height: auto;
+  margin-right: 15px;
+  width: auto;
+}
+
+.wrapper form p, .wrapper form article p, .wrapper form article p a{
+  color: #770422;
+}
+
+.wrapper form p{
+  font-size: 1.7rem;
+}
+
+.wrapper form p{
+  line-height: 20px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.wrapper form p a{
+  font-size: 1.3rem;
+}
+
+.wrapper form article{
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.wrapper form article p{
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
+
+.wrapper form article p a{
+  font-size: 1.5rem;
+  margin: 0;
+  width: auto;
+}
+
+.wrapper form article p a .fa-eye{
+  display: none;
+}
+
+.wrapper form article p a span{
+  width: auto;
+}
+
+.wrapper form article input.submit{
+  background: #AECEAB;
+  border: 1px solid #D0D2D3;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+	display: inline-block;
+  font-size: 1.5rem;
+  margin: 0;
+  padding: 5px 0;
+  text-align: center;
+  width: 100px;
+}
+
+@media (max-width: 800px){
+  .cbWrapper{
+    margin-top: 110px;
+  }
+
+  .backLink{
+    margin: 0 0 40px 3%;
+  }
+
+  .cbList .wrapper{
+    width: 500px;
+  }
+}
+
+@media (max-width: 600px){
+  .cbList .wrapper{
+    width: 390px;
+  }
+}
+
+@media (max-width: 500px){
+  .cbWrapper{
+    margin-top: 125px;
+  }
+
+  .cbWrapper h1{
+    font-size: 3.5rem;
+  }
+}
+
+@media (max-width: 400px){
+  .cbWrapper{
+    margin-top: 120px;
+  }
+
+  .cbList .wrapper{
+    width: 300px;
+  }
+}

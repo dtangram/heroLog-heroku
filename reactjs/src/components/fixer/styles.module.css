@@ -1,0 +1,88 @@
+.cbWrap{
+  background: #FFF;
+  margin-top: 150px;
+  height: 950px;
+  /* padding: 120px 0; */
+}
+
+.cbWrap h1{
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 70px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+
+.cbWrap h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbWrap > h2{
+  margin-top: 0;
+}
+
+.cbWrap section:nth-child(2), .cbWrap section:nth-child(3){
+  background: #AECEAB;
+  color: #FFF;
+}
+
+.cbWrap .cbList section{
+  color: #000;
+  display: inline-block;
+  height: auto;
+  margin-bottom: 50px;
+  padding-top: 0;
+}
+
+.cbWrap .cbList section p{
+  color: #000;
+  line-height: 30px;
+  margin: 0 auto 30px;
+  width: 50%;
+}
+
+.cbWrap .cbList article{
+  align-items: center;
+  background: #AECEAB;
+  border-radius: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  height: auto;
+  margin: auto;
+  padding: 20px 1%;
+  text-align: center;
+  width: 45%;
+}
+
+.cbWrap .cbList article textarea{
+	background: #770422;
+  color: #FFF;
+	border-radius: 4px;
+  font-size: 2.1rem;
+  height: 300px;
+  line-height: 40px;
+  margin: 0 auto;
+	padding: 5px 4%;
+  text-align: center;
+  width: 600px;
+}
+
+.cbWrap .cbList article textarea::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+    background-color: #F5F5F5;
+    border-radius: 10px
+}
+
+.cbWrap .cbList article textarea::-webkit-scrollbar {
+    width: 10px;
+    background-color: #770422
+}
+
+.cbWrap .cbList article textarea::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-image: -webkit-gradient(linear,left bottom,left top,color-stop(.44,#333),color-stop(.72,#333),color-stop(.86,#333))
+}

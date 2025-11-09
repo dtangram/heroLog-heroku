@@ -1,0 +1,29 @@
+.loadMessageWrap{
+  text-align: center;
+
+  /* align-items: center;
+  background: #770422;
+  border-radius: 15px;
+  margin: auto;
+  padding: 20px 2%;
+  width: 80%; */
+}
+
+.loadMessageWrap > section{
+  margin: 0 auto;
+  min-height: auto !important;
+  width: 200px;
+}
+
+.loadMessageWrap > section img{
+  opacity: .2;
+  width: 100%;
+}
+
+.loadMessageWrap p.loadMessage{
+  color: #2B2B2B;
+  font-size: 4rem !important;
+  padding: 3% 0;
+  text-align: center;
+  width: 100%;
+}

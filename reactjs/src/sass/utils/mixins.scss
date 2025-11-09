@@ -1,0 +1,49 @@
+@mixin mq($size){
+  @if $size == small2{
+    @media(max-width: 320px){
+      @content;
+    }
+  }
+
+  @if $size == small{
+    @media(max-width: 500px){
+      @content;
+    }
+  }
+
+  @else if $size == medium{
+    @media(max-width: 800px){
+      @content;
+    }
+  }
+
+  @else if $size == mediumLargeMd2{
+    @media(max-width: 897px){
+      @content;
+    }
+  }
+
+  @else if $size == mediumLargeMd{
+    @media(max-width: 991px){
+      @content;
+    }
+  }
+
+  @else if $size == mediumLarge{
+    @media(max-width: 1199px){
+      @content;
+    }
+  }
+
+  @else if $size == large1440{
+    @media(max-width: 1440px){
+      @content;
+    }
+  }
+
+  @else if $size == large{
+    @media(min-width: 1200px){
+      @content;
+    }
+  }
+}

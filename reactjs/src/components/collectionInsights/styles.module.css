@@ -1,0 +1,267 @@
+.container {
+    margin: 150px auto;
+    min-height: 950px;
+}
+
+.cbWrap{
+  background: #FFF;
+  margin-top: 150px;
+  /* height: 950px; */
+  min-height: 950px;
+  display: inline-block;
+  width: 100%;
+}
+
+.cbWrap h1{
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 50px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+
+.cbWrap h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbWrap .cbList .loadWrap p.loadMessage, .cbWrap .cbList .wrapper, .empty p, .statLabel {
+  font-family: "Lato", Arial, sans-serif;
+}
+
+.cbWrap .cbList .loadWrap{
+  align-items: baseline;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  min-height: auto;
+  padding: 0;
+}
+
+.cbWrap .cbList .loadWrap p.loadMessage{
+  color: #2B2B2B;
+  font-size: 4rem !important;
+  padding: 3% 0;
+  text-align: center;
+}
+
+.cbWrap .cbList .wrapper{
+  border-radius: 15px;
+	font-size: 1.1rem;
+  height: auto;
+	margin: 0 auto 50px;
+  min-height: inherit;
+	padding: 0 3%;
+  position: relative;
+	width: 80%;
+}
+
+/* Loading & Error States */
+.loading,
+.error,
+.empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  font-size: 4rem;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.error {
+  color: #e53e3e;
+}
+
+.empty p {
+  color: #2B2B2B;
+  font-size: 4rem;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.statCard {
+  background: #AECEAB;
+  color: #770422;
+  padding: 2rem;
+  border-radius: 4px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.statNumber {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.statLabel {
+  font-size: 1.5rem;
+  opacity: 0.9;
+}
+
+/* AI Insights */
+.aiInsights {
+  background: #FFF;
+  border-radius: 4px;
+  margin-bottom: 3rem;
+}
+
+.aiInsights h2, .recommendations h2, .seriesBreakdown h2 {
+  color: #770422;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.insightsText {
+    padding: 4.5rem;
+    width: 100%;
+}
+
+.insightsText p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+  color: #2B2B2B;
+}
+
+/* Recommendations */
+.recommendations {
+  background: #fff5f5;
+  border-left: 4px solid #770422;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 3rem;
+}
+
+.recommendations ul {
+  list-style: none;
+  padding: 0;
+}
+
+.recommendations li {
+  border-bottom: 1px solid #fed7d7;
+  color: #2B2B2B;
+  font-size: 1.3rem;
+  line-height: 1.6;
+  padding: 0.75rem 0;
+}
+
+.recommendations li:last-child {
+  border-bottom: none;
+}
+
+/* Series Breakdown */
+.seriesCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.seriesCard:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.seriesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.seriesHeader h3 {
+  font-size: 1.5rem;
+  color: #2B2B2B;
+  margin: 0;
+}
+
+.completionBadge {
+  background: #48bb78;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+
+/* Progress Bar */
+.progressBar {
+  width: 100%;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+  transition: width 0.5s ease;
+}
+
+/* Series Stats */
+.seriesStats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: #2B2B2B;
+}
+
+.seriesStats span {
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.2rem;
+}
+
+/* Missing Issues */
+.missingIssues {
+  background: #fff5f5;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  color: #c53030;
+  margin-top: 0.75rem;
+}
+
+.missingIssues strong {
+  color: #742a2a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .container h1 {
+    font-size: 2rem;
+  }
+  
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .seriesStats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

@@ -1,0 +1,11 @@
+.successSection{
+  background: #AECEAB;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #770422;
+  font-size: 1.8rem;
+  margin: 0 auto 3rem;
+  padding: 0.75rem .5%;
+  text-align: center;
+  width: 30%;
+}

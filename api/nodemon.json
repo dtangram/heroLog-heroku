@@ -1,0 +1,10 @@
+{
+  "watch": ["**/*.ts"],
+    "ext": "ts",
+    "ignore": ["dist/**/*"],
+    "env": {
+    "DEBUG": "api:*",
+    "JWT_SECRET": "dgJZbmXDGWPNzz7CK4YZwUx8r0bG6u74EHIL2WKmsxmZ48lfWcna11DQZSANKvqNuDgJsUkY7JwDAY5MJ3G8H3wsgElyh0OFYM6CSH1MDXlOmEq2rdUHOfHJhDcexguppAj62jUQoVLBpxAsTc9WEYSCaeXWJvyJH3nYOYkBpeICGQuxw1sPY34oPUOuY4iBF6F5XEe8bPqVPnkHql5wWJma95MpOh6WW9izfuP0rtG2uLFmpKHT4qo61g",
+    "CLIENT_ID": "38f19fa0be4e3e2be7c164a3e024fb26"
+  }
+}
