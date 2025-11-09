@@ -278,7 +278,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     const response = await API.post<S3SignResponse>('/s3/sign', {
       fileName,
       fileType
-    }) as any;  // ✅ Use any temporarily
+    })  // ✅ Use any temporarily
 
     console.log('📦 Full S3 response:', response);
 
@@ -309,14 +309,14 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       figureElement.style.display = 'inline-block';
     }
 
-    performRekognitionCheck(fileName);
+    // performRekognitionCheck(fileName);
   } catch (error) {
     console.error('❌ Upload error:', error);
     if (fileInputRef.current) {
       fileInputRef.current.disabled = false;
     }
   }
-}, [performRekognitionCheck]);
+}, []);
 
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
