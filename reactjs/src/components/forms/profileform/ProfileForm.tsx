@@ -44,7 +44,7 @@ const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_FILE_SIZE = 1e6;
 const ALLOWED_FILE_TYPES = ['jpg', 'jpeg', 'png'];
-const S3_BUCKET = 'herologimages';
+const S3_BUCKET = 'dothanthorntonbucket';
 const AWS_REGION = 'us-east-2';
 
 const INAPPROPRIATE_MODERATION_LABELS = [
@@ -271,14 +271,11 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     try {
       console.log('Uploading:', { fileName, fileType });  // Should show "image/jpeg"
 
-      const response = await API.post<{ returnData: { signedRequest: string; url: string } }>(
-        '/sign_s3',
-        { fileName, fileType }
-      );
+      const response = await API.post('/s3/sign', { fileName, fileType });
 
       console.log('S3 sign response:', response);
 
-      const { returnData: { signedRequest, url } } = response.data;
+      const { signedRequest, url } = response.data;
 
       fileInputRef.current.disabled = true;
 

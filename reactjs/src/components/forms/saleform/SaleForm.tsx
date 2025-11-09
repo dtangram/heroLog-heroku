@@ -34,7 +34,7 @@ interface RekognitionLabel {
 const MIN_TITLE_LENGTH = 2;
 const MAX_FILE_SIZE = 1e6;
 const ALLOWED_FILE_TYPES = ['jpg', 'jpeg', 'png'];
-const S3_BUCKET = 'herologimages';
+const S3_BUCKET = 'dothanthorntonbucket';
 const AWS_REGION = 'us-east-2';
 
 const INAPPROPRIATE_MODERATION_LABELS = [
