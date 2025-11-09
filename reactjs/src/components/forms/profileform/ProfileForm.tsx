@@ -256,46 +256,43 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
 
     fileInputRef.current.disabled = false;
 
-    const fileParts = file.name.split('.');
     const fileName = file.name;
-    const fileType = fileParts[fileParts.length - 1]?.toLowerCase() || '';
+    const fileType = file.type;  // Use file.type instead of extracting extension
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
 
-    if (!ALLOWED_FILE_TYPES.includes(fileType)) {
+    // Validate the extension
+    if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
       fileInputRef.current.disabled = false;
-      window.location.reload();
       alert('Image needs to have a .jpeg, .jpg or .png file extension.');
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
       fileInputRef.current.disabled = false;
-      window.location.reload();
       alert('Image size needs to be smaller than 1MB');
       return;
     }
 
     try {
-      // Type the response and cast since interceptor unwraps
+      console.log('Uploading:', { fileName, fileType });  // Should show "image/jpeg"
+      
       const response = await API.post<S3SignResponse>('/s3/sign', {
         fileName,
-        fileType
+        fileType // Now sends "image/jpeg" instead of "jpg"
       }) as unknown as S3SignResponse;
 
       console.log('S3 sign response:', response);
 
-      // Now TypeScript knows the shape
       const { signedRequest, url } = response;
 
       fileInputRef.current.disabled = true;
 
-      const options = {
+      await axios.put(signedRequest, file, {
         headers: {
           'Content-Type': fileType,
           'x-amz-acl': 'public-read'
         }
-      };
-
-      await axios.put(signedRequest, file, options);
+      });
 
       setFormData(prev => ({ ...prev, profilePic: url }));
 
