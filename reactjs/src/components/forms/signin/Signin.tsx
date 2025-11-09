@@ -114,22 +114,22 @@ const handleCredentialResponse = useCallback(
     }
 
     try {
-      console.log('🔐 Sending Google credential to backend...');
+      console.log('Sending Google credential to backend...');
       
-      // ✅ Type the response
+      // Type the response
       const res = await API.post<GoogleLoginResponse>('/auth/googleLogin', {
         credential: response.credential
       }) as unknown as GoogleLoginResponse;  // Cast since interceptor unwraps
 
-      console.log('📦 Response:', res);
+      console.log('Response:', res);
 
-      // ✅ Now TypeScript knows the shape
+      // Now TypeScript knows the shape
       const { token, id, email, name, currencyData } = res;
 
-      console.log('📦 Extracted:', { token: !!token, id, email, name });
+      console.log('Extracted:', { token: !!token, id, email, name });
 
       if (!token || !id) {
-        console.error('❌ Missing token or id:', { token: !!token, id });
+        console.error('Missing token or id:', { token: !!token, id });
         throw new Error('Invalid response from server');
       }
 
@@ -155,14 +155,14 @@ const handleCredentialResponse = useCallback(
         }
       }
 
-      console.log('✅ Google login successful! Redirecting...');
+      console.log('Google login successful! Redirecting...');
 
       setTimeout(() => {
         window.location.href = '/';
       }, 500);
       
     } catch (error) {
-      console.error('❌ Google login error:', error);
+      console.error('Google login error:', error);
       setFormErrors({ 
         form: 'Google login failed. Please try again.'
       });
