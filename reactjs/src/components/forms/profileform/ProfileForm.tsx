@@ -44,7 +44,7 @@ const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_FILE_SIZE = 1e6;
 const ALLOWED_FILE_TYPES = ['jpg', 'jpeg', 'png'];
-const S3_BUCKET = 'dothanthorntonbucket';
+const S3_BUCKET = 'herologimages';
 const AWS_REGION = 'us-east-2';
 
 const INAPPROPRIATE_MODERATION_LABELS = [
