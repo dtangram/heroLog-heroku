@@ -271,14 +271,11 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     try {
       console.log('Uploading:', { fileName, fileType });  // Should show "image/jpeg"
 
-      const response = await API.post<{ returnData: { signedRequest: string; url: string } }>(
-        '/sign_s3',
-        { fileName, fileType }
-      );
+      const response = await API.post('/s3/sign', { fileName, fileType });
 
       console.log('S3 sign response:', response);
 
-      const { returnData: { signedRequest, url } } = response.data;
+      const { signedRequest, url } = response.data;
 
       fileInputRef.current.disabled = true;
 
