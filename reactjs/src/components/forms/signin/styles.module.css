@@ -117,7 +117,7 @@
 .googleBTN div{
   background: transparent !important;
   margin-right: 0 !important;
-  padding: 10px 0 10px 10px !important;
+  /* padding: 10px 0 10px 10px !important; */
 }
 
 .googleBTN span{
