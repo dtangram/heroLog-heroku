@@ -273,27 +273,37 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     }
 
     try {
-      console.log('Uploading:', { fileName, fileType });
+      console.log('📤 Uploading:', { fileName, fileType });
       
       const response = await API.post<S3SignResponse>('/s3/sign', {
         fileName,
         fileType
       }) as unknown as S3SignResponse;
 
-      console.log('S3 sign response:', response);
+      console.log('📦 Full S3 response:', response);  // ✅ Log full response
+      console.log('📦 Response type:', typeof response);  // ✅ Log type
+      console.log('📦 Response keys:', Object.keys(response));  // ✅ Log keys
+      console.log('📦 signedRequest:', response.signedRequest);  // ✅ Log signedRequest
+      console.log('📦 url:', response.url);  // ✅ Log url
 
       const { signedRequest, url } = response;
 
+      if (!signedRequest || !url) {
+        console.error('❌ Missing signedRequest or url:', { signedRequest, url });
+        throw new Error('Invalid S3 response - missing signed URL');
+      }
+
+      console.log('📤 Uploading to S3:', signedRequest);
+
       fileInputRef.current.disabled = true;
 
-      // Remove x-amz-acl header - only send Content-Type
       await axios.put(signedRequest, file, {
         headers: {
           'Content-Type': fileType
         }
       });
 
-      console.log('Upload successful:', url);
+      console.log('✅ Upload successful:', url);
 
       setFormData(prev => ({ ...prev, profilePic: url }));
 
@@ -304,7 +314,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
 
       performRekognitionCheck(fileName);
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       if (fileInputRef.current) {
         fileInputRef.current.disabled = false;
       }
