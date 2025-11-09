@@ -39,11 +39,6 @@ interface RekognitionLabel {
   Confidence?: number;
 }
 
-interface S3SignResponse {
-  signedRequest: string;
-  url: string;
-}
-
 const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
 const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
@@ -275,15 +270,12 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
 
     try {
       console.log('Uploading:', { fileName, fileType });  // Should show "image/jpeg"
-      
-      const response = await API.post<S3SignResponse>('/s3/sign', {
-        fileName,
-        fileType // Now sends "image/jpeg" instead of "jpg"
-      }) as unknown as S3SignResponse;
+
+      const response = await API.post('/s3/sign', { fileName, fileType });
 
       console.log('S3 sign response:', response);
 
-      const { signedRequest, url } = response;
+      const { signedRequest, url } = response.data;
 
       fileInputRef.current.disabled = true;
 
