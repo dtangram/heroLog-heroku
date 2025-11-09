@@ -248,78 +248,75 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
   }, [isInappropriateModeration, isInappropriateDetection, handleInappropriateContent]);
 
   const handleFileInputChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    
-    if (!file || !fileInputRef.current) {
-      return;
-    }
+  const file = event.target.files?.[0];
+  
+  if (!file || !fileInputRef.current) {
+    return;
+  }
 
+  fileInputRef.current.disabled = false;
+
+  const fileName = file.name;
+  const fileType = file.type;
+  const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+
+  if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
     fileInputRef.current.disabled = false;
+    alert('Image needs to have a .jpeg, .jpg or .png file extension.');
+    return;
+  }
 
-    const fileName = file.name;
-    const fileType = file.type;
-    const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+  if (file.size > MAX_FILE_SIZE) {
+    fileInputRef.current.disabled = false;
+    alert('Image size needs to be smaller than 1MB');
+    return;
+  }
 
-    if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
+  try {
+    console.log('📤 Uploading:', { fileName, fileType });
+    
+    const response = await API.post<S3SignResponse>('/s3/sign', {
+      fileName,
+      fileType
+    }) as any;  // ✅ Use any temporarily
+
+    console.log('📦 Full S3 response:', response);
+
+    // ✅ The data is inside response.data (backend returns { success, data, timestamp })
+    const { signedRequest, url } = response.data;
+
+    if (!signedRequest || !url) {
+      console.error('❌ Missing signedRequest or url:', { signedRequest, url });
+      throw new Error('Invalid S3 response - missing signed URL');
+    }
+
+    console.log('📤 Uploading to S3:', signedRequest);
+
+    fileInputRef.current.disabled = true;
+
+    await axios.put(signedRequest, file, {
+      headers: {
+        'Content-Type': fileType
+      }
+    });
+
+    console.log('✅ Upload successful:', url);
+
+    setFormData(prev => ({ ...prev, profilePic: url }));
+
+    const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
+    if (figureElement) {
+      figureElement.style.display = 'inline-block';
+    }
+
+    performRekognitionCheck(fileName);
+  } catch (error) {
+    console.error('❌ Upload error:', error);
+    if (fileInputRef.current) {
       fileInputRef.current.disabled = false;
-      alert('Image needs to have a .jpeg, .jpg or .png file extension.');
-      return;
     }
-
-    if (file.size > MAX_FILE_SIZE) {
-      fileInputRef.current.disabled = false;
-      alert('Image size needs to be smaller than 1MB');
-      return;
-    }
-
-    try {
-      console.log('📤 Uploading:', { fileName, fileType });
-      
-      const response = await API.post<S3SignResponse>('/s3/sign', {
-        fileName,
-        fileType
-      }) as unknown as S3SignResponse;
-
-      console.log('📦 Full S3 response:', response);  // ✅ Log full response
-      console.log('📦 Response type:', typeof response);  // ✅ Log type
-      console.log('📦 Response keys:', Object.keys(response));  // ✅ Log keys
-      console.log('📦 signedRequest:', response.signedRequest);  // ✅ Log signedRequest
-      console.log('📦 url:', response.url);  // ✅ Log url
-
-      const { signedRequest, url } = response;
-
-      if (!signedRequest || !url) {
-        console.error('❌ Missing signedRequest or url:', { signedRequest, url });
-        throw new Error('Invalid S3 response - missing signed URL');
-      }
-
-      console.log('📤 Uploading to S3:', signedRequest);
-
-      fileInputRef.current.disabled = true;
-
-      await axios.put(signedRequest, file, {
-        headers: {
-          'Content-Type': fileType
-        }
-      });
-
-      console.log('✅ Upload successful:', url);
-
-      setFormData(prev => ({ ...prev, profilePic: url }));
-
-      const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
-      if (figureElement) {
-        figureElement.style.display = 'inline-block';
-      }
-
-      performRekognitionCheck(fileName);
-    } catch (error) {
-      console.error('❌ Upload error:', error);
-      if (fileInputRef.current) {
-        fileInputRef.current.disabled = false;
-      }
-    }
-  }, [performRekognitionCheck]);
+  }
+}, [performRekognitionCheck]);
 
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
