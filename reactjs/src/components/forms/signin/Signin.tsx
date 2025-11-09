@@ -17,14 +17,13 @@ interface FormErrorsType {
   form?: string;
 }
 
-interface User {
+interface GoogleLoginResponse {
+  token: string;
+  loggedIn: boolean;
   id: string;
-  username: string;
-  password: string;
-}
-
-interface UserData {
-  id: string;
+  email?: string;
+  name?: string;
+  currencyData?: any;
 }
 
 interface LoginFormData {
@@ -115,34 +114,26 @@ const handleCredentialResponse = useCallback(
     }
 
     try {
-      console.log('Sending Google credential to backend...');
+      console.log('🔐 Sending Google credential to backend...');
       
-      const res = await API.post('/auth/googleLogin', {
+      // ✅ Type the response
+      const res = await API.post<GoogleLoginResponse>('/auth/googleLogin', {
         credential: response.credential
-      });
+      }) as unknown as GoogleLoginResponse;  // Cast since interceptor unwraps
 
-      console.log('Full response:', res);  // Log full response
-      console.log('Response data:', res.data);  // Log data
-      console.log('Data type:', typeof res.data);  // Log type
+      console.log('📦 Response:', res);
 
-      // Check if data exists
-      if (!res || !res.data) {
-        console.error('No response data received');
-        throw new Error('No response from server');
-      }
+      // ✅ Now TypeScript knows the shape
+      const { token, id, email, name, currencyData } = res;
 
-      // Handle both wrapped and unwrapped responses
-      const responseData = res.data;
-      const { token, id, email, name, currencyData } = responseData;
-
-      console.log('Extracted:', { token: !!token, id, email, name });
+      console.log('📦 Extracted:', { token: !!token, id, email, name });
 
       if (!token || !id) {
-        console.error('Missing token or id:', { token: !!token, id });
+        console.error('❌ Missing token or id:', { token: !!token, id });
         throw new Error('Invalid response from server');
       }
 
-      console.log('Storing auth data...');
+      console.log('💾 Storing auth data...');
 
       // Store authentication data
       localStorage.setItem('token', token);
@@ -156,21 +147,22 @@ const handleCredentialResponse = useCallback(
       if (currencyData) {
         try {
           const formattedData = formatResponseData(currencyData);
-          localStorage.setItem('data', formattedData);
+          if (formattedData) {
+            localStorage.setItem('data', formattedData);
+          }
         } catch (formatError) {
           console.error('Error formatting currency data:', formatError);
-          // Continue anyway - currency data is not critical
         }
       }
 
-      console.log('Google login successful! Redirecting...');
+      console.log('✅ Google login successful! Redirecting...');
 
       setTimeout(() => {
         window.location.href = '/';
       }, 500);
+      
     } catch (error) {
-      console.error('Google login error:', error);
-      console.error('Error details:', error);
+      console.error('❌ Google login error:', error);
       setFormErrors({ 
         form: 'Google login failed. Please try again.'
       });
@@ -296,7 +288,7 @@ const handleCredentialResponse = useCallback(
 
   // Handle form submission
 const handleSubmit = useCallback(
-  async (event: FormEvent<HTMLFormElement>) => {  // ✅ Make it async
+  async (event: FormEvent<HTMLFormElement>) => {  // Make it async
     event.preventDefault();
 
     if (!validateFields()) {
@@ -304,13 +296,13 @@ const handleSubmit = useCallback(
     }
 
     try {
-      // ✅ Await the login action
+      // Await the login action
       await loginUser({
         username: formData.username,
         password: formData.password
       });
 
-      // ✅ Token is now in localStorage after successful login
+      // Token is now in localStorage after successful login
       const token = localStorage.getItem('token');
       
       if (token && token !== 'undefined') {
@@ -320,12 +312,12 @@ const handleSubmit = useCallback(
       } else {
         setTimeout(() => {
           setFormErrors({
-            form: 'Login failed. Please try again.'  // ✅ Changed from validToken to form
+            form: 'Login failed. Please try again.'  // Changed from validToken to form
           });
         }, 3000);
       }
     } catch (error) {
-      // ❌ Login failed - show error
+      // Login failed - show error
       setFormErrors({
         form: error instanceof Error ? error.message : 'Incorrect username and/or password'
       });
