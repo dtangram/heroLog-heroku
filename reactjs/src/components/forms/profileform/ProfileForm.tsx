@@ -39,6 +39,11 @@ interface RekognitionLabel {
   Confidence?: number;
 }
 
+interface S3SignResponse {
+  signedRequest: string;
+  url: string;
+}
+
 const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
 const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
@@ -270,12 +275,16 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     }
 
     try {
-      const response = await API.post<{ returnData: { signedRequest: string; url: string } }>(
-        '/sign_s3',
-        { fileName, fileType }
-      );
+      // Type the response and cast since interceptor unwraps
+      const response = await API.post<S3SignResponse>('/s3/sign', {
+        fileName,
+        fileType
+      }) as unknown as S3SignResponse;
 
-      const { returnData: { signedRequest, url } } = response.data;
+      console.log('S3 sign response:', response);
+
+      // Now TypeScript knows the shape
+      const { signedRequest, url } = response;
 
       fileInputRef.current.disabled = true;
 
@@ -302,7 +311,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
         fileInputRef.current.disabled = false;
       }
     }
-  }, [performRekognitionCheck]);
+}, [performRekognitionCheck]);
 
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
