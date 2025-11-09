@@ -39,6 +39,11 @@ interface RekognitionLabel {
   Confidence?: number;
 }
 
+interface S3SignResponse {
+  signedRequest: string;
+  url: string;
+}
+
 const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
 const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
@@ -252,10 +257,9 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     fileInputRef.current.disabled = false;
 
     const fileName = file.name;
-    const fileType = file.type;  // Use file.type instead of extracting extension
+    const fileType = file.type;
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
 
-    // Validate the extension
     if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
       fileInputRef.current.disabled = false;
       alert('Image needs to have a .jpeg, .jpg or .png file extension.');
@@ -269,22 +273,27 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     }
 
     try {
-      console.log('Uploading:', { fileName, fileType });  // Should show "image/jpeg"
-
-      const response = await API.post('/s3/sign', { fileName, fileType });
+      console.log('Uploading:', { fileName, fileType });
+      
+      const response = await API.post<S3SignResponse>('/s3/sign', {
+        fileName,
+        fileType
+      }) as unknown as S3SignResponse;
 
       console.log('S3 sign response:', response);
 
-      const { signedRequest, url } = response.data;
+      const { signedRequest, url } = response;
 
       fileInputRef.current.disabled = true;
 
+      // Remove x-amz-acl header - only send Content-Type
       await axios.put(signedRequest, file, {
         headers: {
-          'Content-Type': fileType,
-          'x-amz-acl': 'public-read'
+          'Content-Type': fileType
         }
       });
+
+      console.log('Upload successful:', url);
 
       setFormData(prev => ({ ...prev, profilePic: url }));
 
@@ -300,7 +309,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
         fileInputRef.current.disabled = false;
       }
     }
-}, [performRekognitionCheck]);
+  }, [performRekognitionCheck]);
 
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
