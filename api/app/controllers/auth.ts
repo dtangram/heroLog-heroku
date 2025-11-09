@@ -69,17 +69,6 @@ interface JwtPayload {
 }
 
 /**
- * Interface for currency data from Fixer API
- */
-interface CurrencyData {
-  success: boolean;
-  timestamp: number;
-  base: string;
-  date: string;
-  rates: Record<string, number>;
-}
-
-/**
  * Interface for login response
  */
 interface LoginResponse {
@@ -89,7 +78,6 @@ interface LoginResponse {
   username?: string;
   email?: string;
   name?: string;
-  currencyData?: CurrencyData;
 }
 
 /**
@@ -124,42 +112,6 @@ const validateJwtSecret = (): string | null => {
   }
   
   return secret;
-};
-
-/**
- * Fetches currency rates from Fixer API
- * Non-critical feature - fails gracefully
- */
-const fetchCurrencyRates = async (): Promise<CurrencyData | null> => {
-  try {
-    const fixerApiKey = process.env.FIXER_ACCESS_KEY;
-    
-    if (!fixerApiKey) {
-      console.warn('FIXER_ACCESS_KEY not configured - skipping currency data fetch');
-      return null;
-    }
-
-    const response = await axios.get<CurrencyData>(
-      `https://data.fixer.io/api/latest?access_key=${fixerApiKey}`,
-      { timeout: 5000 } // 5 second timeout
-    );
-
-    if (response.data && response.data.success) {
-      return response.data;
-    }
-
-    console.warn('Fixer API returned unsuccessful response');
-    return null;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Failed to fetch currency data:', error.message);
-    } else if (error instanceof Error) {
-      console.error('Unexpected error fetching currency data:', error.message);
-    } else {
-      console.error('Unknown error fetching currency data');
-    }
-    return null;
-  }
 };
 
 /**
@@ -260,9 +212,6 @@ export const login = async (
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    // Fetch currency data (non-blocking)
-    const currencyData = await fetchCurrencyRates();
-
     // Generate JWT token
     const token = generateToken(
       { id: user.id, username: user.username },
@@ -276,10 +225,6 @@ export const login = async (
       id: user.id,
       username: user.username,
     };
-
-    if (currencyData) {
-      response.currencyData = currencyData;
-    }
 
     return res.status(200).json(response);
   } catch (error) {
@@ -398,9 +343,6 @@ export const googleLogin = async (
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    // Fetch currency data (non-blocking)
-    const currencyData = await fetchCurrencyRates();
-
     // Generate JWT token
     const token = generateToken(
       { id: user.id, email: user.email },
@@ -419,10 +361,6 @@ export const googleLogin = async (
 
     if (user.name) {
       response.name = user.name;
-    }
-
-    if (currencyData) {
-      response.currencyData = currencyData;
     }
 
     return res.status(200).json(response);
