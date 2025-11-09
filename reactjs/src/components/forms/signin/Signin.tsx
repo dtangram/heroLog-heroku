@@ -8,7 +8,6 @@ import styles from './styles.module.css';
 // Constants
 const MIN_USERNAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
-const TOKEN_CHECK_DELAY = 100;
 
 // Types
 interface FormErrorsType {
@@ -26,10 +25,6 @@ interface User {
 
 interface UserData {
   id: string;
-}
-
-interface UserState {
-  data?: UserData;
 }
 
 interface LoginFormData {
@@ -318,7 +313,7 @@ const handleSubmit = useCallback(
           <FormErrors formErrors={formErrors} />
 
           <fieldset>
-            {/* <div className={styles.googleBTN}>
+            <div className={styles.googleBTN}>
               <div id="googleSignInButton" style={{ width: '100%' }} />
             </div>
 
@@ -326,7 +321,7 @@ const handleSubmit = useCallback(
               <hr />
               <span>or</span>
               <hr />
-            </section> */}
+            </section>
 
             <label htmlFor="username">
               Username
