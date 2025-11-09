@@ -80,60 +80,88 @@ const Signin: React.FC<ConnectorProps> = ({
 
   // Format response data for display
   const formatResponseData = useCallback((data: any): string => {
-    try {
-      return JSON.stringify(data)
-        .substring(16)
-        .replace(/["/{/}/]/gi, '')
-        .replace(/,/gi, '\n')
-        .replace(/:/gi, ': ')
-        .replace(/timestamp/gi, 'Timestamp')
-        .replace(/base/gi, 'Base')
-        .replace(/date/gi, 'Date')
-        .replace(/rates:/gi, 'Rates:\n');
-    } catch (error) {
-      console.error('Error formatting response data:', error);
-      return '';
+  try {
+    if (!data) return '';
+    
+    const jsonStr = JSON.stringify(data);
+    
+    // Check length before substring
+    if (jsonStr.length < 16) {
+      return jsonStr;
     }
-  }, []);
+    
+    return jsonStr
+      .substring(16)
+      .replace(/["/{/}/]/gi, '')
+      .replace(/,/gi, '\n')
+      .replace(/:/gi, ': ')
+      .replace(/timestamp/gi, 'Timestamp')
+      .replace(/base/gi, 'Base')
+      .replace(/date/gi, 'Date')
+      .replace(/rates:/gi, 'Rates:\n');
+  } catch (error) {
+    console.error('Error formatting response data:', error);
+    return '';
+  }
+}, []);
 
   // Handle Google credential response
-  const handleCredentialResponse = useCallback(
-    async (response: any) => {
-      if (!response.credential) {
-        setFormErrors({ validToken: 'Google login failed. Please try again.' });
-        return;
+  // Update the handleCredentialResponse function:
+const handleCredentialResponse = useCallback(
+  async (response: any) => {
+    if (!response.credential) {
+      setFormErrors({ form: 'Google login failed. Please try again.' });
+      return;
+    }
+
+    try {
+      console.log('Sending Google credential to backend...');
+      
+      const res = await API.post('/auth/googleLogin', {
+        credential: response.credential
+      });
+
+      console.log('Backend response:', res.data);
+
+      // Handle the response properly
+      const { token, id, email, name, currencyData } = res.data;
+
+      if (!token || !id) {
+        throw new Error('Invalid response from server');
       }
 
-      try {
-        const res = await API.post('/auth/googleLogin', {
-          credential: response.credential
-        });
+      console.log('Storing auth data...');
 
-        const { token, id: userId, ...restData } = res.data;
-
-        if (!token || !userId) {
-          throw new Error('Invalid response from server');
+      // Store authentication data
+      localStorage.setItem('token', token);
+      localStorage.setItem('id', id);
+      localStorage.setItem('email', email || '');
+      
+      // Only format currency data if it exists
+      if (currencyData) {
+        try {
+          const formattedData = formatResponseData(currencyData);
+          localStorage.setItem('data', formattedData);
+        } catch (formatError) {
+          console.error('Error formatting currency data:', formatError);
+          // Continue anyway - currency data is not critical
         }
-
-        const resData = formatResponseData(restData);
-
-        // Store authentication data
-        localStorage.setItem('token', token);
-        localStorage.setItem('id', userId);
-        localStorage.setItem('data', resData);
-
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 800);
-      } catch (error) {
-        console.error('Google login error:', error);
-        setFormErrors({ 
-          validToken: 'Google login failed. Please try again.' 
-        });
       }
-    },
-    [formatResponseData]
-  );
+
+      console.log('Google login successful! Redirecting...');
+
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 800);
+    } catch (error) {
+      console.error('Google login error:', error);
+      setFormErrors({ 
+        form: error instanceof Error ? error.message : 'Google login failed. Please try again.'
+      });
+    }
+  },
+  [formatResponseData]
+);
 
   // Load Google Identity Services script
   useEffect(() => {
