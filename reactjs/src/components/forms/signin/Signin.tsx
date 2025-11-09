@@ -121,12 +121,24 @@ const handleCredentialResponse = useCallback(
         credential: response.credential
       });
 
-      console.log('Backend response:', res.data);
+      console.log('Full response:', res);  // Log full response
+      console.log('Response data:', res.data);  // Log data
+      console.log('Data type:', typeof res.data);  // Log type
 
-      // Handle the response properly
-      const { token, id, email, name, currencyData } = res.data;
+      // Check if data exists
+      if (!res || !res.data) {
+        console.error('No response data received');
+        throw new Error('No response from server');
+      }
+
+      // Handle both wrapped and unwrapped responses
+      const responseData = res.data;
+      const { token, id, email, name, currencyData } = responseData;
+
+      console.log('Extracted:', { token: !!token, id, email, name });
 
       if (!token || !id) {
+        console.error('Missing token or id:', { token: !!token, id });
         throw new Error('Invalid response from server');
       }
 
@@ -135,7 +147,10 @@ const handleCredentialResponse = useCallback(
       // Store authentication data
       localStorage.setItem('token', token);
       localStorage.setItem('id', id);
-      localStorage.setItem('email', email || '');
+      
+      if (email) {
+        localStorage.setItem('email', email);
+      }
       
       // Only format currency data if it exists
       if (currencyData) {
@@ -152,11 +167,12 @@ const handleCredentialResponse = useCallback(
 
       setTimeout(() => {
         window.location.href = '/';
-      }, 800);
+      }, 500);
     } catch (error) {
       console.error('Google login error:', error);
+      console.error('Error details:', error);
       setFormErrors({ 
-        form: error instanceof Error ? error.message : 'Google login failed. Please try again.'
+        form: 'Google login failed. Please try again.'
       });
     }
   },
