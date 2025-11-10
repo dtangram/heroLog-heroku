@@ -264,14 +264,14 @@ useEffect(() => {
             </Nav>
           </Collapse>
         </Container>
-        {user.data?.profilePic && (
+        {user.data?.profilePic ? (
           <figure>
             <img 
               src={user.data.profilePic} 
               alt={`${user.data.firstname}'s profile`} 
             />
           </figure>
-        )}
+        ) : <></>}
       </Navbar>
     </header>
   );
