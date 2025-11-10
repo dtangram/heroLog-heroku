@@ -151,6 +151,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     };
 
     setFormErrors(errors);
+    errors && window?.scrollTo?.({ top: 0, behavior: 'smooth' });
     return Object.values(errors).every(error => error === '');
   }, [formData, validateField]);
 
