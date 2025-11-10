@@ -261,10 +261,7 @@ useEffect(() => {
                   SIGNOUT
                 </NavLink>
               </NavItem>
-            </Nav>
-          </Collapse>
-        </Container>
-        {user.data?.profilePic ? (
+              {user.data?.profilePic ? (
           <figure>
             <img 
               src={user.data.profilePic} 
@@ -272,6 +269,9 @@ useEffect(() => {
             />
           </figure>
         ) : <></>}
+            </Nav>
+          </Collapse>
+        </Container>
       </Navbar>
     </header>
   );
