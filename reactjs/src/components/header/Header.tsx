@@ -261,17 +261,17 @@ useEffect(() => {
                   SIGNOUT
                 </NavLink>
               </NavItem>
-              {user.data?.profilePic ? (
-          <figure>
+            </Nav>
+          </Collapse>
+        </Container>
+        {user.data?.profilePic ? (
+          <figure className='headerProfilePic'>
             <img 
               src={user.data.profilePic} 
               alt={`${user.data.firstname}'s profile`} 
             />
           </figure>
         ) : <></>}
-            </Nav>
-          </Collapse>
-        </Container>
       </Navbar>
     </header>
   );

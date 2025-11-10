@@ -57,11 +57,11 @@
   width: 80%;
 }
 
-header nav > figure{
+header nav > .headerProfilePic{
   width: 85px;
 }
 
-header nav > figure img{
+header nav > .headerProfilePic img{
   background-color: #FFF;
   border: solid 1px #AECEAB;
   border-radius: 50%;
@@ -71,7 +71,7 @@ header nav > figure img{
 }
 
 @media (max-width: 991px){
-  header nav > figure{
+  header nav > .headerProfilePic{
     margin: 12px 0 0 18px;
     width: 70px;
   }
