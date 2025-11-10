@@ -259,8 +259,7 @@ header {
         z-index: 99;
         width: auto; } }
     header nav img {
-      cursor: pointer;
-      width: 30px; }
+      width: 50px; }
     @media (max-width: 800px) {
       header nav img:nth-child(1) {
         display: block;
