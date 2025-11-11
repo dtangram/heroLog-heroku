@@ -1,67 +1,91 @@
+/// <reference types="jest" />
+
 import request from 'supertest';
 import express from 'express';
-import aiScannerRoutes from '../../routes/aiScanner';
+import bcrypt from 'bcryptjs';
 
-jest.mock('@anthropic-ai/sdk');
+// Mock database
+jest.mock('../../models', () => ({
+  Users: {
+    findOne: jest.fn(),
+    create: jest.fn(),
+  },
+}));
+
+import authRoutes from '../../routes/auth';
 
 const app = express();
 app.use(express.json());
-app.use('/api/ai', aiScannerRoutes);
+app.use('/auth', authRoutes);
 
-describe('AI Scanner Controller', () => {
-  describe('POST /api/ai/scan-comic-cover', () => {
-    it('should return 400 if imageUrl is missing', async () => {
+describe('Auth Controller', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('POST /auth/login', () => {
+    it('should return 400 if username is missing', async () => {
       const response = await request(app)
-        .post('/api/ai/scan-comic-cover')
-        .send({});
+        .post('/auth/login')
+        .send({ password: 'test123456' });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('Image URL is required');
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors.some((e: any) => e.field === 'username')).toBe(true);
     });
 
-    it('should return 400 if imageUrl is invalid', async () => {
+    it('should return 400 if password is missing', async () => {
       const response = await request(app)
-        .post('/api/ai/scan-comic-cover')
-        .send({ imageUrl: 'not-a-url' });
+        .post('/auth/login')
+        .send({ username: 'testuser' });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain('Invalid image URL');
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors.some((e: any) => e.field === 'password')).toBe(true);
     });
 
-    it('should successfully scan a valid image URL', async () => {
-      const Anthropic = require('@anthropic-ai/sdk');
-      
-      Anthropic.prototype.messages = {
-        create: jest.fn().mockResolvedValue({
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                title: 'Batman',
-                issue: '1',
-                volume: '',
-                year: '1940',
-                publisher: 'DC Comics',
-                type: 'regular',
-                confidence: 0.95,
-              }),
-            },
-          ],
-        }),
+    it('should return 401 if credentials are invalid', async () => {
+      const { Users } = require('../../models');
+      Users.findOne.mockResolvedValue(null);
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send({
+          username: 'testuser',
+          password: 'wrongpassword',
+        });
+
+      expect(response.status).toBe(401);
+      // The response format is { type: 'error', message: '...', ... }
+      expect(response.body.type).toBe('error');
+      expect(response.body.message).toBeTruthy();
+    });
+
+    it('should return token on successful login', async () => {
+      const { Users } = require('../../models');
+
+      const mockUser = {
+        id: 'test-uuid-123',
+        username: 'testuser',
+        password: await bcrypt.hash('test123456', 10),
       };
 
+      Users.findOne.mockResolvedValue(mockUser);
+
       const response = await request(app)
-        .post('/api/ai/scan-comic-cover')
+        .post('/auth/login')
         .send({
-          imageUrl: 'https://example.com/batman.jpg',
+          username: 'testuser',
+          password: 'test123456',
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('comicBookTitle', 'Batman');
-      expect(response.body.data).toHaveProperty('comicIssue', '1');
+      expect(response.body.type).toBe('success');
+      expect(response.body.data).toHaveProperty('token');
+      expect(response.body.data).toHaveProperty('id', 'test-uuid-123');
+      expect(response.body.data).toHaveProperty('username', 'testuser');
     });
   });
 });
