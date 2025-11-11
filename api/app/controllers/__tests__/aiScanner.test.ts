@@ -4,19 +4,17 @@ import request from 'supertest';
 import express from 'express';
 import axios from 'axios';
 
-// Mock axios
+// Mock axios BEFORE importing routes
 jest.mock('axios');
 
 // Mock Anthropic SDK
 const mockCreate = jest.fn();
-const mockAnthropicClient = {
-  messages: {
-    create: mockCreate
-  }
-};
-
 jest.mock('@anthropic-ai/sdk', () => {
-  return jest.fn().mockImplementation(() => mockAnthropicClient);
+  return jest.fn().mockImplementation(() => ({
+    messages: {
+      create: mockCreate
+    }
+  }));
 });
 
 import aiScannerRoutes from '../../routes/aiScanner';
@@ -28,8 +26,13 @@ app.use('/api/ai', aiScannerRoutes);
 describe('AI Scanner Controller', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Set environment variable for tests
-    process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
+    // ✅ Set the API key that your controller checks for
+    process.env.ANTHROPIC_API_KEY = 'test-anthropic-api-key-for-testing';
+  });
+
+  afterEach(() => {
+    // Clean up
+    delete process.env.ANTHROPIC_API_KEY;
   });
 
   describe('POST /api/ai/scan-comic-cover', () => {
@@ -40,6 +43,7 @@ describe('AI Scanner Controller', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
+      expect(response.body.error).toBeDefined();
     });
 
     it('should return 400 if imageUrl is invalid', async () => {
@@ -49,20 +53,20 @@ describe('AI Scanner Controller', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
+      expect(response.body.error).toBeDefined();
     });
 
     it('should successfully scan a valid image URL', async () => {
       // Mock axios.get for downloading the image
-      const mockImageData = Buffer.from('fake-image-data');
       (axios.get as jest.Mock).mockResolvedValue({
-        data: mockImageData,
+        data: Buffer.from('fake-image-data'),
         headers: {
           'content-type': 'image/jpeg'
         }
       });
 
       // Mock Anthropic response
-      const mockAnthropicResponse = {
+      mockCreate.mockResolvedValue({
         content: [
           {
             type: 'text',
@@ -77,9 +81,7 @@ describe('AI Scanner Controller', () => {
             }),
           },
         ],
-      };
-
-      mockCreate.mockResolvedValue(mockAnthropicResponse);
+      });
 
       const response = await request(app)
         .post('/api/ai/scan-comic-cover')
@@ -89,8 +91,10 @@ describe('AI Scanner Controller', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('comicBookTitle', 'Batman');
-      expect(response.body.data).toHaveProperty('comicIssue', '1');
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.comicBookTitle).toBe('Batman');
+      expect(response.body.data.comicIssue).toBe('1');
+      expect(response.body.data.comicBookPublisher).toBe('DC Comics');
     });
 
     it('should handle image download errors', async () => {
@@ -104,6 +108,7 @@ describe('AI Scanner Controller', () => {
 
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
+      expect(response.body.error).toBeDefined();
     });
   });
 });

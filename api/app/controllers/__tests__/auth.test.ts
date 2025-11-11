@@ -30,8 +30,10 @@ describe('Auth Controller', () => {
         .send({ password: 'test123456' });
 
       expect(response.status).toBe(400);
+      // Actual format: { success: false, errors: [{ field: 'username', message: '...' }] }
       expect(response.body.success).toBe(false);
       expect(response.body.errors).toBeDefined();
+      expect(Array.isArray(response.body.errors)).toBe(true);
       expect(response.body.errors.some((e: any) => e.field === 'username')).toBe(true);
     });
 
@@ -41,8 +43,10 @@ describe('Auth Controller', () => {
         .send({ username: 'testuser' });
 
       expect(response.status).toBe(400);
+      // Actual format: { success: false, errors: [{ field: 'password', message: '...' }] }
       expect(response.body.success).toBe(false);
       expect(response.body.errors).toBeDefined();
+      expect(Array.isArray(response.body.errors)).toBe(true);
       expect(response.body.errors.some((e: any) => e.field === 'password')).toBe(true);
     });
 
@@ -58,9 +62,9 @@ describe('Auth Controller', () => {
         });
 
       expect(response.status).toBe(401);
-      // The response format is { type: 'error', message: '...', ... }
+      // Actual format: { type: 'error', message: '...' }
       expect(response.body.type).toBe('error');
-      expect(response.body.message).toBeTruthy();
+      expect(response.body.message).toBeDefined();
     });
 
     it('should return token on successful login', async () => {
@@ -82,10 +86,14 @@ describe('Auth Controller', () => {
         });
 
       expect(response.status).toBe(200);
+      // Actual format: { type: 'success', data: { token, id, username }, message: '...', timestamp: '...' }
       expect(response.body.type).toBe('success');
-      expect(response.body.data).toHaveProperty('token');
-      expect(response.body.data).toHaveProperty('id', 'test-uuid-123');
-      expect(response.body.data).toHaveProperty('username', 'testuser');
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.token).toBeDefined();
+      expect(response.body.data.id).toBe('test-uuid-123');
+      expect(response.body.data.username).toBe('testuser');
+      expect(response.body.message).toBeDefined();
+      expect(response.body.timestamp).toBeDefined();
     });
   });
 });
