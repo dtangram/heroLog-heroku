@@ -19,7 +19,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["node", "jest"],
+    "types": ["node"],
     "baseUrl": "./",
     "paths": {
       "@/*": ["./*"],
@@ -35,12 +35,15 @@
     }
   },
   "include": [
-    "**/*.ts", 
+    "**/*.ts",
     "app/**/*",
     "db/config.json"
   ],
   "exclude": [
-    "node_modules", 
-    "dist"
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**"
   ]
 }
