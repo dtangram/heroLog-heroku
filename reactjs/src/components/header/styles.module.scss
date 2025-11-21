@@ -58,6 +58,11 @@
 }
 
 header nav > .headerProfilePic{
+  border: 2px solid #AECEAB;
+  border-radius: 50%;
+  height: 85px;
+  overflow: hidden;
+  position: relative;
   width: 85px;
 }
 
@@ -67,7 +72,11 @@ header nav > .headerProfilePic img{
   border-radius: 50%;
   cursor: default;
   display: block;
-  width: 100%;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;  
 }
 
 @media (max-width: 991px){
