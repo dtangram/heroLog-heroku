@@ -260,14 +260,14 @@ header {
         width: auto; } }
     /* header nav img {
       width: 50px; } */
-      header nav > figure.headerProfilePic{
+      header nav > figure{
     border: 2px solid #AECEAB;
     border-radius: 50%;
     height: 85px;
     overflow: hidden;
     position: relative;
   }
-  header nav > figure.headerProfilePic img{
+  header nav > figure img{
     left: 50%;
     position: absolute;
     top: 50%;
