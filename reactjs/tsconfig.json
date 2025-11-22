@@ -27,6 +27,14 @@
   "exclude": [
     "node_modules",
     "build",
-    "dist"
+    "dist",
+    "**/__mocks__/**",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "src/test-utils.tsx",
+    "src/setupTests.ts"
   ]
 }
