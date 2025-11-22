@@ -258,21 +258,8 @@ header {
         margin-right: 0;
         z-index: 99;
         width: auto; } }
-    /* header nav img {
-      width: 50px; } */
-      header nav > figure{
-    border: 2px solid #AECEAB;
-    border-radius: 50%;
-    height: 85px;
-    overflow: hidden;
-    position: relative;
-  }
-  header nav > figure img{
-    left: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
+    header nav img {
+      width: 50px; }
     @media (max-width: 800px) {
       header nav img:nth-child(1) {
         display: block;
