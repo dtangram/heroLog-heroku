@@ -4,7 +4,9 @@ module.exports = {
   roots: ['<rootDir>/app'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json'
+    }],
   },
   collectCoverageFrom: [
     'app/**/*.ts',
@@ -15,4 +17,9 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testTimeout: 10000,
+  globals: {
+    'ts-jest': {
+      isolatedModules: true,
+    },
+  },
 };
