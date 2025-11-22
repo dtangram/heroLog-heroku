@@ -57,7 +57,7 @@
   width: 80%;
 }
 
-header nav > .headerProfilePic{
+header nav[class*='styles_nav__'] > .container-fluid > figure.headerProfilePic{
   border: 2px solid #AECEAB;
   border-radius: 50%;
   height: 85px;
@@ -66,7 +66,7 @@ header nav > .headerProfilePic{
   width: 85px;
 }
 
-header nav > .headerProfilePic img{
+header nav[class*='styles_nav__'] > .container-fluid > figure.headerProfilePic img{
   background-color: #FFF;
   border: solid 1px #AECEAB;
   border-radius: 50%;
