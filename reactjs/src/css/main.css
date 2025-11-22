@@ -246,6 +246,19 @@ header {
   header nav {
     float: right;
     margin-right: 0; }
+  header nav > .headerProfilePic{
+    border: 2px solid #AECEAB;
+    border-radius: 50%;
+    height: 85px;
+    overflow: hidden;
+    position: relative;
+  }
+  header nav > .headerProfilePic img{
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
     @media (max-width: 1199px) {
       header nav.navbar {
         padding-top: 3px; } }

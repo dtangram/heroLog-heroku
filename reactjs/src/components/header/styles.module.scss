@@ -57,25 +57,14 @@
   width: 80%;
 }
 
-.headerProfilePic{
-  border: 2px solid #AECEAB;
-  border-radius: 50%;
-  height: 85px;
-  overflow: hidden;
-  position: relative;
+header nav > .headerProfilePic{
   width: 85px;
 }
 
-.headerProfilePic img{
+header nav > .headerProfilePic img{
   background-color: #FFF;
-  border: solid 1px #AECEAB;
-  border-radius: 50%;
   cursor: default;
   display: block;
-  left: 50%;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
   width: 100%;  
 }
 
