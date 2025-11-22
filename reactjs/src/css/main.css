@@ -298,6 +298,28 @@ header {
     width: 100%;
     z-index: -1; }
 
+    header nav > .headerProfilePic{
+  border: 2px solid #AECEAB;
+  border-radius: 50%;
+  height: 85px;
+  overflow: hidden;
+  position: relative;
+  width: 85px;
+}
+
+header nav > .headerProfilePic img{
+  background-color: #FFF;
+  border: solid 1px #AECEAB;
+  border-radius: 50%;
+  cursor: default;
+  display: block;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;  
+}
+
 section {
   padding-top: 40px;
   position: relative;
