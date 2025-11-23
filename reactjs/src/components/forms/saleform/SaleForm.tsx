@@ -235,42 +235,47 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
     fileInputRef.current.disabled = false;
 
-    const fileParts = file.name.split('.');
     const fileName = file.name;
-    const fileType = fileParts[fileParts.length - 1]?.toLowerCase() || '';
+    const fileType = file.type;  // ✅ Use file.type (MIME type) instead of extension
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
 
-    if (!ALLOWED_FILE_TYPES.includes(fileType)) {
+    // ✅ Validate the extension
+    if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
       fileInputRef.current.disabled = false;
-      window.location.reload();
       alert('Image needs to have a .jpeg, .jpg or .png file extension.');
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
       fileInputRef.current.disabled = false;
-      window.location.reload();
       alert('Image size needs to be smaller than 1MB');
       return;
     }
 
     try {
-      const response = await API.post<{ returnData: { signedRequest: string; url: string } }>(
-        '/sign_s3',
-        { fileName, fileType }
-      );
+      console.log('📤 Uploading:', { fileName, fileType });
 
-      const { returnData: { signedRequest, url } } = response.data;
+      // ✅ Changed from /sign_s3 to /s3/sign
+      const response = await API.post<{ signedRequest: string; url: string }>(
+        '/s3/sign',
+        { fileName, fileType }
+      ) as any;
+
+      console.log('📦 S3 sign response:', response);
+
+      // ✅ API interceptor unwraps response.data, so access directly
+      const { signedRequest, url } = response.data || response;
 
       fileInputRef.current.disabled = true;
 
-      const options = {
+      // ✅ Remove x-amz-acl header (not signed)
+      await axios.put(signedRequest, file, {
         headers: {
-          'Content-Type': fileType,
-          'x-amz-acl': 'public-read'
+          'Content-Type': fileType
         }
-      };
+      });
 
-      await axios.put(signedRequest, file, options);
+      console.log('✅ Upload successful:', url);
 
       setFormData(prev => ({ ...prev, comicBookCover: url }));
 
@@ -281,7 +286,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
       performRekognitionCheck(fileName);
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       if (fileInputRef.current) {
         fileInputRef.current.disabled = false;
       }
