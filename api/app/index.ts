@@ -149,7 +149,7 @@ app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/passwordreset', passwordresetRouter);
 app.use('/emailpasswordreset', emailPasswordResetRouter);
-app.use('/ai', aiScanner);
+app.use('/api/ai', aiScanner);
 app.use('/api/insights', collectionInsights);
 
 // Utility routes
