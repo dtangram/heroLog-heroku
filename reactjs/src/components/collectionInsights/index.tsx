@@ -43,16 +43,21 @@ const CollectionInsights: React.FC = () => {
       try {
         console.log('📊 Fetching collection insights...');
         
-        // ✅ API interceptor unwraps response.data, so we get data directly
-        const response = await API.get<CollectionInsights>(`/api/insights/${userId}`) as unknown as CollectionInsights;
+        const response = await API.get(`/api/insights/${userId}`) as any;
 
         console.log('📦 Full response:', response);
 
-        // ✅ response IS the data (no response.data)
-        if (response && typeof response === 'object') {
-          console.log('✅ Insights loaded:', response);
+        // ✅ The backend returns { success: true, data: {...} }
+        // So we need to access response.data
+        if (response && response.data) {
+          console.log('✅ Insights loaded:', response.data);
+          setInsights(response.data);
+        } else if (response && typeof response === 'object' && 'topSeries' in response) {
+          // Fallback: if response IS the data (no wrapper)
+          console.log('✅ Insights loaded (unwrapped):', response);
           setInsights(response);
         } else {
+          console.log('❌ No insights data:', response);
           setError('Failed to load insights');
         }
       } catch (err) {
