@@ -10,10 +10,6 @@ import styles from './styles.module.css';
 import { useComicScanner } from '../../../hooks/useComicScanner';
 import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface RouteParams extends Record<string, string | undefined> {
   id?: string;
   coboTitleId?: string;
@@ -46,10 +42,6 @@ interface ComicBookFormData extends FormState {
   comicBookTitle: string;
 }
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const INITIAL_FORM_STATE: FormState = {
   title: '',
   comicIssue: '',
@@ -68,10 +60,6 @@ const MAX_FILE_SIZE = 1e6; // 1MB
 const MAX_YEAR_LENGTH = 4;
 const REDIRECT_DELAY = 1500;
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
 const ComicBookComponent = ({
   comicbook,
   createComicBook,
@@ -82,10 +70,6 @@ const ComicBookComponent = ({
   const navigate = useNavigate();
   const { id, coboTitleId, cbTitle, pubId, publisherName } = useParams<RouteParams>();
   
-  // ============================================================================
-  // STATE
-  // ============================================================================
-  
   const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
   const [formErrors, setFormErrors] = useState<FormErrorsState>({});
   const [successMessage, setSuccessMessage] = useState('');
@@ -94,10 +78,6 @@ const ComicBookComponent = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const userId = localStorage.getItem('id') || getAnonymousUserId();
-
-  // ============================================================================
-  // EFFECTS
-  // ============================================================================
 
   // Log route params for debugging
   useEffect(() => {
@@ -144,10 +124,6 @@ const ComicBookComponent = ({
       });
     }
   }, [comicbook]);
-
-  // ============================================================================
-  // HANDLERS
-  // ============================================================================
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -366,18 +342,10 @@ const handleScanCover = useCallback(async () => {
     }
   };
 
-  // ============================================================================
-  // DERIVED STATE
-  // ============================================================================
-
   const showSuccess = !formErrors.title && !formErrors.type && successMessage === 'success';
   const isEditMode = !!id;
   const pageTitle = isEditMode ? `Edit ${formState.title || 'Comic Book'}` : 'Add Comic Book';
   const cancelUrl = `/dashboard/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbooklistissues`;
-
-  // ============================================================================
-  // RENDER
-  // ============================================================================
 
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
