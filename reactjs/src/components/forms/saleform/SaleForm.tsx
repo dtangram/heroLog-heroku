@@ -66,6 +66,9 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
   const inputRef = useRef<HTMLInputElement>(null);
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
+  // ✅ Destructure formState properties
+  const { comicBookTitle, comicIssue, comicBookVolume, comicBookYear, comicBookPublisher, comicBookCover, type } = formState;
+
   // Log route params for debugging
   useEffect(() => {
     console.log('📋 Sale Form Loaded');
@@ -97,7 +100,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
         comicBookYear: sale.comicBookYear || '',
         comicBookPublisher: sale.comicBookPublisher || '',
         comicBookCover: sale.comicBookCover || '',
-        type: sale.type as 'regular' | 'variant'  || '',
+        type: sale.type as 'regular' | 'variant' || '',
       });
     }
   }, [sale]);
@@ -186,12 +189,12 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
   const { scanCover, isScanning, scanError } = useComicScanner();
 
   const handleScanCover = useCallback(async () => {
-    if (!formState.comicBookCover) {
+    if (!comicBookCover) {
       alert('Please upload a cover image first');
       return;
     }
 
-    const result = await scanCover(formState.comicBookCover);
+    const result = await scanCover(comicBookCover);
     
     if (result) {
       setFormState(prev => ({
@@ -206,28 +209,28 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
       alert(`✅ Cover scanned! Confidence: ${Math.round(result.confidence * 100)}%\n\nPlease review the auto-filled information.`);
     }
-  }, [formState.comicBookCover, scanCover]);
+  }, [comicBookCover, scanCover]);
 
   const validateFields = (): boolean => {
     const errors: FormErrorsState = {};
 
     // Validate title
-    if (!formState.comicBookTitle.trim() || formState.comicBookTitle.trim().length < MIN_TITLE_LENGTH) {
+    if (!comicBookTitle.trim() || comicBookTitle.trim().length < MIN_TITLE_LENGTH) {
       errors.comicBookTitle = 'Comic book title is required';
     }
 
     // Validate issue
-    if (!formState.comicIssue.trim()) {
+    if (!comicIssue.trim()) {
       errors.comicIssue = 'Comic issue is required';
     }
 
     // Validate publisher
-    if (!formState.comicBookPublisher.trim()) {
+    if (!comicBookPublisher.trim()) {
       errors.comicBookPublisher = 'Publisher is required';
     }
 
     // Validate type
-    if (!formState.type) {
+    if (!type) {
       errors.type = 'Please select regular or variant';
     }
 
@@ -261,13 +264,13 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
     try {
       const saleData = {
-        comicBookTitle: formState.comicBookTitle.trim(),
-        comicIssue: formState.comicIssue.trim(),
-        comicBookVolume: formState.comicBookVolume.trim(),
-        comicBookYear: formState.comicBookYear.trim(),
-        comicBookPublisher: formState.comicBookPublisher.trim(),
-        comicBookCover: formState.comicBookCover,
-        type: formState.type,
+        comicBookTitle: comicBookTitle.trim(),
+        comicIssue: comicIssue.trim(),
+        comicBookVolume: comicBookVolume.trim(),
+        comicBookYear: comicBookYear.trim(),
+        comicBookPublisher: comicBookPublisher.trim(),
+        comicBookCover: comicBookCover,
+        type: type,
         userId,
         saleUsersId: userId,
       };
@@ -310,7 +313,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
   const showSuccess = Object.keys(formErrors).length === 0 && successMessage === 'success';
   const isEditMode = !!id;
-  const pageTitle = isEditMode ? `Update ${formState.comicBookTitle || 'Sale Comic'}` : 'Add New Sale Comic';
+  const pageTitle = isEditMode ? `Edit ${comicBookTitle || 'Sale Comic'}` : 'Add New Sale Comic';
   const cancelUrl = `/sale/${userId}`;
 
   return (
@@ -333,10 +336,10 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
             <p id="forbidContent" />
 
-            <figure style={{ display: formState.comicBookCover ? 'inline-block' : 'none' }}>
+            <figure style={{ display: comicBookCover ? 'inline-block' : 'none' }}>
               <img 
-                src={formState.comicBookCover} 
-                alt={formState.comicBookTitle || 'Comic book cover'} 
+                src={comicBookCover} 
+                alt={comicBookTitle || 'Comic book cover'} 
               />
             </figure>
 
@@ -356,7 +359,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                   {isUploading && <span> Uploading...</span>}
                 </label>
 
-                {formState.comicBookCover && (
+                {comicBookCover && (
                   <ScanCoverButton
                     onScan={handleScanCover}
                     isScanning={isScanning}
@@ -373,7 +376,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                     className={styles.inputBorder}
                     type="text"
                     name="comicBookTitle"
-                    value={formState.comicBookTitle}
+                    value={comicBookTitle}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                     required
@@ -387,7 +390,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                     className={styles.inputBorder}
                     type="text"
                     name="comicIssue"
-                    value={formState.comicIssue}
+                    value={comicIssue}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                     required
@@ -401,7 +404,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                     className={styles.inputBorder}
                     type="text"
                     name="comicBookVolume"
-                    value={formState.comicBookVolume}
+                    value={comicBookVolume}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
@@ -416,7 +419,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                     className={styles.inputBorder}
                     type="text"
                     name="comicBookYear"
-                    value={formState.comicBookYear}
+                    value={comicBookYear}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                   />
@@ -429,7 +432,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                     className={styles.inputBorder}
                     type="text"
                     name="comicBookPublisher"
-                    value={formState.comicBookPublisher}
+                    value={comicBookPublisher}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                     required
@@ -444,7 +447,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                   id="regular"
                   type="radio"
                   value="regular"
-                  checked={formState.type === 'regular'}
+                  checked={type === 'regular'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />
@@ -456,7 +459,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                   id="variant"
                   type="radio"
                   value="variant"
-                  checked={formState.type === 'variant'}
+                  checked={type === 'variant'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />
