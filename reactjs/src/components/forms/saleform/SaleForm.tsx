@@ -132,99 +132,99 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
     return Object.values(errors).every(error => error === '');
   }, [formData, validateField]);
 
-  const handleInappropriateContent = useCallback(() => {
-    const forbidElement = document.getElementById('forbidContent');
-    const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
+  // const handleInappropriateContent = useCallback(() => {
+  //   const forbidElement = document.getElementById('forbidContent');
+  //   const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
     
-    if (forbidElement) {
-      forbidElement.innerHTML = 'YOUR IMAGE IS INAPPROPRIATE.';
-    }
+  //   if (forbidElement) {
+  //     forbidElement.innerHTML = 'YOUR IMAGE IS INAPPROPRIATE.';
+  //   }
     
-    if (figureElement) {
-      figureElement.style.filter = 'blur(20px)';
-    }
+  //   if (figureElement) {
+  //     figureElement.style.filter = 'blur(20px)';
+  //   }
     
-    window.scrollTo({ top: 0 });
+  //   window.scrollTo({ top: 0 });
     
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
-  }, []);
+  //   setTimeout(() => {
+  //     window.location.reload();
+  //   }, 2000);
+  // }, []);
 
-  const isInappropriateModeration = useCallback((label: RekognitionLabel): boolean => {
-    if (!label.Name || !label.Confidence) {
-      return false;
-    }
+  // const isInappropriateModeration = useCallback((label: RekognitionLabel): boolean => {
+  //   if (!label.Name || !label.Confidence) {
+  //     return false;
+  //   }
     
-    if (INAPPROPRIATE_MODERATION_LABELS.includes(label.Name)) {
-      return true;
-    }
-    if (label.Name === 'Suggestive' && label.Confidence > 90) {
-      return true;
-    }
-    if (label.Name === 'Revealing Clothes' && label.Confidence > 60) {
-      return true;
-    }
-    return false;
-  }, []);
+  //   if (INAPPROPRIATE_MODERATION_LABELS.includes(label.Name)) {
+  //     return true;
+  //   }
+  //   if (label.Name === 'Suggestive' && label.Confidence > 90) {
+  //     return true;
+  //   }
+  //   if (label.Name === 'Revealing Clothes' && label.Confidence > 60) {
+  //     return true;
+  //   }
+  //   return false;
+  // }, []);
 
-  const isInappropriateDetection = useCallback((label: RekognitionLabel): boolean => {
-    if (!label.Name || !label.Confidence) {
-      return false;
-    }
-    return label.Confidence > 48 && INAPPROPRIATE_DETECTION_LABELS.includes(label.Name);
-  }, []);
+  // const isInappropriateDetection = useCallback((label: RekognitionLabel): boolean => {
+  //   if (!label.Name || !label.Confidence) {
+  //     return false;
+  //   }
+  //   return label.Confidence > 48 && INAPPROPRIATE_DETECTION_LABELS.includes(label.Name);
+  // }, []);
 
-  const performRekognitionCheck = useCallback((fileName: string) => {
-    const awsAccessKeyId = process.env.REACT_APP_AWSAccessKeyId;
-    const awsSecretKey = process.env.REACT_APP_AWSSecretKey;
+  // const performRekognitionCheck = useCallback((fileName: string) => {
+  //   const awsAccessKeyId = process.env.REACT_APP_AWSAccessKeyId;
+  //   const awsSecretKey = process.env.REACT_APP_AWSSecretKey;
     
-    if (!awsAccessKeyId || !awsSecretKey) {
-      console.error('AWS credentials not configured');
-      return;
-    }
+  //   if (!awsAccessKeyId || !awsSecretKey) {
+  //     console.error('AWS credentials not configured');
+  //     return;
+  //   }
 
-    aws.config.update({
-      region: AWS_REGION,
-      accessKeyId: awsAccessKeyId,
-      secretAccessKey: awsSecretKey
-    });
+  //   aws.config.update({
+  //     region: AWS_REGION,
+  //     accessKeyId: awsAccessKeyId,
+  //     secretAccessKey: awsSecretKey
+  //   });
 
-    const rekognition = new aws.Rekognition();
-    const params = {
-      Image: {
-        S3Object: {
-          Bucket: S3_BUCKET,
-          Name: fileName
-        }
-      },
-      MinConfidence: 0
-    };
+  //   const rekognition = new aws.Rekognition();
+  //   const params = {
+  //     Image: {
+  //       S3Object: {
+  //         Bucket: S3_BUCKET,
+  //         Name: fileName
+  //       }
+  //     },
+  //     MinConfidence: 0
+  //   };
 
-    rekognition.detectModerationLabels(params, (err: aws.AWSError, data: aws.Rekognition.DetectModerationLabelsResponse) => {
-      if (err) {
-        console.error('Moderation check error:', err);
-        return;
-      }
+  //   rekognition.detectModerationLabels(params, (err: aws.AWSError, data: aws.Rekognition.DetectModerationLabelsResponse) => {
+  //     if (err) {
+  //       console.error('Moderation check error:', err);
+  //       return;
+  //     }
       
-      const hasInappropriate = data?.ModerationLabels?.some(isInappropriateModeration);
-      if (hasInappropriate) {
-        handleInappropriateContent();
-      }
-    });
+  //     const hasInappropriate = data?.ModerationLabels?.some(isInappropriateModeration);
+  //     if (hasInappropriate) {
+  //       handleInappropriateContent();
+  //     }
+  //   });
 
-    rekognition.detectLabels(params, (err: aws.AWSError, data: aws.Rekognition.DetectLabelsResponse) => {
-      if (err) {
-        console.error('Label detection error:', err);
-        return;
-      }
+  //   rekognition.detectLabels(params, (err: aws.AWSError, data: aws.Rekognition.DetectLabelsResponse) => {
+  //     if (err) {
+  //       console.error('Label detection error:', err);
+  //       return;
+  //     }
       
-      const hasInappropriate = data?.Labels?.some(isInappropriateDetection);
-      if (hasInappropriate) {
-        handleInappropriateContent();
-      }
-    });
-  }, [isInappropriateModeration, isInappropriateDetection, handleInappropriateContent]);
+  //     const hasInappropriate = data?.Labels?.some(isInappropriateDetection);
+  //     if (hasInappropriate) {
+  //       handleInappropriateContent();
+  //     }
+  //   });
+  // }, [isInappropriateModeration, isInappropriateDetection, handleInappropriateContent]);
 
   const handleFileInputChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -284,14 +284,14 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
         figureElement.style.display = 'inline-block';
       }
 
-      performRekognitionCheck(fileName);
+      // performRekognitionCheck(fileName);
     } catch (error) {
       console.error('❌ Upload error:', error);
       if (fileInputRef.current) {
         fileInputRef.current.disabled = false;
       }
     }
-  }, [performRekognitionCheck]);
+  }, []);
 
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
