@@ -90,17 +90,26 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
   }, [id, fetchSale]);
 
   // Populate form when editing
+  const {
+    comicBookTitle: saleComicBookTitle,
+    comicIssue: salecomicIssue,
+    comicBookVolume: saleComicBookVolume,
+    comicBookYear: saleComicBookYear,
+    comicBookPublisher: saleComicBookPublisher,
+    comicBookCover: saleComicBookCover,
+    type: saleType
+  } = sale;
   useEffect(() => {
     if (sale && sale.id) {
       console.log('✏️ Populating form with sale data:', sale);
       setFormState({
-        comicBookTitle: sale.comicBookTitle || '',
-        comicIssue: sale.comicIssue || '',
-        comicBookVolume: sale.comicBookVolume || '',
-        comicBookYear: sale.comicBookYear || '',
-        comicBookPublisher: sale.comicBookPublisher || '',
-        comicBookCover: sale.comicBookCover || '',
-        type: sale.type as 'regular' | 'variant' || '',
+        comicBookTitle: saleComicBookTitle || '',
+        comicIssue: salecomicIssue || '',
+        comicBookVolume: saleComicBookVolume || '',
+        comicBookYear: saleComicBookYear || '',
+        comicBookPublisher: saleComicBookPublisher || '',
+        comicBookCover: saleComicBookCover || '',
+        type: saleType as 'regular' | 'variant' || '',
       });
     }
   }, [sale]);
@@ -313,7 +322,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
   const showSuccess = Object.keys(formErrors).length === 0 && successMessage === 'success';
   const isEditMode = !!id;
-  const pageTitle = isEditMode ? `Edit ${comicBookTitle || 'Sale Comic'}` : 'Add New Sale Comic';
+  const pageTitle = isEditMode ? `Edit ${saleComicBookTitle || 'Sale Comic'}` : 'Add New Sale Comic';
   const cancelUrl = `/sale/${userId}`;
 
   return (
