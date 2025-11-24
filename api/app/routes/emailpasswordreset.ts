@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import debug from 'debug';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { Model, ModelStatic } from 'sequelize';
 import * as emailPasswordResetCtrl from '../controllers/emailpasswordreset';
-import * as validationCtrl from '../controllers/validation';
+import db from '../models';
 
-const jwt = require('jsonwebtoken');
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -71,8 +71,7 @@ const ENV = {
 // MODELS
 // ============================================================================
 
-const models = require('../models') as { Users: UserModel };
-const { Users } = models;
+const Users = (db as any).Users as UserModel;
 
 // ============================================================================
 // VALIDATION FUNCTIONS
@@ -142,8 +141,11 @@ const generatePasswordResetToken = (
   userId: string,
   secret: string
 ): string => {
-  const expiresIn = process.env.PASSWORD_RESET_TOKEN_EXPIRES_IN || '1h';
-  return jwt.sign({ id: userId }, secret, { expiresIn });
+  return jwt.sign(
+    { id: userId }, 
+    secret, 
+    { expiresIn: '1h' } as jwt.SignOptions
+  );
 };
 
 // ============================================================================
@@ -268,18 +270,10 @@ const passwordResetHandler = async (
 const router = Router();
 
 // GET /emailpasswordreset
-// Get password reset page or information
-router.get(
-  '/',
-  emailPasswordResetCtrl.emailPasswordReset
-);
+router.get('/', emailPasswordResetCtrl.emailPasswordReset);
 
 // POST /emailpasswordreset
-// Request password reset token
-router.post(
-  '/',
-  passwordResetHandler
-);
+router.post('/', passwordResetHandler);
 
 // ============================================================================
 // EXPORTS
