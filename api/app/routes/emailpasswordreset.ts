@@ -270,14 +270,14 @@ const router = Router();
 // GET /emailpasswordreset
 // Get password reset page or information
 router.get(
-  '/forms/emailpasswordreset',
+  '/',
   emailPasswordResetCtrl.emailPasswordReset
 );
 
 // POST /emailpasswordreset
 // Request password reset token
 router.post(
-  '/forms/emailpasswordreset',
+  '/',
   validationCtrl.validate('signin'),
   passwordResetHandler
 );
