@@ -144,7 +144,7 @@ const generatePasswordResetToken = (
   return jwt.sign(
     { id: userId }, 
     secret, 
-    { expiresIn: '1h' } as jwt.SignOptions
+    { expiresIn: '1h' } as SignOptions
   );
 };
 
