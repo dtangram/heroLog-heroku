@@ -278,7 +278,6 @@ router.get(
 // Request password reset token
 router.post(
   '/',
-  validationCtrl.validate('signin'),
   passwordResetHandler
 );
 
