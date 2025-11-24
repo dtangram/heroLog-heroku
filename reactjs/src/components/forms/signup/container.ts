@@ -9,7 +9,6 @@ interface User {
   username: string;
   email: string;
   password: string;
-  type: string;
 }
 
 interface SignupState {
@@ -36,8 +35,7 @@ const mapStateToProps = (state: RootState) => {
     lastname: '',
     username: '',
     email: '',
-    password: '',
-    type: ''
+    password: ''
   };
   
   // Try to get the current/last loaded signup
