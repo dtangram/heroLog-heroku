@@ -41,8 +41,6 @@ const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_FILE_SIZE = 1e6;
 const ALLOWED_FILE_TYPES = ['jpg', 'jpeg', 'png'];
-const S3_BUCKET = 'dothanthorntonbucket';
-const AWS_REGION = 'us-east-2';
 
 const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
   const { id } = useParams<{ id: string }>();
@@ -100,8 +98,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       lastname: value.length >= MIN_NAME_LENGTH ? '' : 'Last name is required',
       username: value.length >= 3 ? '' : 'Username must be at least 3 characters',
       email: EMAIL_REGEX.test(value) ? '' : 'Email is invalid',
-      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password must be at least 8 characters',
-      type: value ? '' : 'Please select regular or fixer'
+      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password must be at least 8 characters'
     };
     
     return validations[fieldName];
@@ -194,10 +191,6 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
-
-  const handleTypeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, type: event.target.value }));
   }, []);
 
   const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {

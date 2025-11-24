@@ -11,7 +11,6 @@ interface User {
   email: string;
   password?: string;
   profilePic: string;
-  type: string;
 }
 
 const mapStateToProps = (state: RootState) => {
@@ -24,8 +23,7 @@ const mapStateToProps = (state: RootState) => {
     username: '',
     email: '',
     password: '',
-    profilePic: '',
-    type: ''
+    profilePic: ''
   };
   
   // Now TypeScript knows signups has byId
