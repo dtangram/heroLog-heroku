@@ -273,7 +273,7 @@ const router = Router();
 router.get('/', emailPasswordResetCtrl.emailPasswordReset);
 
 // POST /emailpasswordreset
-router.post('/', passwordResetHandler);
+router.post('/', emailPasswordResetCtrl.emailPasswordReset);
 
 // ============================================================================
 // EXPORTS
