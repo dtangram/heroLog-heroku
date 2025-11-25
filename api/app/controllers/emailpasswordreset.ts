@@ -241,8 +241,7 @@ export const emailPasswordReset = async (
     const token = jwt.sign(tokenPayload, secret, signOptions);
 
     // ✅ Send password reset email
-    const userName = user.firstname || user.username || undefined;
-    const emailResult = await sendPasswordResetEmail(user.email, token, userName);
+    const emailResult = await sendPasswordResetEmail(user.email, token);
 
     if (!emailResult.success) {
       console.error('❌ Failed to send password reset email:', emailResult.error);
