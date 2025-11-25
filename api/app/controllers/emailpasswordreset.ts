@@ -3,7 +3,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
-import { sendPasswordResetEmail } from '../services/emailservices';
+import { sendPasswordResetEmail } from '../services/emailServices';
 
 // Properly typed model interface
 interface UserModel {
