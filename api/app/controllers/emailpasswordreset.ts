@@ -3,7 +3,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
-import { sendPasswordResetEmail } from '../services/emailServices';
+import { sendPasswordResetEmail } from '../services/emailService';
 
 // Properly typed model interface
 interface UserModel {
@@ -21,7 +21,6 @@ interface UserInstance {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: 'regular' | 'fixer';
   createdAt: Date;
   updatedAt: Date;
   update: (data: Partial<UserAttributes>) => Promise<UserInstance>;
@@ -37,7 +36,6 @@ interface UserAttributes {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: 'regular' | 'fixer';
   createdAt: Date;
   updatedAt: Date;
 }
