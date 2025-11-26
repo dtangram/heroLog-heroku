@@ -209,61 +209,6 @@ const logError = (context: string, error: Error): void => {
 };
 
 // ============================================================================
-// ROUTE HANDLERS
-// ============================================================================
-
-const passwordResetHandler = async (
-  req: Request<Record<string, never>, PasswordResetSuccessResponse | ErrorResponse, PasswordResetRequestBody>,
-  res: Response<PasswordResetSuccessResponse | ErrorResponse>,
-  _next: NextFunction
-): Promise<void> => {
-  try {
-    // Validate email
-    const emailValidation = validateEmail(req.body.email);
-
-    if (!emailValidation.isValid) {
-      sendError(res, 400, emailValidation.error!);
-      return;
-    }
-
-    const email = emailValidation.value!;
-
-    // Find user by email
-    const user = await findUserByEmail(email);
-
-    if (!user) {
-      // Security: Don't reveal if email exists or not
-      sendError(res, 404, 'User not found');
-      return;
-    }
-
-    // Validate JWT secret
-    const secretValidation = validateJwtSecret();
-
-    if (!secretValidation.isValid) {
-      logError('JWT configuration', new Error(secretValidation.error));
-      sendError(res, 500, 'Server configuration error');
-      return;
-    }
-
-    // Generate password reset token
-    const token = generatePasswordResetToken(user.id, secretValidation.value!);
-
-    // Send success response with token
-    sendSuccess(res, 'Password reset token generated', { token });
-
-  } catch (error) {
-    if (error instanceof Error) {
-      logError('Password reset', error);
-      const { message, stack } = handleError(error);
-      sendError(res, 500, message, stack);
-    } else {
-      sendError(res, 500, 'An unexpected error occurred');
-    }
-  }
-};
-
-// ============================================================================
 // ROUTER CONFIGURATION
 // ============================================================================
 
