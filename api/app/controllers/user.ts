@@ -3,9 +3,6 @@ import bcrypt from 'bcryptjs';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 
-// User type literal
-type UserType = 'regular' | 'fixer';
-
 // Properly typed model interface
 interface UserModel {
   findAll: (options: { where: WhereOptions<UserAttributes> }) => Promise<UserInstance[]>;
@@ -29,7 +26,6 @@ interface UserInstance {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: UserType;
   createdAt: Date;
   updatedAt: Date;
   toJSON: () => UserAttributes;
@@ -45,7 +41,6 @@ interface UserAttributes {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: UserType;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,7 +53,6 @@ interface UserCreationAttributes {
   email: string;
   password: string;
   accesstoken?: string | null;
-  type: UserType;
   profilePic?: string;
 }
 
@@ -70,7 +64,6 @@ interface SanitizedUserAttributes {
   lastname: string;
   email: string;
   profilePic: string | null;
-  type: UserType;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -120,11 +113,6 @@ const isValidUUID = (value: string): boolean => {
 const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
-};
-
-// User type validation
-const isValidUserType = (type: string): type is UserType => {
-  return type === 'regular' || type === 'fixer';
 };
 
 // Centralized error handler
@@ -245,18 +233,6 @@ const validatePassword = (password: string): ValidationResult => {
   return { isValid: true };
 };
 
-// User type validation
-const validateUserType = (type: string): ValidationResult => {
-  if (!isValidUserType(type.toLowerCase() as UserType)) {
-    return {
-      isValid: false,
-      message: `Type must be either 'regular' or 'fixer'`
-    };
-  }
-  
-  return { isValid: true };
-};
-
 // Generic function to find users with filters
 const findUsers = async (
   whereClause: WhereOptions<UserAttributes>
@@ -323,48 +299,6 @@ export const getUser = async (
   }
 };
 
-// Get all users with type 'regular'
-export const getRegular = async (
-  _req: Request,
-  res: Response<ApiResponse<SanitizedUserAttributes[]>>
-): Promise<Response> => {
-  try {
-    const regularUsers = await findUsers({ type: 'regular' });
-    
-    // Remove sensitive data before sending
-    const sanitizedUsers = regularUsers.map(user => sanitizeUser(user.toJSON()));
-    
-    return res.status(200).json({
-      success: true,
-      data: sanitizedUsers,
-      count: sanitizedUsers.length
-    });
-  } catch (error) {
-    return handleError(res, error as Error, 500, 'getRegular');
-  }
-};
-
-// Get all users with type 'fixer'
-export const getFixer = async (
-  _req: Request,
-  res: Response<ApiResponse<SanitizedUserAttributes[]>>
-): Promise<Response> => {
-  try {
-    const fixerUsers = await findUsers({ type: 'fixer' });
-    
-    // Remove sensitive data before sending
-    const sanitizedUsers = fixerUsers.map(user => sanitizeUser(user.toJSON()));
-    
-    return res.status(200).json({
-      success: true,
-      data: sanitizedUsers,
-      count: sanitizedUsers.length
-    });
-  } catch (error) {
-    return handleError(res, error as Error, 500, 'getFixer');
-  }
-};
-
 // Find one user by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
@@ -426,7 +360,6 @@ export const createUser = async (
     email,
     password,
     accesstoken,
-    type,
   } = req.body;
   
   // Validate required fields
@@ -435,8 +368,7 @@ export const createUser = async (
     'firstname',
     'lastname',
     'email',
-    'password',
-    'type'
+    'password'
   ]);
   
   if (!validation.isValid) {
@@ -493,15 +425,6 @@ export const createUser = async (
     return res.status(400).json({ success: false, error: passwordValidation.message });
   }
   
-  // Validate user type
-  if (!type) {
-    return res.status(400).json({ success: false, error: 'Type is required' });
-  }
-  const typeValidation = validateUserType(type);
-  if (!typeValidation.isValid) {
-    return res.status(400).json({ success: false, error: typeValidation.message });
-  }
-  
   try {
     const Users = getUsersModel();
     
@@ -541,7 +464,6 @@ export const createUser = async (
       email: email.trim().toLowerCase(),
       password: hashedPassword,
       accesstoken: accesstoken || null,
-      type: type.toLowerCase() as UserType,
       profilePic: 'https://herologimages.s3.us-east-2.amazonaws.com/material-design-account-icon.png',
     });
     
@@ -627,15 +549,6 @@ export const updateUser = async (
       return res.status(400).json({ success: false, error: emailFormatValidation.message });
     }
     updateData.email = updateData.email.trim().toLowerCase();
-  }
-  
-  // Validate type if provided
-  if (updateData.type !== undefined) {
-    const typeValidation = validateUserType(updateData.type);
-    if (!typeValidation.isValid) {
-      return res.status(400).json({ success: false, error: typeValidation.message });
-    }
-    updateData.type = updateData.type.toLowerCase() as UserType;
   }
   
   // Hash password if provided
