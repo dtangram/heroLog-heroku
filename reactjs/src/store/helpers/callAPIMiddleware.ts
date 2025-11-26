@@ -146,48 +146,37 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
           data,
         } as DispatchAction);
       })
+      // In the .catch() block of api.ts
       .catch((error) => {
-      // ✅ Extract error from API response first, fallback to Axios message
-      let errorMessage: string | object = 'An unknown error occurred';
-      
-      // Check if it's an Axios error with response data
-      if (error.response?.data) {
-        const responseData = error.response.data;
+        let errorMessage: string | Array<{ field: string; message: string }> = 'An unknown error occurred';
         
-        // API returns { error: "message" }
-        if (responseData.error) {
-          errorMessage = responseData.error;
-        }
-        // API returns { errors: [...] }
-        else if (responseData.errors) {
-          if (Array.isArray(responseData.errors)) {
-            // Array of { field, message } objects
-            errorMessage = responseData.errors
-              .map((e: { message?: string; msg?: string }) => e.message || e.msg || e)
-              .join(', ');
-          } else {
+        if ('response' in error && error.response?.data) {
+          const responseData = error.response.data;
+          
+          // ✅ Preserve array of { field, message } objects
+          if (responseData.errors && Array.isArray(responseData.errors)) {
             errorMessage = responseData.errors;
           }
+          // Single error string
+          else if (responseData.error) {
+            errorMessage = responseData.error;
+          }
+          else if (responseData.message) {
+            errorMessage = responseData.message;
+          }
+        } 
+        else if (error instanceof Error) {
+          errorMessage = error.message;
         }
-        // API returns { message: "message" }
-        else if (responseData.message) {
-          errorMessage = responseData.message;
-        }
-      } 
-      // Fallback to error.message
-      else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      console.error('API call failed:', errorMessage);
-      
-      // Dispatch FAILURE action
-      store.dispatch({
-        ...actionProps,
-        type: failureType,
-        err: errorMessage,
-      } as DispatchAction);
-    });
+        
+        console.error('API call failed:', errorMessage);
+        
+        store.dispatch({
+          ...actionProps,
+          type: failureType,
+          err: errorMessage,  // ✅ Can be string OR array
+        } as DispatchAction);
+      });
   };
 
 export default callAPIMiddleware;

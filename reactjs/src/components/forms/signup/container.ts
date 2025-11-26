@@ -44,24 +44,34 @@ const mapStateToProps = (state: RootState) => {
     password: ''
   };
   
-  // Try to get the current/last loaded signup
   const signupId = currentId || allIds[0] || Object.keys(byId)[0];
   const signup = signupId && byId[signupId] ? byId[signupId].data : defaultUser;
   
-  // ✅ Convert error to string
-  let errorMessage: string | null = null;
+  // ✅ Convert error to field-mapped object
+  const apiErrors: Record<string, string> = {};
+  
   if (error) {
     if (typeof error === 'string') {
-      errorMessage = error;
+      // Single string error - put in general field
+      apiErrors.general = error;
     } else if (Array.isArray(error)) {
-      errorMessage = error.map((e: ErrorItem) => e.message).join(', ');
+      // Array of { field, message } - map to fields
+      error.forEach((e: ErrorItem) => {
+        const fieldName = e.field || 'general';
+        // Append if field already has an error
+        if (apiErrors[fieldName]) {
+          apiErrors[fieldName] += `\n${e.message}`;
+        } else {
+          apiErrors[fieldName] = e.message;
+        }
+      });
     }
   }
   
   return { 
     signup,
     signupId: currentId || allIds[0],
-    signupError: errorMessage,
+    apiErrors,  // ✅ Pass as object mapped by field
     isLoading,
   };
 };
