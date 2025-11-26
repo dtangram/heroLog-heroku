@@ -1,13 +1,18 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { WhereOptions } from 'sequelize';
+import db from '../models';
 
-// Properly typed model interface
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
 interface UserModel {
   findOne: (options: { where: WhereOptions<UserAttributes> }) => Promise<UserInstance | null>;
+  findByPk: (id: string) => Promise<UserInstance | null>;
 }
 
-// Model instance interface
 interface UserInstance {
   id: string;
   username: string;
@@ -23,9 +28,8 @@ interface UserInstance {
   update: (data: Partial<UserAttributes>) => Promise<UserInstance>;
 }
 
-// Fixed interface to match actual model structure (UUIDs, not numbers)
 interface UserAttributes {
-  id: string;  // UUID string
+  id: string;
   username: string;
   firstname: string;
   lastname: string;
@@ -38,13 +42,11 @@ interface UserAttributes {
   updatedAt: Date;
 }
 
-// Request body interfaces
 interface PasswordResetUpdateBody {
   username: string;
   password: string;
 }
 
-// API response interface
 interface ApiResponse<T = Record<string, string>> {
   success: boolean;
   data?: T;
@@ -53,271 +55,207 @@ interface ApiResponse<T = Record<string, string>> {
   errors?: string[];
 }
 
-// Validation result interface
 interface ValidationResult {
   isValid: boolean;
   message?: string;
 }
 
-// Sequelize error interface
-interface SequelizeError {
-  errors: Array<{ message: string }>;
+interface JwtPayload {
+  id: string;
+  email: string;
+  purpose: string;
+  iat?: number;
+  exp?: number;
 }
 
-// Import models with proper typing
-const models = require('../models') as {
-  Users: UserModel;
-};
+// ============================================================================
+// MODELS
+// ============================================================================
 
-const { Users } = models;
+const Users = (db as any).Users as UserModel;
 
-// Type guard for Sequelize errors
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
+// ============================================================================
+// VALIDATION FUNCTIONS
+// ============================================================================
 
-// Centralized error handler
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
-};
-
-// Parameter validation
-const validateParams = (
-  params: Record<string, string>,
-  requiredFields: string[]
-): ValidationResult => {
-  const missing = requiredFields.filter(field => !params[field]);
-  
-  if (missing.length > 0) {
-    return {
-      isValid: false,
-      message: `Missing required fields: ${missing.join(', ')}`
-    };
-  }
-  
-  return { isValid: true };
-};
-
-// String validation
-const validateString = (value: string, fieldName: string): ValidationResult => {
-  if (typeof value !== 'string') {
-    return {
-      isValid: false,
-      message: `${fieldName} must be a string`
-    };
-  }
-  
-  if (value.trim().length === 0) {
-    return {
-      isValid: false,
-      message: `${fieldName} cannot be empty`
-    };
-  }
-  
-  return { isValid: true };
-};
-
-// Password validation
 const validatePassword = (password: string): ValidationResult => {
   if (password.length < 8) {
-    return {
-      isValid: false,
-      message: 'Password must be at least 8 characters long'
-    };
+    return { isValid: false, message: 'Password must be at least 8 characters long' };
   }
-  
   if (password.length > 128) {
-    return {
-      isValid: false,
-      message: 'Password must not exceed 128 characters'
-    };
+    return { isValid: false, message: 'Password must not exceed 128 characters' };
   }
-  
-  // Check for at least one number
   if (!/\d/.test(password)) {
-    return {
-      isValid: false,
-      message: 'Password must contain at least one number'
-    };
+    return { isValid: false, message: 'Password must contain at least one number' };
   }
-  
-  // Check for at least one letter
   if (!/[a-zA-Z]/.test(password)) {
-    return {
-      isValid: false,
-      message: 'Password must contain at least one letter'
-    };
+    return { isValid: false, message: 'Password must contain at least one letter' };
   }
-  
   return { isValid: true };
 };
 
-// Verify password reset token and return user info
+// ============================================================================
+// VERIFY JWT TOKEN AND RETURN USER INFO
+// ============================================================================
+
 export const passwordReset = async (
   req: Request<{ token: string }>,
-  res: Response<ApiResponse<{ username: string }>>
+  res: Response<ApiResponse<{ username: string; email: string }>>
 ): Promise<Response> => {
   const { token } = req.params;
-  
-  // Validate token parameter
-  const paramValidation = validateParams(req.params, ['token']);
-  if (!paramValidation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: paramValidation.message 
+
+  console.log('🔑 Password reset token verification requested');
+
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      error: 'Reset token is required'
     });
   }
-  
-  // Validate token is not empty
-  const tokenValidation = validateString(token, 'Reset token');
-  if (!tokenValidation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: tokenValidation.message 
+
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.error('JWT_SECRET not configured');
+    return res.status(500).json({
+      success: false,
+      error: 'Server configuration error'
     });
   }
-  
+
   try {
-    const user = await Users.findOne({
-      where: {
-        accesstoken: token.trim(),
-      },
-    });
-    
-    if (!user) {
+    // Verify the JWT token
+    const decoded = jwt.verify(token, secret) as JwtPayload;
+
+    console.log('🔑 Token decoded:', { id: decoded.id, email: decoded.email, purpose: decoded.purpose });
+
+    // Check token purpose
+    if (decoded.purpose !== 'password-reset') {
       return res.status(400).json({
         success: false,
-        error: 'Password reset link is invalid or has expired'
+        error: 'Invalid token type'
       });
     }
-    
+
+    // Find user by ID from token
+    const user = await Users.findByPk(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Verify email matches
+    if (user.email.toLowerCase() !== decoded.email.toLowerCase()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Token is no longer valid'
+      });
+    }
+
+    console.log('✅ Token verified for user:', user.username);
+
     return res.status(200).json({
       success: true,
+      message: 'Password reset OK',
       data: {
-        username: user.username
-      },
-      message: 'Password reset token verified'
+        username: user.username,
+        email: user.email
+      }
     });
+
   } catch (error) {
-    return handleError(res, error as Error, 500, 'passwordReset');
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        success: false,
+        error: 'Reset link has expired. Please request a new one.'
+      });
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid reset link'
+      });
+    }
+
+    console.error('Password reset verification error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'An error occurred'
+    });
   }
 };
 
-// Update user password after reset
+// ============================================================================
+// UPDATE PASSWORD
+// ============================================================================
+
 export const passwordResetUpdate = async (
   req: Request<{}, {}, PasswordResetUpdateBody>,
   res: Response<ApiResponse<never>>
 ): Promise<Response> => {
   const { username, password } = req.body;
-  
-  // Validate required fields
-  const validation = validateParams(req.body as unknown as Record<string, string>, ['username', 'password']);
-  if (!validation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: validation.message 
+
+  console.log('🔑 Password update requested for:', username);
+
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      error: 'Username and password are required'
     });
   }
-  
-  // Validate username
-  if (!username) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Username is required' 
-    });
-  }
-  
-  const usernameValidation = validateString(username, 'Username');
-  if (!usernameValidation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: usernameValidation.message 
-    });
-  }
-  
-  // Validate password
-  if (!password) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Password is required' 
-    });
-  }
-  
-  const passwordFormatValidation = validateString(password, 'Password');
-  if (!passwordFormatValidation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: passwordFormatValidation.message 
-    });
-  }
-  
-  // Validate password strength
+
   const passwordValidation = validatePassword(password);
   if (!passwordValidation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: passwordValidation.message 
+    return res.status(400).json({
+      success: false,
+      error: passwordValidation.message
     });
   }
-  
+
   try {
-    const user = await Users.findOne({ 
-      where: { username: username.trim() } 
+    const user = await Users.findOne({
+      where: { username: username.trim() }
     });
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User does not exist'
+        error: 'User not found'
       });
     }
-    
-    // Check if new password is same as old password
+
+    // Check if new password is same as old
     if (user.password) {
       const isSamePassword = await bcrypt.compare(password, user.password);
       if (isSamePassword) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: 'New password must be different from your current password' 
+          error: 'New password must be different from your current password'
         });
       }
     }
-    
-    // Hash the new password
-    const saltRounds = 12; // Increased from default 10 for better security
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    
-    // Update user password and clear access token
+
+    // Hash and update password
+    const hashedPassword = await bcrypt.hash(password, 12);
     await user.update({
       password: hashedPassword,
       accesstoken: null,
     });
-    
-    console.log(`Password reset completed for user: ${user.username}`);
-    
+
+    console.log('✅ Password updated for user:', username);
+
     return res.status(200).json({
       success: true,
       message: 'Password updated successfully'
     });
+
   } catch (error) {
-    return handleError(res, error as Error, 500, 'passwordResetUpdate');
+    console.error('Password update error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'An error occurred while updating password'
+    });
   }
 };
