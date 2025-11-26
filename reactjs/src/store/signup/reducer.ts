@@ -159,6 +159,8 @@ const signupPending = (state: object, action: object): object => {
 
   return {
     ...typedState,
+    isLoading: true,  // ✅ Set top-level loading
+    error: null,      // ✅ Clear top-level error
     byId: {
       ...typedState.byId,
       [id]: {
@@ -243,15 +245,25 @@ const signupError = (state: object, action: object): object => {
   const typedAction = action as Action;
   const { id = '' } = typedAction.payload || {};
 
-  if (!typedState.byId[id]) return typedState;
-
-  return {
+  // ✅ ALWAYS set the top-level error, even if user doesn't exist in byId
+  const baseState = {
     ...typedState,
-    byId: updateUserInState(typedState.byId, id, {
-      isLoading: false,
-      error: typedAction.err || 'Unknown error',
-    }),
+    isLoading: false,
+    error: typedAction.err || 'Unknown error',  // ✅ Set top-level error
   };
+
+  // If the user exists in byId, also update their individual error
+  if (typedState.byId[id]) {
+    return {
+      ...baseState,
+      byId: updateUserInState(typedState.byId, id, {
+        isLoading: false,
+        error: typedAction.err || 'Unknown error',
+      }),
+    };
+  }
+
+  return baseState;
 };
 
 const reducer = createReducer(initialState, {
