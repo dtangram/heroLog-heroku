@@ -147,20 +147,47 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
         } as DispatchAction);
       })
       .catch((error) => {
-        // Handle error
-        const errorMessage = error instanceof Error 
-          ? error.message 
-          : 'An unknown error occurred';
+      // ✅ Extract error from API response first, fallback to Axios message
+      let errorMessage: string | object = 'An unknown error occurred';
+      
+      // Check if it's an Axios error with response data
+      if (error.response?.data) {
+        const responseData = error.response.data;
         
-        console.error('API call failed:', errorMessage);
-        
-        // Dispatch FAILURE action
-        store.dispatch({
-          ...actionProps,
-          type: failureType,
-          err: errorMessage,
-        } as DispatchAction);
-      });
+        // API returns { error: "message" }
+        if (responseData.error) {
+          errorMessage = responseData.error;
+        }
+        // API returns { errors: [...] }
+        else if (responseData.errors) {
+          if (Array.isArray(responseData.errors)) {
+            // Array of { field, message } objects
+            errorMessage = responseData.errors
+              .map((e: { message?: string; msg?: string }) => e.message || e.msg || e)
+              .join(', ');
+          } else {
+            errorMessage = responseData.errors;
+          }
+        }
+        // API returns { message: "message" }
+        else if (responseData.message) {
+          errorMessage = responseData.message;
+        }
+      } 
+      // Fallback to error.message
+      else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      console.error('API call failed:', errorMessage);
+      
+      // Dispatch FAILURE action
+      store.dispatch({
+        ...actionProps,
+        type: failureType,
+        err: errorMessage,
+      } as DispatchAction);
+    });
   };
 
 export default callAPIMiddleware;
