@@ -15,19 +15,25 @@ interface SignupState {
   data: User;
 }
 
+interface ErrorItem {
+  field: string;
+  message: string;
+}
+
 interface RootState {
   signups: {
     byId: {
       [key: string]: SignupState;
     };
     currentId?: string;
-    isLoading: boolean;  // ✅ Add this
-    error: string | null;  // ✅ Add this
+    allIds: string[];
+    isLoading: boolean;
+    error: string | ErrorItem[] | null;
   };
 }
 
 const mapStateToProps = (state: RootState) => {
-  const { signups: { byId, currentId, isLoading, error } } = state;
+  const { signups: { byId, currentId, allIds, isLoading, error } } = state;
   
   const defaultUser: User = {
     id: '',
@@ -39,14 +45,24 @@ const mapStateToProps = (state: RootState) => {
   };
   
   // Try to get the current/last loaded signup
-  const signupId = currentId || Object.keys(byId)[0];
+  const signupId = currentId || allIds[0] || Object.keys(byId)[0];
   const signup = signupId && byId[signupId] ? byId[signupId].data : defaultUser;
+  
+  // ✅ Convert error to string
+  let errorMessage: string | null = null;
+  if (error) {
+    if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (Array.isArray(error)) {
+      errorMessage = error.map((e: ErrorItem) => e.message).join(', ');
+    }
+  }
   
   return { 
     signup,
-    signupId: currentId,  // ✅ Expose signup ID (will be set on success)
-    signupError: error,  // ✅ Expose error
-    isLoading,  // ✅ Expose loading state
+    signupId: currentId || allIds[0],
+    signupError: errorMessage,
+    isLoading,
   };
 };
 
@@ -57,6 +73,6 @@ const mapDispatchToProps = {
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
 
-export type ConnectorProps = ConnectedProps<typeof connector>;
+export type ContainerProps = ConnectedProps<typeof connector>;
 
 export default connector(Signup);

@@ -23,8 +23,8 @@ interface User {
 interface SignupProps {
   signup: User;
   fetchUser: (id: string) => void;
-  signupId: string | undefined;  // ✅ Add this
-  signupError: string | null; // ✅ Add this
+  signupId: string | undefined;
+  signupError: string | null;
   isLoading: boolean;
   createUser: (payload: {
     firstname: string;
@@ -70,7 +70,6 @@ const Signup = ({ signup, signupId,  // ✅ Add this
     }
   }, [signupId]);
 
-  // ✅ Watch for signup errors - display them
   useEffect(() => {
     if (signupError) {
       console.log('❌ Signup failed:', signupError);
