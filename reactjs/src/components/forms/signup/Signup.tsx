@@ -72,6 +72,10 @@ const Signup = ({ signup, signupId,  // ✅ Add this
 
   useEffect(() => {
     if (signupError) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
       console.log('❌ Signup failed:', signupError);
       setFormErrors(prev => ({
         ...prev,
