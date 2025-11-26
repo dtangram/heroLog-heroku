@@ -94,7 +94,7 @@ export const sendPasswordResetEmail = async (
   email: string,
   token: string
 ): Promise<EmailResult> => {
-  const resetLink = `${ENV.frontendUrl}/passwordreset/${token}`;
+  const resetLink = `${ENV.frontendUrl}/forms/passwordreset/${token}`;
   
   console.log('📧 sendPasswordResetEmail called');
   console.log('📧 To:', email);
