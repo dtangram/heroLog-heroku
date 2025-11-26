@@ -216,7 +216,6 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
         checks.lastname,
         checks.email,
         checks.password,
-        checks.typeS,
         checkForErrors,
       ];
     }
