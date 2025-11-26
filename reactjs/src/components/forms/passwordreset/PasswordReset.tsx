@@ -34,7 +34,7 @@ const PasswordReset: React.FC<ContainerProps> = () => {
       if (!token) return;
 
       try {
-        const response = await API.get<TokenValidationResponse>(`/passwordreset/${token}`);
+        const response = await API.get<TokenValidationResponse>(`/api/passwordreset/${token}`);
         if (response.data.message === 'Password reset OK') {
           setUsername(response.data.username);
         }
@@ -77,7 +77,7 @@ const PasswordReset: React.FC<ContainerProps> = () => {
     }
 
     try {
-      await API.put('/passwordreset/passwordResetUpdate', {
+      await API.put('/api/passwordreset/passwordResetUpdate', {
         username,
         password,
       });
