@@ -37,25 +37,35 @@ const PasswordReset: React.FC<ContainerProps> = () => {
 
   useEffect(() => {
   const validateToken = async () => {
+    console.log('🔍 Token from URL:', token);  // ✅ Check if token exists
+    
     if (!token) {
+      console.log('❌ No token found');
       setFormErrors({ password: '', general: 'Invalid reset link' });
       return;
     }
     
     try {
-      // ✅ Fixed syntax - added parenthesis around template literal
+      console.log('🔍 Calling API:', `/api/passwordreset/${token}`);
+      
       const response = await API.get<TokenValidationResponse>(`/api/passwordreset/${token}`);
       
-      console.log('🔍 Token validation response:', response.data);
+      console.log('🔍 Full response:', response);
+      console.log('🔍 Response data:', response.data);
+      console.log('🔍 Success:', response.data.success);
+      console.log('🔍 Username:', response.data.data?.username);
       
       if (response.data.success && response.data.data?.username) {
+        console.log('✅ Setting username and tokenValid');
         setUsername(response.data.data.username);
         setTokenValid(true);
       } else {
+        console.log('❌ Invalid response structure');
         setFormErrors({ password: '', general: 'Invalid or expired reset link' });
       }
     } catch (error: any) {
-      console.error('Token validation error:', error);
+      console.error('❌ Token validation error:', error);
+      console.error('❌ Error response:', error.response?.data);
       const errorMessage = error.response?.data?.error || 'Invalid or expired reset link';
       setFormErrors({ password: '', general: errorMessage });
     }
