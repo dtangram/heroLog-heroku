@@ -154,8 +154,21 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
           const responseData = error.response.data;
           
           // ✅ Preserve array of { field, message } objects
-          if (responseData.errors && Array.isArray(responseData.errors)) {
-            errorMessage = responseData.errors;
+          // In api.ts middleware - extractErrorMessage function:
+          if (responseData.errors) {
+            if (Array.isArray(responseData.errors)) {
+              // Check if errors are "field:message" format
+              const parsed = responseData.errors.map((e: string | { field?: string; message?: string }) => {
+                if (typeof e === 'string' && e.includes(':')) {
+                  const [field, ...messageParts] = e.split(':');
+                  return { field, message: messageParts.join(':') };
+                }
+                if (typeof e === 'string') return { field: 'general', message: e };
+                return { field: e.field || 'general', message: e.message || String(e) };
+              });
+              return parsed;  // Return array of { field, message }
+            }
+            return String(responseData.errors);
           }
           // Single error string
           else if (responseData.error) {

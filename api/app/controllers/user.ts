@@ -89,9 +89,9 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-interface ValidationError {
-  field: string;
-  message: string;
+interface ErrorResponse {
+  success: false;
+  errors: Array<{ field: string; message: string }>;
 }
 
 // Type guard for Sequelize errors
@@ -356,7 +356,7 @@ export const getOneById = async (
 // Create a new user
 export const createUser = async (
   req: Request<{}, {}, Partial<UserCreationAttributes & { password: string }>>,
-  res: Response<ApiResponse<Pick<UserAttributes, 'id'>>>
+  res: Response<ApiResponse<Pick<UserAttributes, 'id'>> | ErrorResponse>
 ): Promise<Response> => {
   const {
     username,
@@ -367,33 +367,27 @@ export const createUser = async (
     accesstoken,
   } = req.body;
   
-  // ✅ Collect ALL validation errors first
-  const allValidationErrors: ValidationError[] = [];
-  const errors: string[] = allValidationErrors.map(error => error.message);
+  // ✅ Collect ALL validation errors
+  const allValidationErrors: Array<{ field: string; message: string }> = [];
   
-  // Validate username
   if (!username || !username.trim()) {
     allValidationErrors.push({ field: 'username', message: 'Username is required' });
   }
   
-  // Validate firstname
   if (!firstname || !firstname.trim()) {
     allValidationErrors.push({ field: 'firstname', message: 'First name is required' });
   }
   
-  // Validate lastname
   if (!lastname || !lastname.trim()) {
     allValidationErrors.push({ field: 'lastname', message: 'Last name is required' });
   }
   
-  // Validate email
   if (!email || !email.trim()) {
     allValidationErrors.push({ field: 'email', message: 'Email is required' });
   } else if (!isValidEmail(email)) {
     allValidationErrors.push({ field: 'email', message: 'Invalid email format' });
   }
   
-  // Validate password
   if (!password) {
     allValidationErrors.push({ field: 'password', message: 'Password is required' });
   } else {
@@ -408,26 +402,23 @@ export const createUser = async (
     }
   }
   
-  // ✅ Return ALL validation errors if any
+  // ✅ Return ALL validation errors
   if (allValidationErrors.length > 0) {
     return res.status(400).json({
       success: false,
-      errors
-    });
+      errors: allValidationErrors
+    } as ErrorResponse);
   }
   
   try {
     const Users = getUsersModel();
     
-    // ✅ Check BOTH username AND email existence in parallel
     const [existingUser, existingEmail] = await Promise.all([
       Users.findOne({ where: { username: username!.trim() } }),
       Users.findOne({ where: { email: email!.trim().toLowerCase() } })
     ]);
     
-    // ✅ Collect ALL existence errors
-    const existenceErrors: ValidationError[] = [];
-    const existingErrorMessages: string[] = existenceErrors.map(error => error.message);
+    const existenceErrors: Array<{ field: string; message: string }> = [];
     
     if (existingUser) {
       existenceErrors.push({ field: 'username', message: 'Username already exists' });
@@ -437,12 +428,12 @@ export const createUser = async (
       existenceErrors.push({ field: 'email', message: 'Email already exists' });
     }
     
-    // ✅ Return ALL existence errors if any
+    // ✅ Return ALL existence errors
     if (existenceErrors.length > 0) {
       return res.status(409).json({
         success: false,
-        errors: existingErrorMessages
-      });
+        errors: existenceErrors
+      } as ErrorResponse);
     }
     
     // Hash password
