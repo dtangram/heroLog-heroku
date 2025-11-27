@@ -103,13 +103,13 @@
   padding: 30px 18px;
   position: absolute;
   right: 0;
-  top: 120px;
   width: 350px;
 }
 
 .resetExpired p {
   color: #2B2B2B;
-  font-size: 1em;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 2rem;
   text-align: center;
   margin-bottom: 7px;
 }
