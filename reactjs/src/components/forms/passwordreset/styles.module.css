@@ -90,9 +90,30 @@
   width: auto;
 }
 
-.wrapper form{
+.wrapper form, .resetExpired{
   margin: 0 auto;
   display: block;
+}
+
+.resetExpired{
+  background: #FFF;
+  border-radius: 15px;
+  display: inline-block;
+  left: 0;
+  padding: 30px 18px;
+  position: absolute;
+  right: 0;
+  top: 120px;
+  width: 350px;
+}
+
+.resetExpired p {
+  color: #2B2B2B;
+  font-size: 1em;
+  margin-bottom: 7px;
+}
+
+.wrapper form{
   position: relative;
   top: 0;
 }

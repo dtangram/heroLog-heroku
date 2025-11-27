@@ -137,10 +137,10 @@ const PasswordReset: React.FC<ContainerProps> = () => {
         </h1>
         
         {!tokenValid ? (
-          <div>
+          <section className={styles.resetExpired}>
             <FormErrors formErrors={formErrors} />
             <p>Validating reset link...</p>
-          </div>
+          </section>
         ) : (
           <form method="POST" onSubmit={handleSubmit}>
             <FormErrors formErrors={formErrors} />
