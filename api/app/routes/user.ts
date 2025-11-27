@@ -228,7 +228,6 @@ router.get(
 // POST /users
 router.post(
   '/',
-  validate('signup'),
   createUser
 );
 
