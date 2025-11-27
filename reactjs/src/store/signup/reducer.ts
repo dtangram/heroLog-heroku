@@ -39,7 +39,7 @@ export interface UsersState {
   allIds: string[];
   loadedAt: number;
   isLoading: boolean;
-  error: string | Array<{ field: string; message: string }> | null;
+  error: string | null;
   type: string;
 }
 
