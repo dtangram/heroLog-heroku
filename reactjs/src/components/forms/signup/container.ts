@@ -50,15 +50,14 @@ const mapStateToProps = (state: RootState) => {
   // ✅ Convert error to field-mapped object
   const apiErrors: Record<string, string> = {};
   
+  console.log('🔍 Raw error from state:', error);  // Debug log
+  
   if (error) {
     if (typeof error === 'string') {
-      // Single string error - put in general field
       apiErrors.general = error;
     } else if (Array.isArray(error)) {
-      // Array of { field, message } - map to fields
       error.forEach((e: ErrorItem) => {
         const fieldName = e.field || 'general';
-        // Append if field already has an error
         if (apiErrors[fieldName]) {
           apiErrors[fieldName] += `\n${e.message}`;
         } else {
@@ -68,10 +67,12 @@ const mapStateToProps = (state: RootState) => {
     }
   }
   
+  console.log('🔍 Mapped apiErrors:', apiErrors);  // Debug log
+  
   return { 
     signup,
     signupId: currentId || allIds[0],
-    apiErrors,  // ✅ Pass as object mapped by field
+    apiErrors,
     isLoading,
   };
 };

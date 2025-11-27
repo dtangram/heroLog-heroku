@@ -34,12 +34,18 @@ interface UserState {
   error: string | null;
 }
 
+// Update the interface
+interface ErrorItem {
+  field: string;
+  message: string;
+}
+
 export interface UsersState {
   byId: Record<string, UserState>;
   allIds: string[];
   loadedAt: number;
   isLoading: boolean;
-  error: string | null;
+  error: string | ErrorItem[] | null;
   type: string;
 }
 
@@ -51,7 +57,7 @@ interface Action {
     signup?: User;
   };
   data?: User | User[];
-  err?: string;
+  err?: string | ErrorItem[];
 }
 
 const initialState: UsersState = {
@@ -258,7 +264,7 @@ const signupError = (state: object, action: object): object => {
       ...baseState,
       byId: updateUserInState(typedState.byId, id, {
         isLoading: false,
-        error: typedAction.err || 'Unknown error',
+        error: typedAction.err as string || 'Unknown error',
       }),
     };
   }

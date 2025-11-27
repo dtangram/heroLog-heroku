@@ -12,13 +12,24 @@ interface APIAction extends ReduxAction {
   callAPI: () => Promise<APIResponse>;
   shouldCallAPI?: (state: object) => boolean;
   payload?: Record<string, string | number | boolean | object | null>;
-  transformResponse?: (response: APIResponse) => object | object[] | string | number | boolean | null; // Add this
+  transformResponse?: (response: APIResponse) => object | object[] | string | number | boolean | null;
 }
 
 interface DispatchAction extends ReduxAction {
   data?: object | object[] | string | number | boolean | null;
-  err?: string;
+  err?: string | Array<{ field: string; message: string }>;  // ✅ Allow array
   payload?: Record<string, string | number | boolean | object | null>;
+}
+
+interface AxiosError extends Error {
+  response?: {
+    data?: {
+      error?: string;
+      errors?: Array<{ field: string; message: string }> | string[];
+      message?: string;
+    };
+    status?: number;
+  };
 }
 
 const isAPIAction = (action: ReduxAction): action is APIAction => {
@@ -47,11 +58,42 @@ const extractActionData = (response: APIResponse): object | object[] | string | 
   return [];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// ✅ Updated to preserve error structure
+const extractErrorFromResponse = (error: AxiosError | Error): string | Array<{ field: string; message: string }> => {
+  if ('response' in error && error.response?.data) {
+    const responseData = error.response.data;
+    
+    // API returns { errors: [{ field, message }, ...] }
+    if (responseData.errors && Array.isArray(responseData.errors)) {
+      // Check if it's array of objects with field/message
+      if (responseData.errors.length > 0 && typeof responseData.errors[0] === 'object') {
+        return responseData.errors as Array<{ field: string; message: string }>;
+      }
+      // Array of strings
+      return responseData.errors.join(', ');
+    }
+    
+    // API returns { error: "message" }
+    if (responseData.error) {
+      return responseData.error;
+    }
+    
+    // API returns { message: "message" }
+    if (responseData.message) {
+      return responseData.message;
+    }
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'An unknown error occurred';
+};
+
 const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; getState: () => object }) => 
   (next: (action: ReduxAction) => void) => 
   (action: ReduxAction): void => {
-    // If action doesn't have types, it's not an API action - pass it through
     if (!isAPIAction(action)) {
       next(action);
       return;
@@ -62,29 +104,25 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
       callAPI,
       shouldCallAPI = () => true,
       payload,
-      transformResponse, // Extract transformResponse
+      transformResponse,
       type,
       ...restProps
     } = action;
 
-    // Validate types array
     if (!validateTypes(types)) {
       throw new Error(
         'Expected types to be an array of exactly three strings [REQUEST, SUCCESS, FAILURE]'
       );
     }
 
-    // Validate callAPI function
     if (typeof callAPI !== 'function') {
       throw new Error('Expected callAPI to be a function');
     }
 
-    // Validate shouldCallAPI function
     if (typeof shouldCallAPI !== 'function') {
       throw new Error('Expected shouldCallAPI to be a function');
     }
 
-    // Check if we should call the API
     try {
       const state = store.getState();
       if (!shouldCallAPI(state)) {
@@ -95,10 +133,8 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
       return;
     }
 
-    // Destructure action types
     const [requestType, successType, failureType] = types;
 
-    // Prepare common action properties
     const actionProps: Record<string, string | number | boolean | object | null | undefined> = {
       ...restProps,
     };
@@ -107,25 +143,20 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
       actionProps.payload = payload;
     }
 
-    // Dispatch REQUEST action
     store.dispatch({
       ...actionProps,
       type: requestType,
     } as DispatchAction);
 
-    // Call the API asynchronously
     callAPI()
       .then((response) => {
-        // Extract data from response
         let data = extractActionData(response);
         
-        // Apply transform if provided
         if (transformResponse && typeof transformResponse === 'function') {
           try {
             data = transformResponse(response);
           } catch (transformError) {
             console.error('Error in transformResponse:', transformError);
-            // If transform fails, dispatch error
             const errorMessage = transformError instanceof Error 
               ? transformError.message 
               : 'Failed to transform response';
@@ -139,7 +170,6 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
           }
         }
         
-        // Dispatch SUCCESS action
         store.dispatch({
           ...actionProps,
           type: successType,
@@ -147,47 +177,17 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
         } as DispatchAction);
       })
       .catch((error) => {
-      // ✅ Extract error from API response first, fallback to Axios message
-      let errorMessage: string | object = 'An unknown error occurred';
-      
-      // Check if it's an Axios error with response data
-      if (error.response?.data) {
-        const responseData = error.response.data;
+        // ✅ Use updated function that preserves error structure
+        const errorData = extractErrorFromResponse(error as AxiosError);
         
-        // API returns { error: "message" }
-        if (responseData.error) {
-          errorMessage = responseData.error;
-        }
-        // API returns { errors: [...] }
-        else if (responseData.errors) {
-          if (Array.isArray(responseData.errors)) {
-            // Array of { field, message } objects
-            errorMessage = responseData.errors
-              .map((e: { message?: string; msg?: string }) => e.message || e.msg || e)
-              .join(', ');
-          } else {
-            errorMessage = responseData.errors;
-          }
-        }
-        // API returns { message: "message" }
-        else if (responseData.message) {
-          errorMessage = responseData.message;
-        }
-      } 
-      // Fallback to error.message
-      else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      console.error('API call failed:', errorMessage);
-      
-      // Dispatch FAILURE action
-      store.dispatch({
-        ...actionProps,
-        type: failureType,
-        err: errorMessage,
-      } as DispatchAction);
-    });
+        console.error('API call failed:', errorData);
+        
+        store.dispatch({
+          ...actionProps,
+          type: failureType,
+          err: errorData,  // ✅ Can be string OR array of { field, message }
+        } as DispatchAction);
+      });
   };
 
 export default callAPIMiddleware;

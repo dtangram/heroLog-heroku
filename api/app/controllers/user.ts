@@ -89,6 +89,11 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
+interface ErrorResponse {
+  success: false;
+  errors: Array<{ field: string; message: string }>;
+}
+
 // Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
   return 'errors' in error && Array.isArray((error as SequelizeError).errors);
@@ -351,7 +356,7 @@ export const getOneById = async (
 // Create a new user
 export const createUser = async (
   req: Request<{}, {}, Partial<UserCreationAttributes & { password: string }>>,
-  res: Response<ApiResponse<Pick<UserAttributes, 'id'>>>
+  res: Response<ApiResponse<Pick<UserAttributes, 'id'>> | ErrorResponse>
 ): Promise<Response> => {
   const {
     username,
@@ -362,106 +367,85 @@ export const createUser = async (
     accesstoken,
   } = req.body;
   
-  // Validate required fields
-  const validation = validateParams(req.body as Record<string, string>, [
-    'username',
-    'firstname',
-    'lastname',
-    'email',
-    'password'
-  ]);
+  // ✅ Collect ALL validation errors
+  const allValidationErrors: Array<{ field: string; message: string }> = [];
   
-  if (!validation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: validation.message 
-    });
+  if (!username || !username.trim()) {
+    allValidationErrors.push({ field: 'username', message: 'Username is required' });
   }
   
-  // Validate string fields
-  if (!username) {
-    return res.status(400).json({ success: false, error: 'Username is required' });
-  }
-  const usernameValidation = validateString(username, 'Username');
-  if (!usernameValidation.isValid) {
-    return res.status(400).json({ success: false, error: usernameValidation.message });
+  if (!firstname || !firstname.trim()) {
+    allValidationErrors.push({ field: 'firstname', message: 'First name is required' });
   }
   
-  if (!firstname) {
-    return res.status(400).json({ success: false, error: 'First name is required' });
-  }
-  const firstnameValidation = validateString(firstname, 'First name');
-  if (!firstnameValidation.isValid) {
-    return res.status(400).json({ success: false, error: firstnameValidation.message });
+  if (!lastname || !lastname.trim()) {
+    allValidationErrors.push({ field: 'lastname', message: 'Last name is required' });
   }
   
-  if (!lastname) {
-    return res.status(400).json({ success: false, error: 'Last name is required' });
-  }
-  const lastnameValidation = validateString(lastname, 'Last name');
-  if (!lastnameValidation.isValid) {
-    return res.status(400).json({ success: false, error: lastnameValidation.message });
+  if (!email || !email.trim()) {
+    allValidationErrors.push({ field: 'email', message: 'Email is required' });
+  } else if (!isValidEmail(email)) {
+    allValidationErrors.push({ field: 'email', message: 'Invalid email format' });
   }
   
-  // Validate email
-  if (!email) {
-    return res.status(400).json({ success: false, error: 'Email is required' });
-  }
-  const emailStringValidation = validateString(email, 'Email');
-  if (!emailStringValidation.isValid) {
-    return res.status(400).json({ success: false, error: emailStringValidation.message });
-  }
-  const emailFormatValidation = validateEmail(email);
-  if (!emailFormatValidation.isValid) {
-    return res.status(400).json({ success: false, error: emailFormatValidation.message });
-  }
-  
-  // Validate password
   if (!password) {
-    return res.status(400).json({ success: false, error: 'Password is required' });
+    allValidationErrors.push({ field: 'password', message: 'Password is required' });
+  } else {
+    if (password.length < 8) {
+      allValidationErrors.push({ field: 'password', message: 'Password must be at least 8 characters' });
+    }
+    if (!/\d/.test(password)) {
+      allValidationErrors.push({ field: 'password', message: 'Password must contain at least one number' });
+    }
+    if (!/[a-zA-Z]/.test(password)) {
+      allValidationErrors.push({ field: 'password', message: 'Password must contain at least one letter' });
+    }
   }
-  const passwordValidation = validatePassword(password);
-  if (!passwordValidation.isValid) {
-    return res.status(400).json({ success: false, error: passwordValidation.message });
+  
+  // ✅ Return ALL validation errors
+  if (allValidationErrors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      errors: allValidationErrors
+    } as ErrorResponse);
   }
   
   try {
     const Users = getUsersModel();
     
-    // Check if username already exists
-    const existingUser = await Users.findOne({ 
-      where: { username: username.trim() } 
-    });
+    const [existingUser, existingEmail] = await Promise.all([
+      Users.findOne({ where: { username: username!.trim() } }),
+      Users.findOne({ where: { email: email!.trim().toLowerCase() } })
+    ]);
+    
+    const existenceErrors: Array<{ field: string; message: string }> = [];
     
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        error: 'Username already exists'
-      });
+      existenceErrors.push({ field: 'username', message: 'Username already exists' });
     }
-    
-    // Check if email already exists
-    const existingEmail = await Users.findOne({ 
-      where: { email: email.trim().toLowerCase() } 
-    });
     
     if (existingEmail) {
-      return res.status(409).json({
-        success: false,
-        error: 'Email already exists'
-      });
+      existenceErrors.push({ field: 'email', message: 'Email already exists' });
     }
     
-    // Hash password with increased salt rounds for better security
+    // ✅ Return ALL existence errors
+    if (existenceErrors.length > 0) {
+      return res.status(409).json({
+        success: false,
+        errors: existenceErrors
+      } as ErrorResponse);
+    }
+    
+    // Hash password
     const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password!, saltRounds);
     
     // Create the user
     const newUser = await Users.create({
-      username: username.trim(),
-      firstname: firstname.trim(),
-      lastname: lastname.trim(),
-      email: email.trim().toLowerCase(),
+      username: username!.trim(),
+      firstname: firstname!.trim(),
+      lastname: lastname!.trim(),
+      email: email!.trim().toLowerCase(),
       password: hashedPassword,
       accesstoken: accesstoken || null,
       profilePic: 'https://herologimages.s3.us-east-2.amazonaws.com/material-design-account-icon.png',
