@@ -15,10 +15,8 @@ interface FormErrorsState {
 interface TokenValidationResponse {
   success: boolean;
   message: string;
-  data: {
-    username: string;
-    email: string;
-  };
+  username: string;
+  email: string;
 }
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -37,7 +35,7 @@ const PasswordReset: React.FC<ContainerProps> = () => {
 
   useEffect(() => {
   const validateToken = async () => {
-    console.log('🔍 Token from URL:', token);  // ✅ Check if token exists
+    console.log('🔍 Token from URL:', token);
     
     if (!token) {
       console.log('❌ No token found');
@@ -50,22 +48,19 @@ const PasswordReset: React.FC<ContainerProps> = () => {
       
       const response = await API.get<TokenValidationResponse>(`/api/passwordreset/${token}`);
       
-      console.log('🔍 Full response:', response);
       console.log('🔍 Response data:', response.data);
-      console.log('🔍 Success:', response.data.success);
-      console.log('🔍 Username:', response.data.data?.username);
       
-      if (response.data.success && response.data.data?.username) {
-        console.log('✅ Setting username and tokenValid');
-        setUsername(response.data.data.username);
+      // ✅ The API wrapper already unwraps, so response.data is the actual data object
+      if (response.data && response.data.username) {
+        console.log('✅ Setting username:', response.data.username);
+        setUsername(response.data.username);
         setTokenValid(true);
       } else {
-        console.log('❌ Invalid response structure');
+        console.log('❌ No username in response');
         setFormErrors({ password: '', general: 'Invalid or expired reset link' });
       }
     } catch (error: any) {
       console.error('❌ Token validation error:', error);
-      console.error('❌ Error response:', error.response?.data);
       const errorMessage = error.response?.data?.error || 'Invalid or expired reset link';
       setFormErrors({ password: '', general: errorMessage });
     }
