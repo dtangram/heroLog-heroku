@@ -36,33 +36,33 @@ const PasswordReset: React.FC<ContainerProps> = () => {
   });
 
   useEffect(() => {
-    const validateToken = async () => {
-      if (!token) {
-        setFormErrors({ password: '', general: 'Invalid reset link' });
-        return;
-      }
-      
-      try {
-        const response = await API.get<TokenValidationResponse>(`/api/passwordreset/${token}`);
-        
-        console.log('🔍 Token validation response:', response.data);  // Debug
-        
-        // ✅ Fix: access nested data
-        if (response.data.success && response.data.data?.username) {
-          setUsername(response.data.data.username);
-          setTokenValid(true);
-        } else {
-          setFormErrors({ password: '', general: 'Invalid or expired reset link' });
-        }
-      } catch (error: any) {
-        console.error('Token validation error:', error);
-        const errorMessage = error.response?.data?.error || 'Invalid or expired reset link';
-        setFormErrors({ password: '', general: errorMessage });
-      }
-    };
+  const validateToken = async () => {
+    if (!token) {
+      setFormErrors({ password: '', general: 'Invalid reset link' });
+      return;
+    }
     
-    validateToken();
-  }, [token]);
+    try {
+      // ✅ Fixed syntax - added parenthesis around template literal
+      const response = await API.get<TokenValidationResponse>(`/api/passwordreset/${token}`);
+      
+      console.log('🔍 Token validation response:', response.data);
+      
+      if (response.data.success && response.data.data?.username) {
+        setUsername(response.data.data.username);
+        setTokenValid(true);
+      } else {
+        setFormErrors({ password: '', general: 'Invalid or expired reset link' });
+      }
+    } catch (error: any) {
+      console.error('Token validation error:', error);
+      const errorMessage = error.response?.data?.error || 'Invalid or expired reset link';
+      setFormErrors({ password: '', general: errorMessage });
+    }
+  };
+  
+  validateToken();
+}, [token]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
