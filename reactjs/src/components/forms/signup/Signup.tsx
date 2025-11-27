@@ -24,7 +24,7 @@ interface SignupProps {
   signup: User;
   fetchUser: (id: string) => void;
   signupId: string | undefined;
-  apiErrors: Record<string, string>;
+  signupError: string | null;
   isLoading: boolean;
   createUser: (payload: {
     firstname: string;
@@ -41,10 +41,8 @@ const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_PROFILE_PIC = 'https://dothanthorntonbucket.s3.amazonaws.com/material-design-account-icon.png';
 
-const Signup = ({
-  signup,
-  signupId,  // ✅ Add this
-  apiErrors,  // ✅ Add this
+const Signup = ({ signup, signupId,  // ✅ Add this
+  signupError,  // ✅ Add this
   isLoading, fetchUser, createUser }: SignupProps) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -73,18 +71,18 @@ const Signup = ({
   }, [signupId]);
 
   useEffect(() => {
-    if (Object.keys(apiErrors).length > 0) {
+    if (signupError) {
       window.scrollTo({
         top: 0,
         behavior: 'smooth'
       });
-      console.log('❌ Signup failed:', apiErrors);
+      console.log('❌ Signup failed:', signupError);
       setFormErrors(prev => ({
         ...prev,
-        ...apiErrors  // Merge API errors into form errors by field
+        email: signupError  // Show error (usually email already exists)
       }));
     }
-  }, [apiErrors]);
+  }, [signupError]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -134,9 +132,6 @@ const Signup = ({
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    // ✅ Clear error for this field when user starts typing
-    setFormErrors(prev => ({ ...prev, [name]: '' }));
   }, []);
 
   const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {

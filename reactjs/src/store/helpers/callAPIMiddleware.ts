@@ -146,50 +146,48 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
           data,
         } as DispatchAction);
       })
-      // In the .catch() block of api.ts
       .catch((error) => {
-        let errorMessage: string | Array<{ field: string; message: string }> = 'An unknown error occurred';
+      // ✅ Extract error from API response first, fallback to Axios message
+      let errorMessage: string | object = 'An unknown error occurred';
+      
+      // Check if it's an Axios error with response data
+      if (error.response?.data) {
+        const responseData = error.response.data;
         
-        if ('response' in error && error.response?.data) {
-          const responseData = error.response.data;
-          
-          // ✅ Preserve array of { field, message } objects
-          // In api.ts middleware - extractErrorMessage function:
-          if (responseData.errors) {
-            if (Array.isArray(responseData.errors)) {
-              // Check if errors are "field:message" format
-              const parsed = responseData.errors.map((e: string | { field?: string; message?: string }) => {
-                if (typeof e === 'string' && e.includes(':')) {
-                  const [field, ...messageParts] = e.split(':');
-                  return { field, message: messageParts.join(':') };
-                }
-                if (typeof e === 'string') return { field: 'general', message: e };
-                return { field: e.field || 'general', message: e.message || String(e) };
-              });
-              return parsed;  // Return array of { field, message }
-            }
-            return String(responseData.errors);
-          }
-          // Single error string
-          else if (responseData.error) {
-            errorMessage = responseData.error;
-          }
-          else if (responseData.message) {
-            errorMessage = responseData.message;
-          }
-        } 
-        else if (error instanceof Error) {
-          errorMessage = error.message;
+        // API returns { error: "message" }
+        if (responseData.error) {
+          errorMessage = responseData.error;
         }
-        
-        console.error('API call failed:', errorMessage);
-        
-        store.dispatch({
-          ...actionProps,
-          type: failureType,
-          err: errorMessage,  // ✅ Can be string OR array
-        } as DispatchAction);
-      });
+        // API returns { errors: [...] }
+        else if (responseData.errors) {
+          if (Array.isArray(responseData.errors)) {
+            // Array of { field, message } objects
+            errorMessage = responseData.errors
+              .map((e: { message?: string; msg?: string }) => e.message || e.msg || e)
+              .join(', ');
+          } else {
+            errorMessage = responseData.errors;
+          }
+        }
+        // API returns { message: "message" }
+        else if (responseData.message) {
+          errorMessage = responseData.message;
+        }
+      } 
+      // Fallback to error.message
+      else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      console.error('API call failed:', errorMessage);
+      
+      // Dispatch FAILURE action
+      store.dispatch({
+        ...actionProps,
+        type: failureType,
+        err: errorMessage,
+      } as DispatchAction);
+    });
   };
 
 export default callAPIMiddleware;
