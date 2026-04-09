@@ -127,7 +127,7 @@ useEffect(() => {
                     to={`/insights/${userId}`}
                     onClick={toggleMenuItem}
                   >
-                    INSIGHTS
+                    INTEL
                   </NavLink>
                 </NavItem>
 
@@ -214,7 +214,7 @@ useEffect(() => {
                   to={`/insights/${userId}`}
                   onClick={toggleMenuItem}
                 >
-                  INSIGHTS
+                  INTEL
                 </NavLink>
               </NavItem>
 
