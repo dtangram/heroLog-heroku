@@ -13,7 +13,7 @@ interface SeriesAnalysis {
   variants: number;
 }
 
-interface CollectionInsights {
+interface CollectionProps {
   totalComics: number;
   uniqueSeries: number;
   seriesBreakdown: SeriesAnalysis[];
@@ -22,14 +22,8 @@ interface CollectionInsights {
   aiInsights: string;
 }
 
-interface InsightsResponse {
-  success: boolean;
-  data?: CollectionInsights;
-  error?: string;
-}
-
-const CollectionInsights: React.FC = () => {
-  const [insights, setInsights] = useState<CollectionInsights | null>(null);
+const CollectionIntel: React.FC = () => {
+  const [insights, setInsights] = useState<CollectionProps | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   
@@ -127,7 +121,7 @@ const CollectionInsights: React.FC = () => {
   return (
     <article id="cbComicForm" className={styles.cbWrap}>
       <h1>
-        AI Collection Insights
+        Collection Intelligence
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
 
@@ -230,4 +224,4 @@ const CollectionInsights: React.FC = () => {
   );
 };
 
-export default CollectionInsights;
+export default CollectionIntel;
