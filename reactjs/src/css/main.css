@@ -258,10 +258,8 @@ header {
         margin-right: 0;
         z-index: 99;
         width: auto; } }
-    header nav img {
-      cursor: pointer;
-      display: none;
-      width: 30px; }
+    /* header nav img {
+      width: 50px; } */
     @media (max-width: 800px) {
       header nav img:nth-child(1) {
         display: block;
@@ -299,6 +297,19 @@ header {
     top: 0;
     width: 100%;
     z-index: -1; }
+
+header nav[class*='styles_nav__'] > .container-fluid > figure.headerProfilePic{
+  height: 50px;
+  width: 50px;
+}
+
+header nav[class*='styles_nav__'] > .container-fluid > figure.headerProfilePic img{
+  background-color: #FFF;
+  border: solid 1px #AECEAB;
+  border-radius: 50%;
+  cursor: default;
+  width: 100%;  
+}
 
 section {
   padding-top: 40px;

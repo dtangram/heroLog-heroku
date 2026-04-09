@@ -9,11 +9,15 @@ interface User {
   username: string;
   email: string;
   password: string;
-  type: string;
 }
 
 interface SignupState {
   data: User;
+}
+
+interface ErrorItem {
+  field: string;
+  message: string;
 }
 
 interface RootState {
@@ -22,13 +26,14 @@ interface RootState {
       [key: string]: SignupState;
     };
     currentId?: string;
-    isLoading: boolean;  // ✅ Add this
-    error: string | null;  // ✅ Add this
+    allIds: string[];
+    isLoading: boolean;
+    error: string | ErrorItem[] | null;
   };
 }
 
 const mapStateToProps = (state: RootState) => {
-  const { signups: { byId, currentId, isLoading, error } } = state;
+  const { signups: { byId, currentId, allIds, isLoading, error } } = state;
   
   const defaultUser: User = {
     id: '',
@@ -36,19 +41,39 @@ const mapStateToProps = (state: RootState) => {
     lastname: '',
     username: '',
     email: '',
-    password: '',
-    type: ''
+    password: ''
   };
   
-  // Try to get the current/last loaded signup
-  const signupId = currentId || Object.keys(byId)[0];
+  const signupId = currentId || allIds[0] || Object.keys(byId)[0];
   const signup = signupId && byId[signupId] ? byId[signupId].data : defaultUser;
+  
+  // ✅ Convert error to field-mapped object
+  const apiErrors: Record<string, string> = {};
+  
+  console.log('🔍 Raw error from state:', error);  // Debug log
+  
+  if (error) {
+    if (typeof error === 'string') {
+      apiErrors.general = error;
+    } else if (Array.isArray(error)) {
+      error.forEach((e: ErrorItem) => {
+        const fieldName = e.field || 'general';
+        if (apiErrors[fieldName]) {
+          apiErrors[fieldName] += `\n${e.message}`;
+        } else {
+          apiErrors[fieldName] = e.message;
+        }
+      });
+    }
+  }
+  
+  console.log('🔍 Mapped apiErrors:', apiErrors);  // Debug log
   
   return { 
     signup,
-    signupId: currentId,  // ✅ Expose signup ID (will be set on success)
-    signupError: error,  // ✅ Expose error
-    isLoading,  // ✅ Expose loading state
+    signupId: currentId || allIds[0],
+    apiErrors,
+    isLoading,
   };
 };
 
@@ -59,6 +84,6 @@ const mapDispatchToProps = {
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
 
-export type ConnectorProps = ConnectedProps<typeof connector>;
+export type ContainerProps = ConnectedProps<typeof connector>;
 
 export default connector(Signup);

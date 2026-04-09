@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { WhereOptions } from 'sequelize';
+import db from '../models';
+import { sendPasswordResetEmail } from '../services/emailService';
 
 // Properly typed model interface
 interface UserModel {
@@ -19,7 +21,6 @@ interface UserInstance {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: 'regular' | 'fixer';
   createdAt: Date;
   updatedAt: Date;
   update: (data: Partial<UserAttributes>) => Promise<UserInstance>;
@@ -27,7 +28,7 @@ interface UserInstance {
 
 // User attributes interface (matching actual model structure)
 interface UserAttributes {
-  id: string;  // UUID string
+  id: string;
   username: string;
   firstname: string;
   lastname: string;
@@ -35,7 +36,6 @@ interface UserAttributes {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: 'regular' | 'fixer';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,20 +61,20 @@ interface ChangePasswordRequestBody {
 
 // JWT payload interface with proper UUID typing
 interface PasswordResetTokenPayload {
-  id: string;  // UUID string, not number
+  id: string;
   email: string;
   purpose: string;
   iat?: number;
   exp?: number;
 }
 
-// API response interface without any
+// API response interface
 interface ApiResponse<T = Record<string, string | number>> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
-  userId?: string;  // UUID string
+  userId?: string;
   token?: string;
 }
 
@@ -84,20 +84,16 @@ interface ValidationResult {
   message?: string;
 }
 
-// Extended Request type for authenticated users (using intersection type)
+// Extended Request type for authenticated users
 type AuthenticatedRequest<P = {}, ResBody = {}, ReqBody = {}> = Request<P, ResBody, ReqBody> & {
   user?: {
-    id: string;  // UUID string
+    id: string;
     email: string;
   };
 };
 
-// Import models with proper typing
-const models = require('../models') as {
-  Users: UserModel;
-};
-
-const { Users } = models;
+// Models
+const Users = (db as any).Users as UserModel;
 
 // Email validation
 const isValidEmail = (email: string): boolean => {
@@ -121,7 +117,6 @@ const validatePasswordStrength = (password: string): ValidationResult => {
     };
   }
 
-  // Check for at least one number
   if (!/\d/.test(password)) {
     return {
       isValid: false,
@@ -129,7 +124,6 @@ const validatePasswordStrength = (password: string): ValidationResult => {
     };
   }
 
-  // Check for at least one letter
   if (!/[a-zA-Z]/.test(password)) {
     return {
       isValid: false,
@@ -183,6 +177,8 @@ export const emailPasswordReset = async (
   const { email } = req.body;
 
   try {
+    console.log('📧 Password reset request received for:', email);
+
     // Validate email is provided
     if (!email) {
       return res.status(400).json({ 
@@ -213,7 +209,6 @@ export const emailPasswordReset = async (
     });
     
     // SECURITY: Don't reveal if user exists or not
-    // Always return success to prevent email enumeration
     if (!user) {
       console.warn(`Password reset requested for non-existent email: ${email}`);
       return res.status(200).json({ 
@@ -238,39 +233,27 @@ export const emailPasswordReset = async (
       purpose: 'password-reset' 
     };
 
-    const token = jwt.sign(
-      tokenPayload,
-      secret,
-      { expiresIn: '1h', algorithm: 'HS256' }
-    );
+    const signOptions: SignOptions = {
+      expiresIn: '1h',
+      algorithm: 'HS256'
+    };
 
-    // TODO: In production, send email instead of returning token
-    // Example:
-    // await sendPasswordResetEmail(user.email, token);
-    // const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    // await emailService.send({
-    //   to: user.email,
-    //   subject: 'Password Reset Request',
-    //   html: `Click here to reset your password: ${resetLink}`
-    // });
-    
-    console.log(`Password reset token generated for user ID: ${user.id}`);
+    const token = jwt.sign(tokenPayload, secret, signOptions);
 
-    // DEVELOPMENT ONLY: Return token directly
-    // In production, remove this and send via email only
-    if (process.env.NODE_ENV === 'development') {
-      return res.status(200).json({
-        success: true,
-        token,
-        message: 'Password reset token generated (development only)',
-        data: {
-          userId: user.id,
-          email: user.email
-        }
+    // ✅ Send password reset email
+    const emailResult = await sendPasswordResetEmail(user.email, token);
+
+    if (!emailResult.success) {
+      console.error('❌ Failed to send password reset email:', emailResult.error);
+      return res.status(500).json({ 
+        success: false,
+        error: 'Failed to send password reset email. Please try again later.'
       });
     }
 
-    // PRODUCTION: Generic success message
+    console.log(`✅ Password reset email sent to user ID: ${user.id}`);
+
+    // Return success response
     return res.status(200).json({
       success: true,
       message: 'If an account with that email exists, a password reset link has been sent'
@@ -293,7 +276,6 @@ export const verifyResetToken = async (
   const { token } = req.body;
 
   try {
-    // Validate token is provided
     if (!token) {
       return res.status(400).json({ 
         success: false,
@@ -301,7 +283,6 @@ export const verifyResetToken = async (
       });
     }
 
-    // Validate token format
     const tokenValidation = validateString(token, 'Token');
     if (!tokenValidation.isValid) {
       return res.status(400).json({ 
@@ -310,7 +291,6 @@ export const verifyResetToken = async (
       });
     }
 
-    // Validate JWT secret
     const secret = validateJwtSecret();
     if (!secret) {
       return res.status(500).json({ 
@@ -319,7 +299,6 @@ export const verifyResetToken = async (
       });
     }
 
-    // Verify token
     let decoded: PasswordResetTokenPayload;
     
     try {
@@ -340,7 +319,6 @@ export const verifyResetToken = async (
       }
     }
 
-    // Check if token purpose is correct
     if (decoded.purpose !== 'password-reset') {
       return res.status(400).json({ 
         success: false,
@@ -348,8 +326,7 @@ export const verifyResetToken = async (
       });
     }
 
-    // Verify user still exists
-    const user = await Users.findByPk(decoded.id);  // UUID string, no parseInt needed
+    const user = await Users.findByPk(decoded.id);
     
     if (!user) {
       return res.status(404).json({ 
@@ -358,7 +335,6 @@ export const verifyResetToken = async (
       });
     }
 
-    // Verify email matches (in case user changed email)
     if (user.email.toLowerCase() !== decoded.email.toLowerCase()) {
       return res.status(400).json({ 
         success: false,
@@ -369,7 +345,7 @@ export const verifyResetToken = async (
     return res.status(200).json({
       success: true,
       message: 'Token is valid',
-      userId: user.id,  // UUID string
+      userId: user.id,
       data: {
         email: user.email
       }
@@ -392,7 +368,6 @@ export const resetPassword = async (
   const { token, newPassword } = req.body;
 
   try {
-    // Validate inputs
     if (!token || !newPassword) {
       return res.status(400).json({ 
         success: false,
@@ -400,7 +375,6 @@ export const resetPassword = async (
       });
     }
 
-    // Validate token format
     const tokenValidation = validateString(token, 'Token');
     if (!tokenValidation.isValid) {
       return res.status(400).json({ 
@@ -409,7 +383,6 @@ export const resetPassword = async (
       });
     }
 
-    // Validate password format
     const passwordFormatValidation = validateString(newPassword, 'New password');
     if (!passwordFormatValidation.isValid) {
       return res.status(400).json({ 
@@ -418,7 +391,6 @@ export const resetPassword = async (
       });
     }
 
-    // Validate password strength
     const passwordValidation = validatePasswordStrength(newPassword);
     if (!passwordValidation.isValid) {
       return res.status(400).json({ 
@@ -427,7 +399,6 @@ export const resetPassword = async (
       });
     }
 
-    // Validate JWT secret
     const secret = validateJwtSecret();
     if (!secret) {
       return res.status(500).json({ 
@@ -436,7 +407,6 @@ export const resetPassword = async (
       });
     }
 
-    // Verify token
     let decoded: PasswordResetTokenPayload;
     
     try {
@@ -457,7 +427,6 @@ export const resetPassword = async (
       }
     }
 
-    // Check token purpose
     if (decoded.purpose !== 'password-reset') {
       return res.status(400).json({ 
         success: false,
@@ -465,8 +434,7 @@ export const resetPassword = async (
       });
     }
 
-    // Find user
-    const user = await Users.findByPk(decoded.id);  // UUID string, no parseInt needed
+    const user = await Users.findByPk(decoded.id);
     
     if (!user) {
       return res.status(404).json({ 
@@ -475,7 +443,6 @@ export const resetPassword = async (
       });
     }
 
-    // Verify email matches
     if (user.email.toLowerCase() !== decoded.email.toLowerCase()) {
       return res.status(400).json({ 
         success: false,
@@ -483,7 +450,6 @@ export const resetPassword = async (
       });
     }
 
-    // Check if new password is same as old password
     if (user.password) {
       const isSamePassword = await bcrypt.compare(newPassword, user.password);
       if (isSamePassword) {
@@ -494,16 +460,10 @@ export const resetPassword = async (
       }
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
     await user.update({ password: hashedPassword });
 
-    console.log(`Password reset successful for user ID: ${user.id}`);
-
-    // Optional: Invalidate all existing sessions/tokens for this user
-    // This would require a token blacklist or session management system
+    console.log(`✅ Password reset successful for user ID: ${user.id}`);
 
     return res.status(200).json({
       success: true,
@@ -519,18 +479,15 @@ export const resetPassword = async (
   }
 };
 
-// Change password for authenticated users (not using reset token)
+// Change password for authenticated users
 export const changePassword = async (
   req: AuthenticatedRequest<{}, ApiResponse<never>, ChangePasswordRequestBody>,
   res: Response<ApiResponse<never>>
 ): Promise<Response> => {
   const { currentPassword, newPassword } = req.body;
-  
-  // Note: This assumes you have authentication middleware that adds user to req
   const userId = req.user?.id;
 
   try {
-    // Check if user is authenticated
     if (!userId) {
       return res.status(401).json({ 
         success: false,
@@ -538,7 +495,6 @@ export const changePassword = async (
       });
     }
 
-    // Validate inputs
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ 
         success: false,
@@ -546,7 +502,6 @@ export const changePassword = async (
       });
     }
 
-    // Validate current password format
     const currentPasswordValidation = validateString(currentPassword, 'Current password');
     if (!currentPasswordValidation.isValid) {
       return res.status(400).json({ 
@@ -555,7 +510,6 @@ export const changePassword = async (
       });
     }
 
-    // Validate new password format
     const newPasswordFormatValidation = validateString(newPassword, 'New password');
     if (!newPasswordFormatValidation.isValid) {
       return res.status(400).json({ 
@@ -564,7 +518,6 @@ export const changePassword = async (
       });
     }
 
-    // Validate password strength
     const passwordValidation = validatePasswordStrength(newPassword);
     if (!passwordValidation.isValid) {
       return res.status(400).json({ 
@@ -573,8 +526,7 @@ export const changePassword = async (
       });
     }
 
-    // Find user
-    const user = await Users.findByPk(userId);  // UUID string, no parseInt needed
+    const user = await Users.findByPk(userId);
     
     if (!user || !user.password) {
       return res.status(404).json({ 
@@ -583,7 +535,6 @@ export const changePassword = async (
       });
     }
 
-    // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     
     if (!isCurrentPasswordValid) {
@@ -593,7 +544,6 @@ export const changePassword = async (
       });
     }
 
-    // Check if new password is same as current
     if (currentPassword === newPassword) {
       return res.status(400).json({ 
         success: false,
@@ -601,13 +551,10 @@ export const changePassword = async (
       });
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
     await user.update({ password: hashedPassword });
 
-    console.log(`Password changed successfully for user ID: ${user.id}`);
+    console.log(`✅ Password changed successfully for user ID: ${user.id}`);
 
     return res.status(200).json({
       success: true,

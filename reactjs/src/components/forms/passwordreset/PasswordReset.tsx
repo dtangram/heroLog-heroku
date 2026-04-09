@@ -1,4 +1,3 @@
-// PasswordReset.tsx
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import API from '../../../API';
@@ -9,11 +8,15 @@ import { ContainerProps } from './container';
 interface FormErrorsState {
   password: string;
   confirmed?: string;
+  general?: string;
 }
 
+// ✅ Fix interface to match actual API response
 interface TokenValidationResponse {
+  success: boolean;
   message: string;
   username: string;
+  email: string;
 }
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -21,30 +24,50 @@ const MIN_PASSWORD_LENGTH = 8;
 const PasswordReset: React.FC<ContainerProps> = () => {
   const navigate = useNavigate();
   const { token } = useParams();
-
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [tokenValid, setTokenValid] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrorsState>({
     password: '',
   });
 
   useEffect(() => {
-    const validateToken = async () => {
-      if (!token) return;
-
-      try {
-        const response = await API.get<TokenValidationResponse>(`/passwordreset/${token}`);
-        if (response.data.message === 'Password reset OK') {
-          setUsername(response.data.username);
-        }
-      } catch (error) {
-        console.error('Token validation error:', error);
+  const validateToken = async () => {
+    console.log('🔍 Token from URL:', token);
+    
+    if (!token) {
+      console.log('❌ No token found');
+      setFormErrors({ password: '', general: 'Invalid reset link' });
+      return;
+    }
+    
+    try {
+      console.log('🔍 Calling API:', `/api/passwordreset/${token}`);
+      
+      const response = await API.get<TokenValidationResponse>(`/api/passwordreset/${token}`);
+      
+      console.log('🔍 Response data:', response.data);
+      
+      // ✅ The API wrapper already unwraps, so response.data is the actual data object
+      if (response.data && response.data.username) {
+        console.log('✅ Setting username:', response.data.username);
+        setUsername(response.data.username);
+        setTokenValid(true);
+      } else {
+        console.log('❌ No username in response');
+        setFormErrors({ password: '', general: 'Invalid or expired reset link' });
       }
-    };
-
-    validateToken();
-  }, [token]);
+    } catch (error: any) {
+      console.error('❌ Token validation error:', error);
+      const errorMessage = error.response?.data?.error || 'Invalid or expired reset link';
+      setFormErrors({ password: '', general: errorMessage });
+    }
+  };
+  
+  validateToken();
+}, [token]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -54,37 +77,56 @@ const PasswordReset: React.FC<ContainerProps> = () => {
     } else if (name === 'passwordConfirm') {
       setPasswordConfirm(value);
     }
+    
+    // Clear errors when typing
+    setFormErrors(prev => ({ ...prev, [name]: '', general: '' }));
   };
 
   const validateFields = (): boolean => {
     const isPasswordValid = password.length >= MIN_PASSWORD_LENGTH;
     const doPasswordsMatch = password === passwordConfirm;
-
+    
     setFormErrors({
       password: isPasswordValid ? '' : `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
       confirmed: doPasswordsMatch ? '' : 'Passwords do not match',
     });
-
+    
     return isPasswordValid && doPasswordsMatch;
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
+    
     const isValid = validateFields();
+    
     if (!isValid || !password || !passwordConfirm) {
       return;
     }
-
+    
+    // ✅ Check username is set
+    if (!username) {
+      setFormErrors({ password: '', general: 'Session expired. Please request a new reset link.' });
+      return;
+    }
+    
+    setIsLoading(true);
+    
     try {
-      await API.put('/passwordreset/passwordResetUpdate', {
+      console.log('🔍 Submitting password reset for username:', username);  // Debug
+      
+      await API.put('/api/passwordreset/passwordResetUpdate', {
         username,
         password,
       });
-
+      
+      // Success - redirect to signin
       navigate('/signin');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Password reset error:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to reset password. Please try again.';
+      setFormErrors({ password: '', general: errorMessage });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,51 +140,60 @@ const PasswordReset: React.FC<ContainerProps> = () => {
             aria-label="Small burgundy rectangle graphic" 
           />
         </h1>
-
-        <form method="POST" onSubmit={handleSubmit}>
-          <FormErrors formErrors={formErrors} />
-
-          <fieldset>
-            <label htmlFor="password">
-              Password
-              <input
-                id="password"
-                className={styles.inputBorder}
-                type="password"
-                name="password"
-                value={password}
-                onChange={handleInputChange}
-                minLength={MIN_PASSWORD_LENGTH}
-                required
-              />
-            </label>
-          </fieldset>
-
-          <fieldset>
-            <label htmlFor="passwordConfirm">
-              Confirm Password
-              <input
-                id="passwordConfirm"
-                className={styles.inputBorder}
-                type="password"
-                name="passwordConfirm"
-                value={passwordConfirm}
-                onChange={handleInputChange}
-                minLength={MIN_PASSWORD_LENGTH}
-                required
-              />
-            </label>
-          </fieldset>
-
-          <input
-            id="submitQ1"
-            className={styles.submit}
-            type="submit"
-            value="Submit"
-          />
-        </form>
+        
+        {!tokenValid ? (
+          <section className={styles.resetExpired}>
+            <FormErrors formErrors={formErrors} />
+            <p>Validating reset link...</p>
+          </section>
+        ) : (
+          <form method="POST" onSubmit={handleSubmit}>
+            <FormErrors formErrors={formErrors} />
+            
+            <fieldset>
+              <label htmlFor="password">
+                New Password
+                <input
+                  id="password"
+                  className={styles.inputBorder}
+                  type="password"
+                  name="password"
+                  value={password}
+                  onChange={handleInputChange}
+                  minLength={MIN_PASSWORD_LENGTH}
+                  required
+                  disabled={isLoading}
+                />
+              </label>
+            </fieldset>
+            
+            <fieldset>
+              <label htmlFor="passwordConfirm">
+                Confirm Password
+                <input
+                  id="passwordConfirm"
+                  className={styles.inputBorder}
+                  type="password"
+                  name="passwordConfirm"
+                  value={passwordConfirm}
+                  onChange={handleInputChange}
+                  minLength={MIN_PASSWORD_LENGTH}
+                  required
+                  disabled={isLoading}
+                />
+              </label>
+            </fieldset>
+            
+            <input
+              id="submitQ1"
+              className={styles.submit}
+              type="submit"
+              value={isLoading ? 'Resetting...' : 'Reset Password'}
+              disabled={isLoading}
+            />
+          </form>
+        )}
       </section>
-
       <figure className={styles.signBCK} />
     </main>
   );

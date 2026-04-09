@@ -10,10 +10,6 @@ import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface SaleItem {
   id: string;
   comicBookTitle: string;
@@ -30,10 +26,6 @@ interface SaleData {
   byId: Record<string, { data: SaleItem }>;
   isLoading: boolean;
 }
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
 
 const Sale = ({
   fetchSales,

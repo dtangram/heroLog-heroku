@@ -27,7 +27,6 @@ interface User {
   username: string;
   email: string;
   password?: string;
-  type: string;
   profilePic: string;
 }
 
@@ -192,7 +191,6 @@ export const updateUser = (user: User): APIAction => {
     username,
     email,
     password,
-    type,
     profilePic,
   } = user;
 
@@ -202,7 +200,6 @@ export const updateUser = (user: User): APIAction => {
     lastname: lastname?.trim(),
     username: username?.trim(),
     email: email?.trim(),
-    type: type?.trim(),
     profilePic: profilePic?.trim(),
   };
 

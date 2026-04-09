@@ -37,12 +37,6 @@ const checks = {
     .exists().withMessage('Password is required.')
     .isLength({ min: 8 })
     .withMessage('Password is required to be at least 8 characters.'),
-    
-  typeS: check('type')
-    .exists().withMessage('Signup type is required.')
-    .isIn(['regular', 'fixer'])
-    .withMessage('Signup must be Regular or Fixer.')
-    .toLowerCase(),
   
   // Integer ID validation (for legacy tables)
   idInt: check('id')
@@ -222,7 +216,6 @@ export const validate = (method: string): Array<ValidationChain | typeof checkFo
         checks.lastname,
         checks.email,
         checks.password,
-        checks.typeS,
         checkForErrors,
       ];
     }

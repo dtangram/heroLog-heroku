@@ -57,21 +57,8 @@
   width: 80%;
 }
 
-header nav > figure{
-  width: 85px;
-}
-
-header nav > figure img{
-  background-color: #FFF;
-  border: solid 1px #AECEAB;
-  border-radius: 50%;
-  cursor: default;
-  display: block;
-  width: 100%;
-}
-
 @media (max-width: 991px){
-  header nav > figure{
+  header nav > .headerProfilePic{
     margin: 12px 0 0 18px;
     width: 70px;
   }

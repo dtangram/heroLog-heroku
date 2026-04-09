@@ -3,9 +3,6 @@ import bcrypt from 'bcryptjs';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 
-// User type literal
-type UserType = 'regular' | 'fixer';
-
 // Properly typed model interface
 interface UserModel {
   findAll: (options: { where: WhereOptions<UserAttributes> }) => Promise<UserInstance[]>;
@@ -29,7 +26,6 @@ interface UserInstance {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: UserType;
   createdAt: Date;
   updatedAt: Date;
   toJSON: () => UserAttributes;
@@ -45,7 +41,6 @@ interface UserAttributes {
   accesstoken: string | null;
   password: string | null;
   profilePic: string | null;
-  type: UserType;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,7 +53,6 @@ interface UserCreationAttributes {
   email: string;
   password: string;
   accesstoken?: string | null;
-  type: UserType;
   profilePic?: string;
 }
 
@@ -70,7 +64,6 @@ interface SanitizedUserAttributes {
   lastname: string;
   email: string;
   profilePic: string | null;
-  type: UserType;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -94,6 +87,11 @@ interface ValidationResult {
 // Sequelize error interface
 interface SequelizeError {
   errors: Array<{ message: string }>;
+}
+
+interface ErrorResponse {
+  success: false;
+  errors: Array<{ field: string; message: string }>;
 }
 
 // Type guard for Sequelize errors
@@ -120,11 +118,6 @@ const isValidUUID = (value: string): boolean => {
 const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
-};
-
-// User type validation
-const isValidUserType = (type: string): type is UserType => {
-  return type === 'regular' || type === 'fixer';
 };
 
 // Centralized error handler
@@ -245,18 +238,6 @@ const validatePassword = (password: string): ValidationResult => {
   return { isValid: true };
 };
 
-// User type validation
-const validateUserType = (type: string): ValidationResult => {
-  if (!isValidUserType(type.toLowerCase() as UserType)) {
-    return {
-      isValid: false,
-      message: `Type must be either 'regular' or 'fixer'`
-    };
-  }
-  
-  return { isValid: true };
-};
-
 // Generic function to find users with filters
 const findUsers = async (
   whereClause: WhereOptions<UserAttributes>
@@ -323,48 +304,6 @@ export const getUser = async (
   }
 };
 
-// Get all users with type 'regular'
-export const getRegular = async (
-  _req: Request,
-  res: Response<ApiResponse<SanitizedUserAttributes[]>>
-): Promise<Response> => {
-  try {
-    const regularUsers = await findUsers({ type: 'regular' });
-    
-    // Remove sensitive data before sending
-    const sanitizedUsers = regularUsers.map(user => sanitizeUser(user.toJSON()));
-    
-    return res.status(200).json({
-      success: true,
-      data: sanitizedUsers,
-      count: sanitizedUsers.length
-    });
-  } catch (error) {
-    return handleError(res, error as Error, 500, 'getRegular');
-  }
-};
-
-// Get all users with type 'fixer'
-export const getFixer = async (
-  _req: Request,
-  res: Response<ApiResponse<SanitizedUserAttributes[]>>
-): Promise<Response> => {
-  try {
-    const fixerUsers = await findUsers({ type: 'fixer' });
-    
-    // Remove sensitive data before sending
-    const sanitizedUsers = fixerUsers.map(user => sanitizeUser(user.toJSON()));
-    
-    return res.status(200).json({
-      success: true,
-      data: sanitizedUsers,
-      count: sanitizedUsers.length
-    });
-  } catch (error) {
-    return handleError(res, error as Error, 500, 'getFixer');
-  }
-};
-
 // Find one user by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
@@ -417,7 +356,7 @@ export const getOneById = async (
 // Create a new user
 export const createUser = async (
   req: Request<{}, {}, Partial<UserCreationAttributes & { password: string }>>,
-  res: Response<ApiResponse<Pick<UserAttributes, 'id'>>>
+  res: Response<ApiResponse<Pick<UserAttributes, 'id'>> | ErrorResponse>
 ): Promise<Response> => {
   const {
     username,
@@ -426,122 +365,89 @@ export const createUser = async (
     email,
     password,
     accesstoken,
-    type,
   } = req.body;
   
-  // Validate required fields
-  const validation = validateParams(req.body as Record<string, string>, [
-    'username',
-    'firstname',
-    'lastname',
-    'email',
-    'password',
-    'type'
-  ]);
+  // ✅ Collect ALL validation errors
+  const allValidationErrors: Array<{ field: string; message: string }> = [];
   
-  if (!validation.isValid) {
-    return res.status(400).json({ 
-      success: false, 
-      error: validation.message 
-    });
+  if (!username || !username.trim()) {
+    allValidationErrors.push({ field: 'username', message: 'Username is required' });
   }
   
-  // Validate string fields
-  if (!username) {
-    return res.status(400).json({ success: false, error: 'Username is required' });
-  }
-  const usernameValidation = validateString(username, 'Username');
-  if (!usernameValidation.isValid) {
-    return res.status(400).json({ success: false, error: usernameValidation.message });
+  if (!firstname || !firstname.trim()) {
+    allValidationErrors.push({ field: 'firstname', message: 'First name is required' });
   }
   
-  if (!firstname) {
-    return res.status(400).json({ success: false, error: 'First name is required' });
-  }
-  const firstnameValidation = validateString(firstname, 'First name');
-  if (!firstnameValidation.isValid) {
-    return res.status(400).json({ success: false, error: firstnameValidation.message });
+  if (!lastname || !lastname.trim()) {
+    allValidationErrors.push({ field: 'lastname', message: 'Last name is required' });
   }
   
-  if (!lastname) {
-    return res.status(400).json({ success: false, error: 'Last name is required' });
-  }
-  const lastnameValidation = validateString(lastname, 'Last name');
-  if (!lastnameValidation.isValid) {
-    return res.status(400).json({ success: false, error: lastnameValidation.message });
+  if (!email || !email.trim()) {
+    allValidationErrors.push({ field: 'email', message: 'Email is required' });
+  } else if (!isValidEmail(email)) {
+    allValidationErrors.push({ field: 'email', message: 'Invalid email format' });
   }
   
-  // Validate email
-  if (!email) {
-    return res.status(400).json({ success: false, error: 'Email is required' });
-  }
-  const emailStringValidation = validateString(email, 'Email');
-  if (!emailStringValidation.isValid) {
-    return res.status(400).json({ success: false, error: emailStringValidation.message });
-  }
-  const emailFormatValidation = validateEmail(email);
-  if (!emailFormatValidation.isValid) {
-    return res.status(400).json({ success: false, error: emailFormatValidation.message });
-  }
-  
-  // Validate password
   if (!password) {
-    return res.status(400).json({ success: false, error: 'Password is required' });
-  }
-  const passwordValidation = validatePassword(password);
-  if (!passwordValidation.isValid) {
-    return res.status(400).json({ success: false, error: passwordValidation.message });
+    allValidationErrors.push({ field: 'password', message: 'Password is required' });
+  } else {
+    if (password.length < 8) {
+      allValidationErrors.push({ field: 'password', message: 'Password must be at least 8 characters' });
+    }
+    if (!/\d/.test(password)) {
+      allValidationErrors.push({ field: 'password', message: 'Password must contain at least one number' });
+    }
+    if (!/[a-zA-Z]/.test(password)) {
+      allValidationErrors.push({ field: 'password', message: 'Password must contain at least one letter' });
+    }
   }
   
-  // Validate user type
-  if (!type) {
-    return res.status(400).json({ success: false, error: 'Type is required' });
-  }
-  const typeValidation = validateUserType(type);
-  if (!typeValidation.isValid) {
-    return res.status(400).json({ success: false, error: typeValidation.message });
+  // ✅ Return ALL validation errors
+  if (allValidationErrors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      errors: allValidationErrors
+    } as ErrorResponse);
   }
   
   try {
     const Users = getUsersModel();
     
-    // Check if username already exists
-    const existingUser = await Users.findOne({ 
-      where: { username: username.trim() } 
-    });
+    const [existingUser, existingEmail] = await Promise.all([
+      Users.findOne({ where: { username: username!.trim() } }),
+      Users.findOne({ where: { email: email!.trim().toLowerCase() } })
+    ]);
+    
+    const existenceErrors: Array<{ field: string; message: string }> = [];
     
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        error: 'Username already exists'
-      });
+      existenceErrors.push({ field: 'username', message: 'Username already exists' });
     }
-    
-    // Check if email already exists
-    const existingEmail = await Users.findOne({ 
-      where: { email: email.trim().toLowerCase() } 
-    });
     
     if (existingEmail) {
-      return res.status(409).json({
-        success: false,
-        error: 'Email already exists'
-      });
+      existenceErrors.push({ field: 'email', message: 'Email already exists' });
     }
     
-    // Hash password with increased salt rounds for better security
+    // ✅ Return ALL existence errors
+    if (existenceErrors.length > 0) {
+      return res.status(409).json({
+        success: false,
+        errors: existenceErrors
+      } as ErrorResponse);
+    }
+    
+    // Hash password
     const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password!, saltRounds);
     
     // Create the user
     const newUser = await Users.create({
-      username: username.trim(),
-      firstname: firstname.trim(),
-      lastname: lastname.trim(),
-      email: email.trim().toLowerCase(),
+      username: username!.trim(),
+      firstname: firstname!.trim(),
+      lastname: lastname!.trim(),
+      email: email!.trim().toLowerCase(),
       password: hashedPassword,
       accesstoken: accesstoken || null,
-      type: type.toLowerCase() as UserType,
       profilePic: 'https://herologimages.s3.us-east-2.amazonaws.com/material-design-account-icon.png',
     });
     
@@ -627,15 +533,6 @@ export const updateUser = async (
       return res.status(400).json({ success: false, error: emailFormatValidation.message });
     }
     updateData.email = updateData.email.trim().toLowerCase();
-  }
-  
-  // Validate type if provided
-  if (updateData.type !== undefined) {
-    const typeValidation = validateUserType(updateData.type);
-    if (!typeValidation.isValid) {
-      return res.status(400).json({ success: false, error: typeValidation.message });
-    }
-    updateData.type = updateData.type.toLowerCase() as UserType;
   }
   
   // Hash password if provided

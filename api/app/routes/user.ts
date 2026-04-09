@@ -2,8 +2,6 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Model, ModelStatic } from 'sequelize';
 import { 
   getUser, 
-  getRegular, 
-  getFixer, 
   getOneById, 
   updateUser, 
   removeUser,
@@ -227,24 +225,9 @@ router.get(
   getUser
 );
 
-// GET /users/regular
-// Get all regular type users
-router.get(
-  '/regular',
-  getRegular
-);
-
-// GET /users/fixer
-// Get all fixer type users
-router.get(
-  '/fixer',
-  getFixer
-);
-
 // POST /users
 router.post(
   '/',
-  validate('signup'),
   createUser
 );
 

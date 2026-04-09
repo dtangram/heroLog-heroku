@@ -36,37 +36,40 @@ const CollectionInsights: React.FC = () => {
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   useEffect(() => {
-  const fetchInsights = async () => {
-    setIsLoading(true);
-    setError('');
+    const fetchInsights = async () => {
+      setIsLoading(true);
+      setError('');
 
-    try {
-      console.log('Fetching collection insights...');
-      
-      const response = await API.get<CollectionInsights>(`/api/insights/${userId}`);
-      
-      console.log('Full response:', response);
-      console.log('Response data:', response.data);
+      try {
+        console.log('📊 Fetching collection insights...');
+        
+        const response = await API.get(`/api/insights/${userId}`) as any;
 
-      // The data is already unwrapped - response.data IS the insights
-      if (response.data && typeof response.data === 'object') {
-        console.log('Insights loaded:', response.data);
-        setInsights(response.data);
-      } else {
-        const errorMsg = 'Failed to load insights';
-        console.log('No insights data:', errorMsg);
-        setError(errorMsg);
+        console.log('📦 Full response:', response);
+
+        // ✅ The backend returns { success: true, data: {...} }
+        // So we need to access response.data
+        if (response && response.data) {
+          console.log('✅ Insights loaded:', response.data);
+          setInsights(response.data);
+        } else if (response && typeof response === 'object' && 'topSeries' in response) {
+          // Fallback: if response IS the data (no wrapper)
+          console.log('✅ Insights loaded (unwrapped):', response);
+          setInsights(response);
+        } else {
+          console.log('❌ No insights data:', response);
+          setError('Failed to load insights');
+        }
+      } catch (err) {
+        console.error('❌ Error loading insights:', err);
+        setError('Failed to load collection insights. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading insights:', err);
-      setError('Failed to load collection insights. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  fetchInsights();
-}, [userId]);
+      fetchInsights();
+  }, [userId]);
 
   // Loading state
   if (isLoading) {

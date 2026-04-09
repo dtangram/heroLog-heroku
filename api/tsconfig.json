@@ -16,9 +16,11 @@
     "sourceMap": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "noImplicitAny": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
+    "types": ["node"],
     "baseUrl": "./",
     "paths": {
       "@/*": ["./*"],
@@ -34,14 +36,15 @@
     }
   },
   "include": [
-    "**/*.ts", 
+    "**/*.ts",
     "app/**/*",
     "db/config.json"
   ],
   "exclude": [
-    "node_modules", 
-    "dist", 
-    "**/*.spec.ts", 
-    "**/*.test.ts"
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**"
   ]
 }

@@ -46,7 +46,7 @@ export const passwordResetUser = (token: string): APIAction => {
       REQ_PASSWORDRESET_SUCCESS,
       REQ_PASSWORDRESET_ERROR,
     ],
-    callAPI: () => API.get(`/passwordreset/${trimmedToken}`),
+    callAPI: () => API.get(`/api/passwordreset/${trimmedToken}`),
     payload: { token: trimmedToken },
   };
 };
@@ -71,7 +71,7 @@ export const updatePasswordResetUser = (
       UPDATE_PASSWORDRESET_SUCCESS,
       UPDATE_PASSWORDRESET_ERROR,
     ],
-    callAPI: () => API.put(`/passwordreset/${trimmedToken}`, {
+    callAPI: () => API.put(`/api/passwordreset/${trimmedToken}`, {
       ...(newPassword && { newPassword }),
     }),
     payload: {

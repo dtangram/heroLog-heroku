@@ -33,6 +33,7 @@ import ProfileForm from './components/forms/profileform';
 import Footer from './components/footer';
 import { getAnonymousUserId } from './utils/anonymousUser';
 import CollectionInsights from './components/collectionInsights';
+import ScrollToTop from './components/ScrollToTop';
 
 const App = () => {
   useEffect(() => {
@@ -65,6 +66,7 @@ const App = () => {
   return (
     <Provider store={store}>
       <Router>
+        <ScrollToTop />
         <div id="main">
           <Header />
           <Routes>

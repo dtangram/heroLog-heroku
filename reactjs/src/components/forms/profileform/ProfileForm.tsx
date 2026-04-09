@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, ChangeEvent, FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import aws from 'aws-sdk';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
 import SuccessDisplay from '../success';
@@ -14,7 +13,6 @@ interface FormErrorsType {
   username: string;
   email: string;
   password: string;
-  type: string;
 }
 
 interface User {
@@ -25,7 +23,6 @@ interface User {
   email: string;
   password?: string;
   profilePic: string;
-  type: string;
 }
 
 interface ProfileFormProps {
@@ -34,9 +31,9 @@ interface ProfileFormProps {
   updateUser: (user: User) => void;
 }
 
-interface RekognitionLabel {
-  Name?: string;
-  Confidence?: number;
+interface S3SignResponse {
+  signedRequest: string;
+  url: string;
 }
 
 const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
@@ -44,34 +41,11 @@ const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_FILE_SIZE = 1e6;
 const ALLOWED_FILE_TYPES = ['jpg', 'jpeg', 'png'];
-const S3_BUCKET = 'dothanthorntonbucket';
-const AWS_REGION = 'us-east-2';
-
-const INAPPROPRIATE_MODERATION_LABELS = [
-  'Explicit Nudity',
-  'Nudity',
-  'Graphic Female Nudity',
-  'Graphic Male Nudity',
-  'Illustrated Explicit Nudity',
-  'Sexual Activity',
-  'Female Swimwear Or Underwear',
-  'Male Swimwear Or Underwear',
-  'Partial Nudity'
-];
-
-const INAPPROPRIATE_DETECTION_LABELS = [
-  'Lingerie',
-  'Panties',
-  'Underwear',
-  'Bra',
-  'Thong',
-  'Thigh',
-  'Swimwear'
-];
 
 const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
   const { id } = useParams<{ id: string }>();
   const userId = localStorage.getItem('id') || '';
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     firstname: '',
@@ -79,7 +53,6 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     username: '',
     email: '',
     password: '',
-    type: '',
     profilePic: ''
   });
   
@@ -88,8 +61,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
     lastname: '',
     username: '',
     email: '',
-    password: '',
-    type: ''
+    password: ''
   });
   
   const [successMessage, setSuccessMessage] = useState('');
@@ -115,7 +87,6 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
         username: signup.username || '',
         email: signup.email || '',
         password: signup.password || '',
-        type: signup.type || '',
         profilePic: signup.profilePic || ''
       });
     }
@@ -127,8 +98,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       lastname: value.length >= MIN_NAME_LENGTH ? '' : 'Last name is required',
       username: value.length >= 3 ? '' : 'Username must be at least 3 characters',
       email: EMAIL_REGEX.test(value) ? '' : 'Email is invalid',
-      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password must be at least 8 characters',
-      type: value ? '' : 'Please select regular or fixer'
+      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password must be at least 8 characters'
     };
     
     return validations[fieldName];
@@ -140,177 +110,87 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       lastname: validateField('lastname', formData.lastname),
       username: validateField('username', formData.username),
       email: validateField('email', formData.email),
-      password: validateField('password', formData.password),
-      type: validateField('type', formData.type)
+      password: validateField('password', formData.password)
     };
 
     setFormErrors(errors);
+    errors && window?.scrollTo?.({ top: 0, behavior: 'smooth' });
     return Object.values(errors).every(error => error === '');
   }, [formData, validateField]);
 
-  const handleInappropriateContent = useCallback(() => {
-    const forbidElement = document.getElementById('forbidContent');
-    const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
-    
-    if (forbidElement) {
-      forbidElement.innerHTML = 'YOUR IMAGE IS INAPPROPRIATE.';
-    }
-    
-    if (figureElement) {
-      figureElement.style.filter = 'blur(20px)';
-    }
-    
-    window.scrollTo({ top: 0 });
-    
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
-  }, []);
-
-  const isInappropriateModeration = useCallback((label: RekognitionLabel): boolean => {
-    if (!label.Name || !label.Confidence) {
-      return false;
-    }
-    
-    if (INAPPROPRIATE_MODERATION_LABELS.includes(label.Name)) {
-      return true;
-    }
-    if (label.Name === 'Suggestive' && label.Confidence > 90) {
-      return true;
-    }
-    if (label.Name === 'Revealing Clothes' && label.Confidence > 60) {
-      return true;
-    }
-    return false;
-  }, []);
-
-  const isInappropriateDetection = useCallback((label: RekognitionLabel): boolean => {
-    if (!label.Name || !label.Confidence) {
-      return false;
-    }
-    return label.Confidence > 48 && INAPPROPRIATE_DETECTION_LABELS.includes(label.Name);
-  }, []);
-
-  const performRekognitionCheck = useCallback((fileName: string) => {
-    const awsAccessKeyId = process.env.REACT_APP_AWSAccessKeyId;
-    const awsSecretKey = process.env.REACT_APP_AWSSecretKey;
-    
-    if (!awsAccessKeyId || !awsSecretKey) {
-      console.error('AWS credentials not configured');
-      return;
-    }
-
-    aws.config.update({
-      region: AWS_REGION,
-      accessKeyId: awsAccessKeyId,
-      secretAccessKey: awsSecretKey
-    });
-
-    const rekognition = new aws.Rekognition();
-    const params = {
-      Image: {
-        S3Object: {
-          Bucket: S3_BUCKET,
-          Name: fileName
-        }
-      },
-      MinConfidence: 0
-    };
-
-    rekognition.detectModerationLabels(params, (err: aws.AWSError, data: aws.Rekognition.DetectModerationLabelsResponse) => {
-      if (err) {
-        console.error('Moderation check error:', err);
-        return;
-      }
-      
-      const hasInappropriate = data?.ModerationLabels?.some(isInappropriateModeration);
-      if (hasInappropriate) {
-        handleInappropriateContent();
-      }
-    });
-
-    rekognition.detectLabels(params, (err: aws.AWSError, data: aws.Rekognition.DetectLabelsResponse) => {
-      if (err) {
-        console.error('Label detection error:', err);
-        return;
-      }
-      
-      const hasInappropriate = data?.Labels?.some(isInappropriateDetection);
-      if (hasInappropriate) {
-        handleInappropriateContent();
-      }
-    });
-  }, [isInappropriateModeration, isInappropriateDetection, handleInappropriateContent]);
-
   const handleFileInputChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    
-    if (!file || !fileInputRef.current) {
-      return;
-    }
+  const file = event.target.files?.[0];
+  
+  if (!file || !fileInputRef.current) {
+    return;
+  }
 
+  fileInputRef.current.disabled = false;
+
+  const fileName = file.name;
+  const fileType = file.type;
+  const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+
+  if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
     fileInputRef.current.disabled = false;
+    alert('Image needs to have a .jpeg, .jpg or .png file extension.');
+    return;
+  }
 
-    const fileParts = file.name.split('.');
-    const fileName = file.name;
-    const fileType = fileParts[fileParts.length - 1]?.toLowerCase() || '';
+  if (file.size > MAX_FILE_SIZE) {
+    fileInputRef.current.disabled = false;
+    alert('Image size needs to be smaller than 1MB');
+    return;
+  }
 
-    if (!ALLOWED_FILE_TYPES.includes(fileType)) {
-      fileInputRef.current.disabled = false;
-      window.location.reload();
-      alert('Image needs to have a .jpeg, .jpg or .png file extension.');
-      return;
+  try {
+    console.log('📤 Uploading:', { fileName, fileType });
+    
+    const response = await API.post<S3SignResponse>('/s3/sign', {
+      fileName,
+      fileType
+    })  // ✅ Use any temporarily
+
+    console.log('📦 Full S3 response:', response);
+
+    // ✅ The data is inside response.data (backend returns { success, data, timestamp })
+    const { signedRequest, url } = response.data;
+
+    if (!signedRequest || !url) {
+      console.error('❌ Missing signedRequest or url:', { signedRequest, url });
+      throw new Error('Invalid S3 response - missing signed URL');
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      fileInputRef.current.disabled = false;
-      window.location.reload();
-      alert('Image size needs to be smaller than 1MB');
-      return;
-    }
+    console.log('📤 Uploading to S3:', signedRequest);
 
-    try {
-      const response = await API.post<{ returnData: { signedRequest: string; url: string } }>(
-        '/sign_s3',
-        { fileName, fileType }
-      );
+    fileInputRef.current.disabled = true;
 
-      const { returnData: { signedRequest, url } } = response.data;
-
-      fileInputRef.current.disabled = true;
-
-      const options = {
-        headers: {
-          'Content-Type': fileType,
-          'x-amz-acl': 'public-read'
-        }
-      };
-
-      await axios.put(signedRequest, file, options);
-
-      setFormData(prev => ({ ...prev, profilePic: url }));
-
-      const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
-      if (figureElement) {
-        figureElement.style.display = 'inline-block';
+    await axios.put(signedRequest, file, {
+      headers: {
+        'Content-Type': fileType
       }
+    });
 
-      performRekognitionCheck(fileName);
-    } catch (error) {
-      console.error('Upload error:', error);
-      if (fileInputRef.current) {
-        fileInputRef.current.disabled = false;
-      }
+    console.log('✅ Upload successful:', url);
+
+    setFormData(prev => ({ ...prev, profilePic: url }));
+
+    const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
+    if (figureElement) {
+      figureElement.style.display = 'inline-block';
     }
-  }, [performRekognitionCheck]);
+    
+  } catch (error) {
+    console.error('❌ Upload error:', error);
+    if (fileInputRef.current) {
+      fileInputRef.current.disabled = false;
+    }
+  }
+}, []);
 
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
-
-  const handleTypeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, type: event.target.value }));
   }, []);
 
   const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
@@ -329,15 +209,18 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       username: formData.username,
       email: formData.email,
       password: formData.password,
-      type: formData.type,
       profilePic: formData.profilePic
     };
 
     updateUser(updatedUser);
     setSuccessMessage('success');
+    setTimeout(() => {
+      window.location.href = {  pathname: `/profile/${userId}` }.pathname;
+      navigate(`/profile/${userId}`);
+    }, 1500);
   }, [id, formData, validateAllFields, updateUser]);
 
-  const { firstname, lastname, username, email, password, profilePic, type } = formData;
+  const { firstname, lastname, username, email, password, profilePic } = formData;
   const hasNoErrors = Object.values(formErrors).every(error => error.length === 0);
 
   return (
@@ -349,7 +232,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
         </h1>
 
         <article className={styles.cbList}>
-          {hasNoErrors && type && successMessage === 'success' && <SuccessDisplay />}
+          {hasNoErrors && successMessage === 'success' && <SuccessDisplay />}
 
           <section className={styles.wrapper}>
             <form method="POST" onSubmit={handleSubmit}>
@@ -437,30 +320,6 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
                     />
                   </label>
                 </fieldset>
-              </article>
-
-              <article>
-                <label className={styles.labelRadio} htmlFor="regular">
-                  <input
-                    id="regular"
-                    type="radio"
-                    value="regular"
-                    checked={type === 'regular'}
-                    onChange={handleTypeChange}
-                  />
-                  Regular
-                </label>
-
-                <label className={styles.labelRadio} htmlFor="fixer">
-                  <input
-                    id="fixer"
-                    type="radio"
-                    value="fixer"
-                    checked={type === 'fixer'}
-                    onChange={handleTypeChange}
-                  />
-                  Fixer
-                </label>
               </article>
 
               <article>

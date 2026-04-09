@@ -8,7 +8,6 @@ import styles from './styles.module.css';
 // Constants
 const MIN_USERNAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
-const TOKEN_CHECK_DELAY = 100;
 
 // Types
 interface FormErrorsType {
@@ -18,18 +17,13 @@ interface FormErrorsType {
   form?: string;
 }
 
-interface User {
+interface GoogleLoginResponse {
+  token: string;
+  loggedIn: boolean;
   id: string;
-  username: string;
-  password: string;
-}
-
-interface UserData {
-  id: string;
-}
-
-interface UserState {
-  data?: UserData;
+  email?: string;
+  name?: string;
+  currencyData?: any;
 }
 
 interface LoginFormData {
@@ -85,60 +79,97 @@ const Signin: React.FC<ConnectorProps> = ({
 
   // Format response data for display
   const formatResponseData = useCallback((data: any): string => {
-    try {
-      return JSON.stringify(data)
-        .substring(16)
-        .replace(/["/{/}/]/gi, '')
-        .replace(/,/gi, '\n')
-        .replace(/:/gi, ': ')
-        .replace(/timestamp/gi, 'Timestamp')
-        .replace(/base/gi, 'Base')
-        .replace(/date/gi, 'Date')
-        .replace(/rates:/gi, 'Rates:\n');
-    } catch (error) {
-      console.error('Error formatting response data:', error);
-      return '';
+  try {
+    if (!data) return '';
+    
+    const jsonStr = JSON.stringify(data);
+    
+    // Check length before substring
+    if (jsonStr.length < 16) {
+      return jsonStr;
     }
-  }, []);
+    
+    return jsonStr
+      .substring(16)
+      .replace(/["/{/}/]/gi, '')
+      .replace(/,/gi, '\n')
+      .replace(/:/gi, ': ')
+      .replace(/timestamp/gi, 'Timestamp')
+      .replace(/base/gi, 'Base')
+      .replace(/date/gi, 'Date')
+      .replace(/rates:/gi, 'Rates:\n');
+  } catch (error) {
+    console.error('Error formatting response data:', error);
+    return '';
+  }
+}, []);
 
   // Handle Google credential response
-  const handleCredentialResponse = useCallback(
-    async (response: any) => {
-      if (!response.credential) {
-        setFormErrors({ validToken: 'Google login failed. Please try again.' });
-        return;
+  // Update the handleCredentialResponse function:
+const handleCredentialResponse = useCallback(
+  async (response: any) => {
+    if (!response.credential) {
+      setFormErrors({ form: 'Google login failed. Please try again.' });
+      return;
+    }
+
+    try {
+      console.log('Sending Google credential to backend...');
+      
+      // Type the response
+      const res = await API.post<GoogleLoginResponse>('/auth/googleLogin', {
+        credential: response.credential
+      }) as unknown as GoogleLoginResponse;  // Cast since interceptor unwraps
+
+      console.log('Response:', res);
+
+      // Now TypeScript knows the shape
+      const { token, id, email, name, currencyData } = res;
+
+      console.log('Extracted:', { token: !!token, id, email, name });
+
+      if (!token || !id) {
+        console.error('Missing token or id:', { token: !!token, id });
+        throw new Error('Invalid response from server');
       }
 
-      try {
-        const res = await API.post('/auth/googleLogin', {
-          credential: response.credential
-        });
+      console.log('💾 Storing auth data...');
 
-        const { token, id: userId, ...restData } = res.data;
-
-        if (!token || !userId) {
-          throw new Error('Invalid response from server');
+      // Store authentication data
+      localStorage.setItem('token', token);
+      localStorage.setItem('id', id);
+      
+      if (email) {
+        localStorage.setItem('email', email);
+      }
+      
+      // Only format currency data if it exists
+      if (currencyData) {
+        try {
+          const formattedData = formatResponseData(currencyData);
+          if (formattedData) {
+            localStorage.setItem('data', formattedData);
+          }
+        } catch (formatError) {
+          console.error('Error formatting currency data:', formatError);
         }
-
-        const resData = formatResponseData(restData);
-
-        // Store authentication data
-        localStorage.setItem('token', token);
-        localStorage.setItem('id', userId);
-        localStorage.setItem('data', resData);
-
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 800);
-      } catch (error) {
-        console.error('Google login error:', error);
-        setFormErrors({ 
-          validToken: 'Google login failed. Please try again.' 
-        });
       }
-    },
-    [formatResponseData]
-  );
+
+      console.log('Google login successful! Redirecting...');
+
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
+      
+    } catch (error) {
+      console.error('Google login error:', error);
+      setFormErrors({ 
+        form: 'Google login failed. Please try again.'
+      });
+    }
+  },
+  [formatResponseData]
+);
 
   // Load Google Identity Services script
   useEffect(() => {
@@ -257,7 +288,7 @@ const Signin: React.FC<ConnectorProps> = ({
 
   // Handle form submission
 const handleSubmit = useCallback(
-  async (event: FormEvent<HTMLFormElement>) => {  // ✅ Make it async
+  async (event: FormEvent<HTMLFormElement>) => {  // Make it async
     event.preventDefault();
 
     if (!validateFields()) {
@@ -265,13 +296,13 @@ const handleSubmit = useCallback(
     }
 
     try {
-      // ✅ Await the login action
+      // Await the login action
       await loginUser({
         username: formData.username,
         password: formData.password
       });
 
-      // ✅ Token is now in localStorage after successful login
+      // Token is now in localStorage after successful login
       const token = localStorage.getItem('token');
       
       if (token && token !== 'undefined') {
@@ -281,12 +312,12 @@ const handleSubmit = useCallback(
       } else {
         setTimeout(() => {
           setFormErrors({
-            form: 'Login failed. Please try again.'  // ✅ Changed from validToken to form
+            form: 'Login failed. Please try again.'  // Changed from validToken to form
           });
         }, 3000);
       }
     } catch (error) {
-      // ❌ Login failed - show error
+      // Login failed - show error
       setFormErrors({
         form: error instanceof Error ? error.message : 'Incorrect username and/or password'
       });
@@ -318,7 +349,7 @@ const handleSubmit = useCallback(
           <FormErrors formErrors={formErrors} />
 
           <fieldset>
-            {/* <div className={styles.googleBTN}>
+            <div className={styles.googleBTN}>
               <div id="googleSignInButton" style={{ width: '100%' }} />
             </div>
 
@@ -326,7 +357,7 @@ const handleSubmit = useCallback(
               <hr />
               <span>or</span>
               <hr />
-            </section> */}
+            </section>
 
             <label htmlFor="username">
               Username

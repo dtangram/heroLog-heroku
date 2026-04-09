@@ -9,7 +9,6 @@ interface FormErrorsType {
   username: string;
   email: string;
   password: string;
-  type: string;
 }
 
 interface User {
@@ -19,14 +18,13 @@ interface User {
   username: string;
   email: string;
   password: string;
-  type: string;
 }
 
 interface SignupProps {
   signup: User;
   fetchUser: (id: string) => void;
-  signupId: string | undefined;  // ✅ Add this
-  signupError: string | null; // ✅ Add this
+  signupId: string | undefined;
+  apiErrors: Record<string, string>;
   isLoading: boolean;
   createUser: (payload: {
     firstname: string;
@@ -34,7 +32,6 @@ interface SignupProps {
     username: string;
     email: string;
     password: string;
-    type: string;
     profilePic: string;
   }) => void;
 }
@@ -44,8 +41,10 @@ const MIN_NAME_LENGTH = 2;
 const MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_PROFILE_PIC = 'https://dothanthorntonbucket.s3.amazonaws.com/material-design-account-icon.png';
 
-const Signup = ({ signup, signupId,  // ✅ Add this
-  signupError,  // ✅ Add this
+const Signup = ({
+  signup,
+  signupId,  // ✅ Add this
+  apiErrors,  // ✅ Add this
   isLoading, fetchUser, createUser }: SignupProps) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -55,8 +54,7 @@ const Signup = ({ signup, signupId,  // ✅ Add this
     lastname: '',
     username: '',
     email: '',
-    password: '',
-    type: ''
+    password: ''
   });
   
   const [formErrors, setFormErrors] = useState<FormErrorsType>({
@@ -64,8 +62,7 @@ const Signup = ({ signup, signupId,  // ✅ Add this
     lastname: '',
     username: '',
     email: '',
-    password: '',
-    type: ''
+    password: ''
   });
 
   useEffect(() => {
@@ -75,16 +72,19 @@ const Signup = ({ signup, signupId,  // ✅ Add this
     }
   }, [signupId]);
 
-  // ✅ Watch for signup errors - display them
   useEffect(() => {
-    if (signupError) {
-      console.log('❌ Signup failed:', signupError);
+    if (Object.keys(apiErrors).length > 0) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      console.log('❌ Signup failed:', apiErrors);
       setFormErrors(prev => ({
         ...prev,
-        email: signupError  // Show error (usually email already exists)
+        ...apiErrors  // Merge API errors into form errors by field
       }));
     }
-  }, [signupError]);
+  }, [apiErrors]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -101,8 +101,7 @@ const Signup = ({ signup, signupId,  // ✅ Add this
         lastname: signup.lastname || '',
         username: signup.username || '',
         email: signup.email || '',
-        password: signup.password || '',
-        type: signup.type || ''
+        password: signup.password || ''
       });
     }
   }, [signup]);
@@ -113,8 +112,7 @@ const Signup = ({ signup, signupId,  // ✅ Add this
       lastname: value.length >= MIN_NAME_LENGTH ? '' : 'Last name is required',
       username: value.length >= MIN_NAME_LENGTH ? '' : 'Username is required',
       email: EMAIL_REGEX.test(value) ? '' : 'Email is invalid',
-      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password is too short',
-      type: value ? '' : 'Please select regular or fixer'
+      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password is too short'
     };
     
     return validations[fieldName];
@@ -126,8 +124,7 @@ const Signup = ({ signup, signupId,  // ✅ Add this
       lastname: validateField('lastname', formData.lastname),
       username: validateField('username', formData.username),
       email: validateField('email', formData.email),
-      password: validateField('password', formData.password),
-      type: validateField('type', formData.type)
+      password: validateField('password', formData.password)
     };
 
     setFormErrors(errors);
@@ -137,10 +134,9 @@ const Signup = ({ signup, signupId,  // ✅ Add this
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  }, []);
 
-  const handleTypeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, type: event.target.value }));
+    // ✅ Clear error for this field when user starts typing
+    setFormErrors(prev => ({ ...prev, [name]: '' }));
   }, []);
 
   const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
@@ -154,8 +150,7 @@ const Signup = ({ signup, signupId,  // ✅ Add this
         lastname: '',
         username: '',
         email: '',
-        password: '',
-        type: ''
+        password: ''
       });
 
       createUser({
@@ -170,7 +165,7 @@ const Signup = ({ signup, signupId,  // ✅ Add this
     });
   }, [id, formData, validateAllFields, createUser, navigate]);
 
-  const { firstname, lastname, username, email, password, type } = formData;
+  const { firstname, lastname, username, email, password } = formData;
 
   return (
     <>
@@ -245,30 +240,6 @@ const Signup = ({ signup, signupId,  // ✅ Add this
                 />
               </label>
             </fieldset>
-
-            <article>
-              <label className={styles.labelRadio} htmlFor="regular">
-                <input
-                  id="regular"
-                  type="radio"
-                  value="regular"
-                  checked={type === 'regular'}
-                  onChange={handleTypeChange}
-                />
-                Regular
-              </label>
-
-              <label className={styles.labelRadio} htmlFor="fixer">
-                <input
-                  id="fixer"
-                  type="radio"
-                  value="fixer"
-                  checked={type === 'fixer'}
-                  onChange={handleTypeChange}
-                />
-                Fixer
-              </label>
-            </article>
 
             <input
               id="submitQ1"
