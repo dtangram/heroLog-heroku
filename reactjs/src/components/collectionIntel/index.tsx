@@ -3,6 +3,7 @@ import { BeatLoader } from 'react-spinners';
 import API from '../../API';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import styles from './styles.module.css';
+import ScrollToTop from '../ScrollToTop';
 
 interface SeriesAnalysis {
   seriesName: string;
@@ -28,9 +29,9 @@ const CollectionIntel: React.FC = () => {
   const [error, setError] = useState<string>('');
   
   const userId = localStorage.getItem('id') || getAnonymousUserId();
-  window.scrollTo({ top: 0, behavior: "smooth" });
 
   useEffect(() => {
+    <ScrollToTop />
     const fetchInsights = async () => {
       setIsLoading(true);
       setError('');
