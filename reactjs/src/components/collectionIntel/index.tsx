@@ -28,9 +28,9 @@ const CollectionIntel: React.FC = () => {
   const [error, setError] = useState<string>('');
   
   const userId = localStorage.getItem('id') || getAnonymousUserId();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
     const fetchInsights = async () => {
       setIsLoading(true);
       setError('');
