@@ -3,7 +3,6 @@ import { BeatLoader } from 'react-spinners';
 import API from '../../API';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import styles from './styles.module.css';
-import ScrollToTop from '../ScrollToTop';
 
 interface SeriesAnalysis {
   seriesName: string;
@@ -29,7 +28,6 @@ const CollectionIntel: React.FC = () => {
   const [error, setError] = useState<string>('');
   
   const userId = localStorage.getItem('id') || getAnonymousUserId();
-  <ScrollToTop />
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -72,7 +70,7 @@ const CollectionIntel: React.FC = () => {
     return (
       <article id="cbComicForm" className={styles.cbWrap}>
         <h1>
-          Collection Intelligence
+          AI Collection Insights
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
         </h1>
 
@@ -91,7 +89,7 @@ const CollectionIntel: React.FC = () => {
     return (
       <div className={styles.container}>
         <h1>
-          Collection Intelligence
+          AI Collection Insights
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
         </h1>
         
@@ -107,7 +105,7 @@ const CollectionIntel: React.FC = () => {
     return (
       <article id="cbComicForm" className={styles.cbWrap}>
       <h1>
-        Collection Intelligence
+        AI Collection Insights
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
       
