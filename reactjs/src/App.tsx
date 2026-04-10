@@ -66,8 +66,8 @@ const App = () => {
   return (
     <Provider store={store}>
       <Router>
+        <ScrollToTop />
         <div id="main">
-          <ScrollToTop />
           <Header />
           <Routes>
             {/* Public Routes */}
