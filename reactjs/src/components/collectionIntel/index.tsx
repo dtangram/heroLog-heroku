@@ -30,6 +30,10 @@ const CollectionIntel: React.FC = () => {
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     const fetchInsights = async () => {
       setIsLoading(true);
       setError('');
