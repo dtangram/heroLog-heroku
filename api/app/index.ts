@@ -18,6 +18,7 @@ import usersRouter from './routes/user';
 import authRouter from './routes/auth';
 import passwordresetRouter from './routes/passwordreset';
 import emailPasswordResetRouter from './routes/emailpasswordreset';
+import searchRouter from './routes/search';
 
 // Import utility routes
 import s3Router from './routes/s3upload';
@@ -151,6 +152,7 @@ app.use('/api/passwordreset', passwordresetRouter);
 app.use('/emailpasswordreset', emailPasswordResetRouter);
 app.use('/api/ai', aiScanner);
 app.use('/api/insights', collectionInsights);
+app.use('/api/search', searchRouter);
 
 // Utility routes
 app.use('/s3', s3Router);

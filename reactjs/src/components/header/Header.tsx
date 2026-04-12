@@ -134,6 +134,16 @@ useEffect(() => {
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                     className={getNavLinkClass}
+                    to={`/search/${userId}`}
+                    onClick={toggleMenuItem}
+                  >
+                    SEARCH
+                  </NavLink>
+                </NavItem>
+
+                <NavItem className={styles.slideUnder}>
+                  <NavLink
+                    className={getNavLinkClass}
                     to="/signup"
                     onClick={toggleMenuItem}
                   >
@@ -215,6 +225,16 @@ useEffect(() => {
                   onClick={toggleMenuItem}
                 >
                   INTEL
+                </NavLink>
+              </NavItem>
+
+              <NavItem className={styles.slideUnder}>
+                <NavLink
+                  className={getNavLinkClass}
+                  to={`/search/${userId}`}
+                  onClick={toggleMenuItem}
+                >
+                  SEARCH
                 </NavLink>
               </NavItem>
 

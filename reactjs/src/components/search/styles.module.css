@@ -1,0 +1,371 @@
+/* BASE (Mobile First) */
+.cbWrap {
+  background: #FFF;
+  display: inline-block;
+  margin-top: 110px;
+  margin-bottom: 100px;
+  min-height: 950px;
+  width: 100%;
+}
+
+.cbWrap h1 {
+  color: #2B2B2B;
+  font-size: 3rem;
+  margin-bottom: 30px;
+  text-align: center;
+  width: 100%;
+}
+
+.cbWrap h1 .graphic {
+  background: #770422;
+  height: 10px;
+  margin: 15px auto 0;
+  width: 70px;
+}
+
+.cbList {
+  width: 100%;
+}
+
+.wrapper {
+  background: #AECEAB;
+  border-radius: 15px;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.1rem;
+  height: auto;
+  margin: 0 auto 50px;
+  min-height: inherit;
+  padding: 25px 4%;
+  position: relative;
+  width: 90%;
+}
+
+.loadWrap {
+  align-items: baseline;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  min-height: auto;
+  padding: 0;
+}
+
+.loadMessage {
+  color: #2B2B2B;
+  font-size: 2.5rem;
+  padding: 3% 0;
+  text-align: center;
+}
+
+/* MODE SELECTOR */
+.modeSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.modeButton {
+  background: #FFF;
+  border: 2px solid #770422;
+  border-radius: 8px;
+  color: #770422;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.modeButton:hover {
+  background: #770422;
+  color: #FFF;
+}
+
+.modeActive {
+  background: #770422;
+  color: #FFF;
+}
+
+.modeDescription {
+  color: #2B2B2B;
+  font-size: 1.3rem;
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+/* SEARCH BAR */
+.searchBar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.searchInput {
+  background: rgba(236, 236, 236, .5);
+  border: 1px solid #000;
+  border-radius: 8px;
+  color: #404041;
+  font-size: 1.4rem;
+  padding: .8rem;
+  transition: all 0.30s ease-in-out;
+  width: 100%;
+}
+
+.searchInput:focus {
+  border-color: #770422;
+  outline: none;
+}
+
+.searchButton {
+  background: #770422;
+  border: none;
+  border-radius: 8px;
+  color: #FFF;
+  cursor: pointer;
+  font-size: 1.4rem;
+  padding: .8rem;
+  transition: background 0.3s ease;
+  width: 100%;
+}
+
+.searchButton:hover {
+  background: #2B2B2B;
+}
+
+.searchButton:disabled {
+  background: #D0D2D3;
+  cursor: not-allowed;
+}
+
+/* SUGGESTIONS */
+.suggestions {
+  margin-bottom: 25px;
+}
+
+.suggestions p {
+  color: #2B2B2B;
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+
+.suggestionTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestionTag {
+  background: #770422;
+  border: none;
+  border-radius: 20px;
+  color: #FFF;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 5px 12px;
+  transition: background 0.3s ease;
+}
+
+.suggestionTag:hover {
+  background: #2B2B2B;
+}
+
+/* RESULTS */
+.results h2 {
+  color: #2B2B2B;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+}
+
+.resultCard {
+  background: #770422;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  padding: 15px 20px;
+}
+
+.resultHeader {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.resultHeader h3 {
+  color: #FFF;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.scoreBadge {
+  background: #AECEAB;
+  border-radius: 20px;
+  color: #2B2B2B;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.description {
+  color: #AECEAB;
+  font-size: 1.3rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* BADGES */
+.badges {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yearBadge {
+  background: #2B2B2B;
+  border-radius: 20px;
+  color: #FFF;
+  font-size: 1.2rem;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.ownedBadge {
+  background: #AECEAB;
+  border-radius: 20px;
+  color: #2B2B2B;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.missingBadge {
+  background: #770422;
+  border-radius: 20px;
+  color: #FFF;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.owned {
+  opacity: 0.7;
+}
+
+.publisher {
+  color: #D0D2D3;
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+}
+
+.error p,
+.empty p {
+  color: #770422;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+/* TABLET (min-width: 600px) */
+@media (min-width: 600px) {
+  .cbWrap h1 {
+    font-size: 4rem;
+    margin-bottom: 40px;
+  }
+
+  .wrapper {
+    padding: 30px 4%;
+    width: 88%;
+  }
+
+  .loadMessage {
+    font-size: 3rem;
+  }
+
+  .modeSelector {
+    flex-direction: row;
+  }
+
+  .modeButton {
+    flex: 1;
+    width: auto;
+  }
+
+  .searchBar {
+    flex-direction: row;
+  }
+
+  .searchButton {
+    padding: .8rem 2rem;
+    white-space: nowrap;
+    width: auto;
+  }
+
+  .searchInput {
+    font-size: 1.5rem;
+  }
+
+  .resultHeader {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .resultHeader h3 {
+    font-size: 2rem;
+  }
+
+  .results h2 {
+    font-size: 2rem;
+  }
+
+  .resultCard {
+    padding: 20px 25px;
+  }
+
+  .description {
+    font-size: 1.4rem;
+  }
+}
+
+/* DESKTOP (min-width: 1024px) */
+@media (min-width: 1024px) {
+  .cbWrap {
+    margin-top: 150px;
+    margin-bottom: 150px;
+  }
+
+  .cbWrap h1 {
+    font-size: 5rem;
+    margin-bottom: 50px;
+  }
+
+  .wrapper {
+    padding: 40px 3%;
+    width: 80%;
+  }
+
+  .loadMessage {
+    font-size: 4rem;
+  }
+
+  .suggestionTag {
+    font-size: 1.3rem;
+    padding: 5px 15px;
+  }
+
+  .scoreBadge {
+    font-size: 1.3rem;
+    padding: 5px 15px;
+  }
+
+  .ownedBadge,
+  .missingBadge,
+  .yearBadge {
+    font-size: 1.3rem;
+    padding: 5px 15px;
+  }
+}

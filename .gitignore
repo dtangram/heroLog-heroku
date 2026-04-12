@@ -9,6 +9,9 @@ yarn-error.log*
 node_modules/
 dist/
 coverage/
+venv/
+__pycache__/
+*.pyc
 
 # dotenv environment variables file
 .env
