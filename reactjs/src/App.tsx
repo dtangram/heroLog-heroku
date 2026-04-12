@@ -34,6 +34,7 @@ import Footer from './components/footer';
 import { getAnonymousUserId } from './utils/anonymousUser';
 import CollectionIntel from './components/collectionIntel';
 import ScrollToTop from './components/ScrollToTop';
+import Search from './components/search';
 
 const App = () => {
   useEffect(() => {
@@ -74,6 +75,16 @@ const App = () => {
             <Route path="/landing" element={<Landing />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/signin" element={<Signin />} />
+            <Route path="/forms/createpublisher/new/:userId" element={<CreatePublisher />} />
+            <Route path="/forms/:userId/createpublisher/edit/:id" element={<CreatePublisher />} />
+            <Route path="/dashboard/:userId/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
+            <Route path="/dashboard/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new" element={<ComicBook />} />
+            <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
+            <Route path="/intel/:userId" element={<CollectionIntel />} />
+            <Route path="/search/:userId" element={<Search />} />
             <Route path="/forms/emailpasswordreset" element={<EmailPasswordReset />} />
             <Route path="/forms/passwordreset/:token" element={<PasswordReset />} />
 
@@ -90,16 +101,7 @@ const App = () => {
             />
             <Route path="/viewMessages/:userId" element={<PrivateRouteHandler><ViewMessages /></PrivateRouteHandler>} />
             <Route path="/sentMessages/:userId" element={<PrivateRouteHandler><SentMessages /></PrivateRouteHandler>} />
-            <Route path="/forms/createpublisher/new/:userId" element={<CreatePublisher />} />
             <Route path="/forms/createpublisherProfile/new/:userId" element={<PrivateRouteHandler><CreatePublisher /></PrivateRouteHandler>} />
-            <Route path="/forms/:userId/createpublisher/edit/:id" element={<CreatePublisher />} />
-            <Route path="/dashboard/:userId/:pubId/:publisherName/comicbooklist" element={<ComicBookList />} />
-            <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/new" element={<ComicBookListTitle />} />
-            <Route path="/forms/:userId/:pubId/:publisherName/comicbooklisttitle/edit/:id" element={<ComicBookListTitle />} />
-            <Route path="/dashboard/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbooklistissues" element={<ComicBookListIssues />} />
-            <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new" element={<ComicBook />} />
-            <Route path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id" element={<ComicBook />} />
-            <Route path="/intel/:userId" element={<CollectionIntel />} />
             <Route path="/sale/:userId" element={<PrivateRouteHandler><Sale /></PrivateRouteHandler>} />
             <Route 
               path="/forms/saleform/new/:userId" 
@@ -109,7 +111,6 @@ const App = () => {
               path="/forms/saleform/edit/:id" 
               element={<PrivateRouteHandler><SaleForm /></PrivateRouteHandler>} 
             />
-
             <Route path="/wishlist/:userId" element={<PrivateRouteHandler><WishList /></PrivateRouteHandler>} />
             <Route path="/forms/wishlistform/new/:userId" element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>} />
             <Route path="/forms/wishlistform/edit/:id" element={<PrivateRouteHandler><WishListForm /></PrivateRouteHandler>} />
