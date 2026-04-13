@@ -275,7 +275,7 @@
 }
 
 .results {
-  background: none;
+  background: none !important;
 }
 
 .results h2 {
