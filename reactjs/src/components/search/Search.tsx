@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import styles from './styles.module.css';
@@ -33,6 +32,10 @@ const Search: React.FC = () => {
     handleCancelEnrichment,
     resetEnrichment
   } = useEnrichment(userId);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const suggestions: string[] = [
     'dark 90s Batman',
