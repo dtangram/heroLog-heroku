@@ -274,6 +274,10 @@
   background: #2B2B2B;
 }
 
+.results {
+  background: none;
+}
+
 .results h2 {
   color: #2B2B2B;
   font-size: 1.8rem;
