@@ -242,12 +242,12 @@ const Search: React.FC = () => {
               <h2>Results for "{query}"</h2>
               {collectionResults.map((result) => (
                 <article key={result.comic_id} className={styles.resultCard}>
-                  <header className={styles.resultHeader}>
+                  <section className={styles.resultHeader}>
                     <h3>{result.title}</h3>
                     <span className={styles.scoreBadge}>
                       {Math.round(result.similarity_score * 100)}% match
                     </span>
-                  </header>
+                  </section>
                   <p className={styles.description}>{result.description}</p>
                 </article>
               ))}
@@ -263,7 +263,7 @@ const Search: React.FC = () => {
                   key={index}
                   className={`${styles.resultCard} ${result.already_owned ? styles.owned : ''}`}
                 >
-                  <header className={styles.resultHeader}>
+                  <section className={styles.resultHeader}>
                     <h3>{result.title}</h3>
                     <aside className={styles.badges}>
                       {result.year && (
@@ -275,7 +275,7 @@ const Search: React.FC = () => {
                         </span>
                       )}
                     </aside>
-                  </header>
+                  </section>
                   {result.publisher && (
                     <p className={styles.publisher}>{result.publisher}</p>
                   )}
