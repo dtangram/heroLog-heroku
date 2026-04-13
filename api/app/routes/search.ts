@@ -109,7 +109,14 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
         break;
       }
 
-      // Fetch next batch of comics not yet enriched — from Heroku DB
+      // Get already enriched comic IDs from Stackhero
+      const enrichedResult = await getVectorDb().query(`
+        SELECT comic_id FROM comic_embeddings WHERE user_id = $1;
+      `, [userId]);
+
+      const enrichedIds = enrichedResult.rows.map((row: any) => row.comic_id);
+
+      // Fetch next batch from Heroku excluding already enriched comics
       const comicsResult = await getHerokuDb().query(`
         SELECT 
           cb.id,
@@ -125,11 +132,12 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
         JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
         JOIN "Users" u ON cp."collectpubUsersId" = u.id
         WHERE u.id = $1
-        AND cb.id::text NOT IN (
-          SELECT comic_id FROM comic_embeddings WHERE user_id = $1
-        )
-        LIMIT $2 OFFSET $3;
-      `, [userId, BATCH_SIZE, offset]);
+        ${enrichedIds.length > 0
+          ? `AND cb.id::text NOT IN (${enrichedIds.map((_: any, i: number) => `$${i + 2}`).join(',')})`
+          : ''
+        }
+        LIMIT $${enrichedIds.length + 2} OFFSET $${enrichedIds.length + 3};
+      `, [userId, ...enrichedIds, BATCH_SIZE, offset]);
 
       // No more comics to process
       if (comicsResult.rows.length === 0) {
@@ -179,7 +187,7 @@ Return only the description, no additional text.`
           const embedding = await generateEmbedding(description);
           const embeddingStr = `[${embedding.join(',')}]`;
 
-          // Store in Stackhero vector DB
+          // Store in Stackhero
           await getVectorDb().query(`
             INSERT INTO comic_embeddings 
               (comic_id, user_id, title, description, embedding)
@@ -435,7 +443,6 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<
   const { userId } = req.params;
 
   try {
-    // Count comics from Heroku DB
     const countResult = await getHerokuDb().query(`
       SELECT COUNT(*) as total
       FROM "ComicBooks" cb
@@ -455,7 +462,6 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<
       return;
     }
 
-    // Create job in Stackhero
     const jobResult = await getVectorDb().query(`
       INSERT INTO enrichment_jobs (user_id, total_comics, status)
       VALUES ($1, $2, 'running')
