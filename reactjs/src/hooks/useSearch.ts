@@ -39,6 +39,7 @@ export const useSearch = (userId: string | undefined) => {
   const [hasSearched, setHasSearched] = useState<boolean>(false);
 
   const handleSearch = useCallback(async (): Promise<void> => {
+    window.scrollTo(0, 0);
     if (!query.trim()) return;
 
     setIsLoading(true);
