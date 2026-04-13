@@ -53,6 +53,38 @@ export const useEnrichment = (userId: string | undefined) => {
     }, 3000);
   }, []);
 
+  const autoEnrichIfNeeded = useCallback(async (): Promise<void> => {
+    if (!userId) return;
+
+    try {
+        const response = await axios.post(
+        `${API_BASE}/api/search/enrich-all/${userId}`
+        );
+
+        if (response.data.status === 'Empty' || response.data.status === 'Complete') {
+            setIsEnriching(false);
+            return;
+        }
+
+        if (response.data.status === 'Success') {
+            const newJob: EnrichmentJob = {
+                id: response.data.job_id,
+                total_comics: response.data.total_comics,
+                processed_comics: 0,
+                percentage: 0,
+                status: 'running',
+                started_at: new Date().toISOString(),
+                completed_at: null
+            };
+
+            setEnrichmentJob(newJob);
+            pollEnrichmentProgress(response.data.job_id);
+        }
+    } catch (err) {
+        console.error('❌ Auto-enrich check error:', err);
+    }
+  }, [userId, pollEnrichmentProgress]);
+
   const handleStartEnrichment = useCallback(async (): Promise<void> => {
     setIsEnriching(true);
     setEnrichmentError('');
@@ -130,6 +162,7 @@ export const useEnrichment = (userId: string | undefined) => {
     handleStartEnrichment,
     handleCancelEnrichment,
     resetEnrichment,
-    clearEnrichmentError
+    clearEnrichmentError,
+    autoEnrichIfNeeded  
   };
 };
