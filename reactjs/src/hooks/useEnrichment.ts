@@ -25,6 +25,7 @@ export const useEnrichment = (userId: string | undefined) => {
   const [enrichmentJob, setEnrichmentJob] = useState<EnrichmentJob | null>(null);
   const [isEnriching, setIsEnriching] = useState<boolean>(false);
   const [enrichmentError, setEnrichmentError] = useState<string>('');
+  const [isAutoEnriching, setIsAutoEnriching] = useState<boolean>(false);
 
   const pollEnrichmentProgress = useCallback((jobId: number): void => {
     const interval = setInterval(async () => {
@@ -56,34 +57,39 @@ export const useEnrichment = (userId: string | undefined) => {
   const autoEnrichIfNeeded = useCallback(async (): Promise<void> => {
     if (!userId) return;
 
+    setIsAutoEnriching(true);
+
     try {
         const response = await axios.post(
         `${API_BASE}/api/search/enrich-all/${userId}`
         );
 
         if (response.data.status === 'Empty' || response.data.status === 'Complete') {
-            setIsEnriching(false);
-            return;
+        setIsAutoEnriching(false);
+        return;
         }
 
         if (response.data.status === 'Success') {
-            const newJob: EnrichmentJob = {
-                id: response.data.job_id,
-                total_comics: response.data.total_comics,
-                processed_comics: 0,
-                percentage: 0,
-                status: 'running',
-                started_at: new Date().toISOString(),
-                completed_at: null
-            };
+        const newJob: EnrichmentJob = {
+            id: response.data.job_id,
+            total_comics: response.data.total_comics,
+            processed_comics: 0,
+            percentage: 0,
+            status: 'running',
+            started_at: new Date().toISOString(),
+            completed_at: null
+        };
 
-            setEnrichmentJob(newJob);
-            pollEnrichmentProgress(response.data.job_id);
+        setEnrichmentJob(newJob);
+        pollEnrichmentProgress(response.data.job_id);
         }
+
     } catch (err) {
         console.error('❌ Auto-enrich check error:', err);
+    } finally {
+        setIsAutoEnriching(false);
     }
-  }, [userId, pollEnrichmentProgress]);
+    }, [userId, pollEnrichmentProgress]);
 
   const handleStartEnrichment = useCallback(async (): Promise<void> => {
     setIsEnriching(true);
@@ -158,11 +164,12 @@ export const useEnrichment = (userId: string | undefined) => {
   return {
     enrichmentJob,
     isEnriching,
+    isAutoEnriching,
     enrichmentError,
     handleStartEnrichment,
     handleCancelEnrichment,
     resetEnrichment,
     clearEnrichmentError,
-    autoEnrichIfNeeded  
-  };
+    autoEnrichIfNeeded
+    };
 };
