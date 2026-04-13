@@ -56,7 +56,113 @@
   text-align: center;
 }
 
-/* MODE SELECTOR */
+.enrichmentSection {
+  background: #2B2B2B;
+  border-radius: 15px;
+  margin-bottom: 25px;
+  padding: 20px;
+}
+
+.enrichmentSection h2 {
+  color: #FFF;
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.enrichmentDescription {
+  color: #D0D2D3;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+}
+
+.enrichmentError {
+  color: #AECEAB;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.enrichButton {
+  background: #770422;
+  border: none;
+  border-radius: 8px;
+  color: #FFF;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: 10px 20px;
+  transition: background 0.3s ease;
+  width: 100%;
+}
+
+.enrichButton:hover {
+  background: #AECEAB;
+  color: #2B2B2B;
+}
+
+.enrichButton:disabled {
+  background: #D0D2D3;
+  cursor: not-allowed;
+}
+
+.progressContainer {
+  width: 100%;
+}
+
+.progressHeader {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.progressText {
+  color: #FFF;
+  font-size: 1.3rem;
+  margin: 0;
+  text-align: center;
+}
+
+.progressPercentage {
+  color: #AECEAB;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.progressBar {
+  background: #404041;
+  border-radius: 10px;
+  height: 20px;
+  margin: 0 0 15px;
+  overflow: hidden;
+  padding: 0;
+  width: 100%;
+}
+
+.progressFill {
+  background: #770422;
+  border-radius: 10px;
+  display: block;
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.cancelButton {
+  background: transparent;
+  border: 2px solid #AECEAB;
+  border-radius: 8px;
+  color: #AECEAB;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: 8px 20px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.cancelButton:hover {
+  background: #AECEAB;
+  color: #2B2B2B;
+}
+
 .modeSelector {
   display: flex;
   flex-direction: column;
@@ -93,7 +199,6 @@
   margin-bottom: 20px;
 }
 
-/* SEARCH BAR */
 .searchBar {
   display: flex;
   flex-direction: column;
@@ -138,7 +243,6 @@
   cursor: not-allowed;
 }
 
-/* SUGGESTIONS */
 .suggestions {
   margin-bottom: 25px;
 }
@@ -170,7 +274,6 @@
   background: #2B2B2B;
 }
 
-/* RESULTS */
 .results h2 {
   color: #2B2B2B;
   font-size: 1.8rem;
@@ -184,7 +287,7 @@
   padding: 15px 20px;
 }
 
-.resultHeader {
+.resultCard header {
   align-items: flex-start;
   display: flex;
   flex-direction: column;
@@ -192,7 +295,7 @@
   margin-bottom: 10px;
 }
 
-.resultHeader h3 {
+.resultCard header h3 {
   color: #FFF;
   font-size: 1.8rem;
   margin: 0;
@@ -215,7 +318,6 @@
   margin: 0;
 }
 
-/* BADGES */
 .badges {
   display: flex;
   flex-direction: row;
@@ -285,6 +387,29 @@
     font-size: 3rem;
   }
 
+  .enrichmentSection {
+    padding: 25px;
+  }
+
+  .enrichmentSection h2 {
+    font-size: 2rem;
+  }
+
+  .progressHeader {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .progressText {
+    text-align: left;
+  }
+
+  .enrichButton,
+  .cancelButton {
+    width: auto;
+  }
+
   .modeSelector {
     flex-direction: row;
   }
@@ -308,13 +433,13 @@
     font-size: 1.5rem;
   }
 
-  .resultHeader {
+  .resultCard header {
     align-items: center;
     flex-direction: row;
     justify-content: space-between;
   }
 
-  .resultHeader h3 {
+  .resultCard header h3 {
     font-size: 2rem;
   }
 
@@ -352,16 +477,16 @@
     font-size: 4rem;
   }
 
+  .enrichmentSection {
+    padding: 30px;
+  }
+
   .suggestionTag {
     font-size: 1.3rem;
     padding: 5px 15px;
   }
 
-  .scoreBadge {
-    font-size: 1.3rem;
-    padding: 5px 15px;
-  }
-
+  .scoreBadge,
   .ownedBadge,
   .missingBadge,
   .yearBadge {
