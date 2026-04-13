@@ -398,7 +398,6 @@
   }
 
   .progressHeader {
-    align-items: center;
     flex-direction: row;
     justify-content: space-between;
   }
@@ -443,6 +442,7 @@
 
   .resultHeader h3 {
     font-size: 2rem;
+    width: auto;
   }
 
   .results h2 {
