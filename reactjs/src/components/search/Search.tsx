@@ -27,10 +27,12 @@ const Search: React.FC = () => {
   const {
     enrichmentJob,
     isEnriching,
+    isAutoEnriching,
     enrichmentError,
     handleStartEnrichment,
     handleCancelEnrichment,
-    resetEnrichment
+    resetEnrichment,
+    autoEnrichIfNeeded
   } = useEnrichment(userId);
 
   useEffect(() => {
