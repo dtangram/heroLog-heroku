@@ -26,6 +26,8 @@ const getVectorDb = (): Pool => {
   return vectorDbPool;
 };
 
+const vectorDb = getVectorDb();
+
 // ============================================================================
 // AI CLIENTS
 // ============================================================================
@@ -79,7 +81,6 @@ Example of exact format to return:
 [{"title": "Batman #497", "description": "A dark psychological thriller.", "publisher": "DC Comics", "year": "1993"}]`;
 
 const processEnrichmentJob = async (userId: string, jobId: number): Promise<void> => {
-  const vectorDb = getVectorDb();
   const BATCH_SIZE = 10;
   let offset = 0;
 
@@ -166,7 +167,7 @@ Return only the description, no additional text.`
           const embeddingStr = `[${embedding.join(',')}]`;
 
           // Store description and embedding together
-          await getVectorDb().query(`
+          await vectorDb.query(`
             INSERT INTO comic_embeddings 
               (comic_id, user_id, title, description, embedding)
             VALUES ($1, $2, $3, $4, $5::vector)
@@ -180,7 +181,7 @@ Return only the description, no additional text.`
           ]);
 
           // Update progress
-          await getVectorDb().query(`
+          await vectorDb.query(`
             UPDATE enrichment_jobs
             SET processed_comics = processed_comics + 1
             WHERE id = $1;
@@ -199,7 +200,7 @@ Return only the description, no additional text.`
 
   } catch (error) {
     // Mark job as failed
-    await getVectorDb().query(`
+    await vectorDb.query(`
       UPDATE enrichment_jobs
       SET status = 'failed', completed_at = CURRENT_TIMESTAMP
       WHERE id = $1;
@@ -218,7 +219,7 @@ router.get('/enrich-and-store/:userId', async (req: Request, res: Response) => {
 
   try {
     // Fetch user's comics from Heroku database
-    const comicsResult = await getVectorDb().query(`
+    const comicsResult = await vectorDb.query(`
       SELECT 
         cb.id,
         cb.title,
