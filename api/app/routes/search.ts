@@ -73,11 +73,11 @@ Just the raw JSON array starting with [ and ending with ]
 
 Each item must have exactly these fields:
 - title: series name and issue number
-- description: 2-3 sentences about tone, themes, era and significance
+- description: 1-2 sentences about tone and themes only
 - publisher: publisher name
 - year: publication year as a string
 
-Example of exact format to return:
+Return exactly 10 results. Example of exact format to return:
 [{"title": "Batman #497", "description": "A dark psychological thriller.", "publisher": "DC Comics", "year": "1993"}]`;
 
 const processEnrichmentJob = async (userId: string, jobId: number): Promise<void> => {
@@ -364,7 +364,7 @@ router.get('/search-all', async (req: Request, res: Response) => {
   try {
     const message = await getAnthropic().messages.create({
       model: 'claude-opus-4-5',
-      max_tokens: 1000,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: comicPrompt(q) }]
     });
 
@@ -390,7 +390,7 @@ router.get('/search-missing/:userId', async (req: Request, res: Response) => {
   try {
     const message = await getAnthropic().messages.create({
       model: 'claude-opus-4-5',
-      max_tokens: 1000,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: comicPrompt(q) }]
     });
 
