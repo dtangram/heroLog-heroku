@@ -421,12 +421,11 @@ router.get('/search-missing/:userId', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/enrich-all/:userId', async (req: Request, res: Response) => {
+router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
 
   try {
-    // Get total comic count for this user
-    const countResult = await vectorDb.query(`
+    const countResult = await getVectorDb().query(`
       SELECT COUNT(*) as total
       FROM "ComicBooks" cb
       JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
@@ -437,8 +436,15 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response) => {
 
     const totalComics = parseInt(countResult.rows[0].total);
 
-    // Create enrichment job
-    const jobResult = await vectorDb.query(`
+    if (totalComics === 0) {
+      res.json({
+        status: 'Empty',
+        message: 'No comics found in your collection. Add some comics first!'
+      });
+      return;
+    }
+
+    const jobResult = await getVectorDb().query(`
       INSERT INTO enrichment_jobs (user_id, total_comics, status)
       VALUES ($1, $2, 'running')
       RETURNING id;
@@ -446,7 +452,6 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response) => {
 
     const jobId = jobResult.rows[0].id;
 
-    // Process in background without awaiting
     processEnrichmentJob(userId, jobId).catch(err => {
       console.error('❌ Enrichment job failed:', err);
     });

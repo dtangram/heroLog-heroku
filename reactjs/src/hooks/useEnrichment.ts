@@ -58,34 +58,40 @@ export const useEnrichment = (userId: string | undefined) => {
     setEnrichmentError('');
 
     try {
-      console.log('🚀 Starting enrichment for user:', userId);
+        console.log('🚀 Starting enrichment for user:', userId);
 
-      const response = await axios.post(
+        const response = await axios.post(
         `${API_BASE}/api/search/enrich-all/${userId}`
-      );
+        );
 
-      if (response.data.status === 'Success') {
+        if (response.data.status === 'Empty') {
+        setEnrichmentError(response.data.message);
+        setIsEnriching(false);
+        return;
+        }
+
+        if (response.data.status === 'Success') {
         const newJob: EnrichmentJob = {
-          id: response.data.job_id,
-          total_comics: response.data.total_comics,
-          processed_comics: 0,
-          percentage: 0,
-          status: 'running',
-          started_at: new Date().toISOString(),
-          completed_at: null
+            id: response.data.job_id,
+            total_comics: response.data.total_comics,
+            processed_comics: 0,
+            percentage: 0,
+            status: 'running',
+            started_at: new Date().toISOString(),
+            completed_at: null
         };
 
         setEnrichmentJob(newJob);
         console.log('✅ Enrichment job started:', newJob);
         pollEnrichmentProgress(response.data.job_id);
-      }
+        }
 
     } catch (err) {
-      console.error('❌ Start enrichment error:', err);
-      setEnrichmentError('Failed to start enrichment. Please try again.');
-      setIsEnriching(false);
+        console.error('❌ Start enrichment error:', err);
+        setEnrichmentError('Failed to start enrichment. Please try again.');
+        setIsEnriching(false);
     }
-  }, [userId, pollEnrichmentProgress]);
+    }, [userId, pollEnrichmentProgress]);
 
   const handleCancelEnrichment = useCallback(async (): Promise<void> => {
     if (!enrichmentJob) return;
