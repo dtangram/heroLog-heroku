@@ -87,7 +87,7 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
   try {
     while (true) {
       // Check if job was cancelled
-      const jobCheck = await getVectorDb().query(`
+      const jobCheck = await vectorDb.query(`
         SELECT status FROM enrichment_jobs WHERE id = $1;
       `, [jobId]);
 
@@ -97,7 +97,7 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
       }
 
       // Fetch next batch of comics not yet enriched
-      const comicsResult = await getVectorDb().query(`
+      const comicsResult = await vectorDb.query(`
         SELECT 
           cb.id,
           cb.title,
@@ -120,7 +120,7 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
 
       // No more comics to process
       if (comicsResult.rows.length === 0) {
-        await getVectorDb().query(`
+        await vectorDb.query(`
           UPDATE enrichment_jobs
           SET status = 'completed', completed_at = CURRENT_TIMESTAMP
           WHERE id = $1;
@@ -269,7 +269,7 @@ Return only the description, no additional text.`
         ? message.content[0].text 
         : '';
 
-      await getVectorDb().query(`
+      await vectorDb.query(`
         INSERT INTO comic_embeddings (comic_id, user_id, title, description)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT DO NOTHING;
@@ -291,7 +291,7 @@ router.get('/generate-embeddings/:userId', async (req: Request, res: Response) =
   const { userId } = req.params;
 
   try {
-    const result = await getVectorDb().query(`
+    const result = await vectorDb.query(`
       SELECT id, title, description
       FROM comic_embeddings
       WHERE user_id = $1
@@ -304,7 +304,7 @@ router.get('/generate-embeddings/:userId', async (req: Request, res: Response) =
       const embedding = await generateEmbedding(comic.description);
       const embeddingStr = `[${embedding.join(',')}]`;
 
-      await getVectorDb().query(`
+      await vectorDb.query(`
         UPDATE comic_embeddings
         SET embedding = $1::vector
         WHERE id = $2;
@@ -330,7 +330,7 @@ router.get('/search/:userId', async (req: Request, res: Response) => {
     const queryEmbedding = await generateEmbedding(q);
     const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-    const result = await getVectorDb().query(`
+    const result = await vectorDb.query(`
       SELECT 
         comic_id,
         title,
@@ -398,7 +398,7 @@ router.get('/search-missing/:userId', async (req: Request, res: Response) => {
     const allResults = parseClaudeJSON(text);
 
     // Get user's owned titles from vector db
-    const ownedResult = await getVectorDb().query(`
+    const ownedResult = await vectorDb.query(`
       SELECT LOWER(title) FROM comic_embeddings
       WHERE user_id = $1;
     `, [userId]);
@@ -425,10 +425,8 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response) => {
   const { userId } = req.params;
 
   try {
-    const vectorDb = getVectorDb();
-
     // Get total comic count for this user
-    const countResult = await getVectorDb().query(`
+    const countResult = await vectorDb.query(`
       SELECT COUNT(*) as total
       FROM "ComicBooks" cb
       JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
@@ -440,7 +438,7 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response) => {
     const totalComics = parseInt(countResult.rows[0].total);
 
     // Create enrichment job
-    const jobResult = await getVectorDb().query(`
+    const jobResult = await vectorDb.query(`
       INSERT INTO enrichment_jobs (user_id, total_comics, status)
       VALUES ($1, $2, 'running')
       RETURNING id;
@@ -466,13 +464,11 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/enrich-progress/:jobId', async (req: Request, res: Response) => {
+router.get('/enrich-progress/:jobId', async (req: Request, res: Response): Promise<void> => {
   const { jobId } = req.params;
 
   try {
-    const vectorDb = getVectorDb();
-
-    const result = await getVectorDb().query(`
+    const result = await vectorDb.query(`
       SELECT 
         id,
         user_id,
@@ -486,7 +482,8 @@ router.get('/enrich-progress/:jobId', async (req: Request, res: Response) => {
     `, [jobId]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'Failed', error: 'Job not found' });
+      res.status(404).json({ status: 'Failed', error: 'Job not found' });
+      return;
     }
 
     const job = result.rows[0];
@@ -517,9 +514,7 @@ router.post('/enrich-cancel/:jobId', async (req: Request, res: Response) => {
   const { jobId } = req.params;
 
   try {
-    const vectorDb = getVectorDb();
-
-    await getVectorDb().query(`
+    await vectorDb.query(`
       UPDATE enrichment_jobs
       SET status = 'cancelled', completed_at = CURRENT_TIMESTAMP
       WHERE id = $1;
