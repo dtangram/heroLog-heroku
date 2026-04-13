@@ -454,6 +454,23 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<
 
     const totalComics = parseInt(countResult.rows[0].total);
 
+    // After getting totalComics count add this check
+    const alreadyEnrichedResult = await getVectorDb().query(`
+      SELECT COUNT(*) as total
+      FROM comic_embeddings
+      WHERE user_id = $1;
+    `, [userId]);
+
+    const alreadyEnriched = parseInt(alreadyEnrichedResult.rows[0].total);
+
+    if (alreadyEnriched >= totalComics) {
+      res.json({
+        status: 'Complete',
+        message: 'Collection already fully enriched'
+      });
+      return;
+    }
+
     if (totalComics === 0) {
       res.json({
         status: 'Empty',
