@@ -73,38 +73,18 @@ const Search: React.FC = () => {
 
       <article className={styles.cbList}>
         <section className={styles.wrapper}>
+          {/* Collection Enrichment — only shows when actively running */}
+          {enrichmentJob && enrichmentJob.status === 'running' && (
+            <section className={styles.enrichmentSection}>
+              <h2>Collection Enrichment</h2>
+              <p className={styles.enrichmentDescription}>
+                Enriching your collection to improve search accuracy...
+              </p>
 
-          {/* Collection Enrichment */}
-          <section className={styles.enrichmentSection}>
-            <h2>Collection Enrichment</h2>
-            <p className={styles.enrichmentDescription}>
-              Enrich your entire collection with AI-generated descriptions to improve search accuracy.
-            </p>
-
-            {enrichmentError && (
-              <p className={styles.enrichmentError}>{enrichmentError}</p>
-            )}
-
-            {!enrichmentJob && (
-              <button
-                className={styles.enrichButton}
-                onClick={handleStartEnrichment}
-                disabled={isEnriching}
-                type="button"
-                aria-label="Enrich my comic collection"
-              >
-                {isEnriching ? 'Starting...' : 'Enrich My Collection'}
-              </button>
-            )}
-
-            {enrichmentJob && (
               <article className={styles.progressContainer}>
                 <header className={styles.progressHeader}>
                   <p className={styles.progressText}>
-                    {enrichmentJob.status === 'completed' && '✅ Enrichment complete!'}
-                    {enrichmentJob.status === 'running' && `Processing ${enrichmentJob.processed_comics} of ${enrichmentJob.total_comics} comics...`}
-                    {enrichmentJob.status === 'failed' && '❌ Enrichment failed. Please try again.'}
-                    {enrichmentJob.status === 'cancelled' && '🛑 Enrichment cancelled.'}
+                    Processing {enrichmentJob.processed_comics} of {enrichmentJob.total_comics} comics...
                   </p>
                   <span className={styles.progressPercentage}>
                     {enrichmentJob.percentage}%
@@ -123,32 +103,17 @@ const Search: React.FC = () => {
                   />
                 </figure>
 
-                {enrichmentJob.status === 'running' && (
-                  <button
-                    className={styles.cancelButton}
-                    onClick={handleCancelEnrichment}
-                    type="button"
-                    aria-label="Cancel enrichment job"
-                  >
-                    Cancel
-                  </button>
-                )}
-
-                {(enrichmentJob.status === 'completed' ||
-                  enrichmentJob.status === 'failed' ||
-                  enrichmentJob.status === 'cancelled') && (
-                  <button
-                    className={styles.enrichButton}
-                    onClick={resetEnrichment}
-                    type="button"
-                    aria-label="Start a new enrichment job"
-                  >
-                    Start New Enrichment
-                  </button>
-                )}
+                <button
+                  className={styles.cancelButton}
+                  onClick={handleCancelEnrichment}
+                  type="button"
+                  aria-label="Cancel enrichment job"
+                >
+                  Cancel
+                </button>
               </article>
-            )}
-          </section>
+            </section>
+          )}
 
           {/* Search Mode Selector */}
           <nav className={styles.modeSelector} aria-label="Search mode">
