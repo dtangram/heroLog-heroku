@@ -9,7 +9,6 @@ const router = express.Router();
 // DATABASE CONNECTIONS
 // ============================================================================
 
-// Stackhero vector database connection
 let vectorDbPool: Pool | null = null;
 
 const getVectorDb = (): Pool => {
@@ -26,7 +25,17 @@ const getVectorDb = (): Pool => {
   return vectorDbPool;
 };
 
-const vectorDb = getVectorDb();
+let herokuDbPool: Pool | null = null;
+
+const getHerokuDb = (): Pool => {
+  if (!herokuDbPool) {
+    herokuDbPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+  }
+  return herokuDbPool;
+};
 
 // ============================================================================
 // AI CLIENTS
@@ -80,6 +89,10 @@ Each item must have exactly these fields:
 Return exactly 10 results. Example of exact format to return:
 [{"title": "Batman #497", "description": "A dark psychological thriller.", "publisher": "DC Comics", "year": "1993"}]`;
 
+// ============================================================================
+// BACKGROUND ENRICHMENT PROCESSOR
+// ============================================================================
+
 const processEnrichmentJob = async (userId: string, jobId: number): Promise<void> => {
   const BATCH_SIZE = 10;
   let offset = 0;
@@ -87,7 +100,7 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
   try {
     while (true) {
       // Check if job was cancelled
-      const jobCheck = await vectorDb.query(`
+      const jobCheck = await getVectorDb().query(`
         SELECT status FROM enrichment_jobs WHERE id = $1;
       `, [jobId]);
 
@@ -96,8 +109,8 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
         break;
       }
 
-      // Fetch next batch of comics not yet enriched
-      const comicsResult = await vectorDb.query(`
+      // Fetch next batch of comics not yet enriched — from Heroku DB
+      const comicsResult = await getHerokuDb().query(`
         SELECT 
           cb.id,
           cb.title,
@@ -120,7 +133,7 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
 
       // No more comics to process
       if (comicsResult.rows.length === 0) {
-        await vectorDb.query(`
+        await getVectorDb().query(`
           UPDATE enrichment_jobs
           SET status = 'completed', completed_at = CURRENT_TIMESTAMP
           WHERE id = $1;
@@ -141,7 +154,7 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
             messages: [{
               role: 'user',
               content: `Generate a rich, detailed description for this comic book that captures its themes, tone, era, and significance.
-              
+
 Comic Details:
 - Series: ${cbTitle}
 - Title: ${title}
@@ -166,8 +179,8 @@ Return only the description, no additional text.`
           const embedding = await generateEmbedding(description);
           const embeddingStr = `[${embedding.join(',')}]`;
 
-          // Store description and embedding together
-          await vectorDb.query(`
+          // Store in Stackhero vector DB
+          await getVectorDb().query(`
             INSERT INTO comic_embeddings 
               (comic_id, user_id, title, description, embedding)
             VALUES ($1, $2, $3, $4, $5::vector)
@@ -180,8 +193,8 @@ Return only the description, no additional text.`
             embeddingStr
           ]);
 
-          // Update progress
-          await vectorDb.query(`
+          // Update progress in Stackhero
+          await getVectorDb().query(`
             UPDATE enrichment_jobs
             SET processed_comics = processed_comics + 1
             WHERE id = $1;
@@ -191,7 +204,6 @@ Return only the description, no additional text.`
 
         } catch (comicError) {
           console.error(`❌ Failed to enrich comic ${id}:`, comicError);
-          // Continue processing remaining comics
         }
       }
 
@@ -199,8 +211,7 @@ Return only the description, no additional text.`
     }
 
   } catch (error) {
-    // Mark job as failed
-    await vectorDb.query(`
+    await getVectorDb().query(`
       UPDATE enrichment_jobs
       SET status = 'failed', completed_at = CURRENT_TIMESTAMP
       WHERE id = $1;
@@ -213,13 +224,12 @@ Return only the description, no additional text.`
 // ROUTES
 // ============================================================================
 
-// Enrich and store comics with Claude descriptions
+// Enrich and store comics with Claude descriptions (legacy — limit 10)
 router.get('/enrich-and-store/:userId', async (req: Request, res: Response) => {
   const { userId } = req.params;
 
   try {
-    // Fetch user's comics from Heroku database
-    const comicsResult = await vectorDb.query(`
+    const comicsResult = await getHerokuDb().query(`
       SELECT 
         cb.id,
         cb.title,
@@ -248,7 +258,7 @@ router.get('/enrich-and-store/:userId', async (req: Request, res: Response) => {
         messages: [{
           role: 'user',
           content: `Generate a rich, detailed description for this comic book that captures its themes, tone, era, and significance.
-          
+
 Comic Details:
 - Series: ${cbTitle}
 - Title: ${title}
@@ -265,11 +275,11 @@ Return only the description, no additional text.`
         }]
       });
 
-      const description = message.content[0].type === 'text' 
-        ? message.content[0].text 
+      const description = message.content[0].type === 'text'
+        ? message.content[0].text
         : '';
 
-      await vectorDb.query(`
+      await getVectorDb().query(`
         INSERT INTO comic_embeddings (comic_id, user_id, title, description)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT DO NOTHING;
@@ -291,7 +301,7 @@ router.get('/generate-embeddings/:userId', async (req: Request, res: Response) =
   const { userId } = req.params;
 
   try {
-    const result = await vectorDb.query(`
+    const result = await getVectorDb().query(`
       SELECT id, title, description
       FROM comic_embeddings
       WHERE user_id = $1
@@ -304,7 +314,7 @@ router.get('/generate-embeddings/:userId', async (req: Request, res: Response) =
       const embedding = await generateEmbedding(comic.description);
       const embeddingStr = `[${embedding.join(',')}]`;
 
-      await vectorDb.query(`
+      await getVectorDb().query(`
         UPDATE comic_embeddings
         SET embedding = $1::vector
         WHERE id = $2;
@@ -330,7 +340,7 @@ router.get('/search/:userId', async (req: Request, res: Response) => {
     const queryEmbedding = await generateEmbedding(q);
     const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-    const result = await vectorDb.query(`
+    const result = await getVectorDb().query(`
       SELECT 
         comic_id,
         title,
@@ -397,8 +407,7 @@ router.get('/search-missing/:userId', async (req: Request, res: Response) => {
     const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
     const allResults = parseClaudeJSON(text);
 
-    // Get user's owned titles from vector db
-    const ownedResult = await vectorDb.query(`
+    const ownedResult = await getVectorDb().query(`
       SELECT LOWER(title) FROM comic_embeddings
       WHERE user_id = $1;
     `, [userId]);
@@ -421,11 +430,13 @@ router.get('/search-missing/:userId', async (req: Request, res: Response) => {
   }
 });
 
+// Start enrichment job
 router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
 
   try {
-    const countResult = await getVectorDb().query(`
+    // Count comics from Heroku DB
+    const countResult = await getHerokuDb().query(`
       SELECT COUNT(*) as total
       FROM "ComicBooks" cb
       JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
@@ -444,6 +455,7 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<
       return;
     }
 
+    // Create job in Stackhero
     const jobResult = await getVectorDb().query(`
       INSERT INTO enrichment_jobs (user_id, total_comics, status)
       VALUES ($1, $2, 'running')
@@ -469,11 +481,12 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<
   }
 });
 
+// Check enrichment job progress
 router.get('/enrich-progress/:jobId', async (req: Request, res: Response): Promise<void> => {
   const { jobId } = req.params;
 
   try {
-    const result = await vectorDb.query(`
+    const result = await getVectorDb().query(`
       SELECT 
         id,
         user_id,
@@ -515,11 +528,12 @@ router.get('/enrich-progress/:jobId', async (req: Request, res: Response): Promi
   }
 });
 
+// Cancel enrichment job
 router.post('/enrich-cancel/:jobId', async (req: Request, res: Response) => {
   const { jobId } = req.params;
 
   try {
-    await vectorDb.query(`
+    await getVectorDb().query(`
       UPDATE enrichment_jobs
       SET status = 'cancelled', completed_at = CURRENT_TIMESTAMP
       WHERE id = $1;
