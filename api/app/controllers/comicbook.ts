@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import { autoEnrichComic } from '../utils/autoEnrich';
 
 // Comic book type literal
 type ComicBookType = 'regular' | 'variant';
@@ -510,10 +511,52 @@ export const createComicBook = async (
     });
     
     const createdData = newComicBook.toJSON();
-    
+
     console.log('Comic book created successfully');
     console.log('Created data:', createdData);
-    
+
+    // Fetch cbTitle and userId for auto-enrichment
+    import('pg').then(({ Pool }) => {
+      const db = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      });
+
+      db.query(`
+        SELECT 
+          cbt."cbTitle",
+          u.id as "userId"
+        FROM "ComicBookTitles" cbt
+        JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
+        JOIN "Users" u ON cp."collectpubUsersId" = u.id
+        WHERE cbt.id = $1;
+      `, [comicbooktitlerelId]).then(result => {
+        if (result.rows.length > 0) {
+          const { cbTitle, userId } = result.rows[0];
+
+          autoEnrichComic({
+            comicId: createdData.id,
+            userId,
+            title: createdData.title,
+            comicIssue: createdData.comicIssue,
+            volume: createdData.volume,
+            year: createdData.year,
+            author: createdData.author,
+            penciler: createdData.penciler,
+            cbTitle
+          }).catch(err => {
+            console.error('❌ Auto-enrich error:', err);
+          });
+        }
+        db.end();
+      }).catch(err => {
+        console.error('❌ Failed to fetch title for enrichment:', err);
+        db.end();
+      });
+    }).catch(err => {
+      console.error('❌ Failed to import pg:', err);
+    });
+
     return res.status(201).json({ 
       success: true,
       data: createdData,
