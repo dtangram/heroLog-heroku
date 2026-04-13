@@ -3,89 +3,36 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import styles from './styles.module.css';
-
-interface CollectionResult {
-  comic_id: string;
-  title: string;
-  description: string;
-  similarity_score: number;
-}
-
-interface ClaudeResult {
-  title: string;
-  description: string;
-  publisher: string;
-  year: string;
-  already_owned?: boolean;
-  source: string;
-}
-
-type SearchMode = 'collection' | 'all' | 'missing';
+import { useSearch } from '../../hooks/useSearch';
+import { useEnrichment } from '../../hooks/useEnrichment';
 
 const Search: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const [query, setQuery] = useState<string>('');
-  const [mode, setMode] = useState<SearchMode>('collection');
-  const [collectionResults, setCollectionResults] = useState<CollectionResult[]>([]);
-  const [claudeResults, setClaudeResults] = useState<ClaudeResult[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [hasSearched, setHasSearched] = useState<boolean>(false);
 
-  const handleSearch = async (): Promise<void> => {
-    if (!query.trim()) return;
+  const {
+    query,
+    setQuery,
+    mode,
+    setMode,
+    collectionResults,
+    claudeResults,
+    isLoading,
+    error,
+    hasSearched,
+    hasResults,
+    handleSearch,
+    handleKeyDown,
+    handleSuggestionClick
+  } = useSearch(userId);
 
-    setIsLoading(true);
-    setError('');
-    setHasSearched(true);
-    setCollectionResults([]);
-    setClaudeResults([]);
-
-    const API_BASE = process.env.REACT_APP_API_URL || '';
-
-    try {
-    if (mode === 'collection') {
-        const response = await axios.get(
-        `${API_BASE}/api/search/search/${userId}`,
-        { params: { q: query } }
-        );
-        if (response.data.status === 'Success') {
-        setCollectionResults(response.data.results);
-        }
-
-    } else if (mode === 'all') {
-        const response = await axios.get(
-        `${API_BASE}/api/search/search-all`,
-        { params: { q: query } }
-        );
-        if (response.data.status === 'Success') {
-        setClaudeResults(response.data.results);
-        }
-
-    } else if (mode === 'missing') {
-        const response = await axios.get(
-        `${API_BASE}/api/search/search-missing/${userId}`,
-        { params: { q: query } }
-        );
-        if (response.data.status === 'Success') {
-        setClaudeResults(response.data.results);
-        }
-    }
-
-    } catch (err) {
-      setError('Failed to connect to search service. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'Enter') handleSearch();
-  };
-
-  const handleSuggestionClick = (suggestion: string): void => {
-    setQuery(suggestion);
-  };
+  const {
+    enrichmentJob,
+    isEnriching,
+    enrichmentError,
+    handleStartEnrichment,
+    handleCancelEnrichment,
+    resetEnrichment
+  } = useEnrichment(userId);
 
   const suggestions: string[] = [
     'dark 90s Batman',
@@ -93,8 +40,6 @@ const Search: React.FC = () => {
     'Knightfall saga',
     'milestone collector issues'
   ];
-
-  const hasResults = collectionResults.length > 0 || claudeResults.length > 0;
 
   // Loading state
   if (isLoading) {
@@ -124,8 +69,84 @@ const Search: React.FC = () => {
       <article className={styles.cbList}>
         <section className={styles.wrapper}>
 
+          {/* Collection Enrichment */}
+          <section className={styles.enrichmentSection}>
+            <h2>Collection Enrichment</h2>
+            <p className={styles.enrichmentDescription}>
+              Enrich your entire collection with AI-generated descriptions to improve search accuracy.
+            </p>
+
+            {enrichmentError && (
+              <p className={styles.enrichmentError}>{enrichmentError}</p>
+            )}
+
+            {!enrichmentJob && (
+              <button
+                className={styles.enrichButton}
+                onClick={handleStartEnrichment}
+                disabled={isEnriching}
+                type="button"
+                aria-label="Enrich my comic collection"
+              >
+                {isEnriching ? 'Starting...' : 'Enrich My Collection'}
+              </button>
+            )}
+
+            {enrichmentJob && (
+              <article className={styles.progressContainer}>
+                <header className={styles.progressHeader}>
+                  <p className={styles.progressText}>
+                    {enrichmentJob.status === 'completed' && '✅ Enrichment complete!'}
+                    {enrichmentJob.status === 'running' && `Processing ${enrichmentJob.processed_comics} of ${enrichmentJob.total_comics} comics...`}
+                    {enrichmentJob.status === 'failed' && '❌ Enrichment failed. Please try again.'}
+                    {enrichmentJob.status === 'cancelled' && '🛑 Enrichment cancelled.'}
+                  </p>
+                  <span className={styles.progressPercentage}>
+                    {enrichmentJob.percentage}%
+                  </span>
+                </header>
+
+                <figure className={styles.progressBar}>
+                  <span
+                    className={styles.progressFill}
+                    style={{ width: `${enrichmentJob.percentage}%` }}
+                    role="progressbar"
+                    aria-valuenow={enrichmentJob.percentage}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Enrichment progress: ${enrichmentJob.percentage}%`}
+                  />
+                </figure>
+
+                {enrichmentJob.status === 'running' && (
+                  <button
+                    className={styles.cancelButton}
+                    onClick={handleCancelEnrichment}
+                    type="button"
+                    aria-label="Cancel enrichment job"
+                  >
+                    Cancel
+                  </button>
+                )}
+
+                {(enrichmentJob.status === 'completed' ||
+                  enrichmentJob.status === 'failed' ||
+                  enrichmentJob.status === 'cancelled') && (
+                  <button
+                    className={styles.enrichButton}
+                    onClick={resetEnrichment}
+                    type="button"
+                    aria-label="Start a new enrichment job"
+                  >
+                    Start New Enrichment
+                  </button>
+                )}
+              </article>
+            )}
+          </section>
+
           {/* Search Mode Selector */}
-          <div className={styles.modeSelector}>
+          <nav className={styles.modeSelector} aria-label="Search mode">
             <button
               className={`${styles.modeButton} ${mode === 'collection' ? styles.modeActive : ''}`}
               onClick={() => setMode('collection')}
@@ -150,7 +171,7 @@ const Search: React.FC = () => {
             >
               Find Missing
             </button>
-          </div>
+          </nav>
 
           {/* Mode Description */}
           <p className={styles.modeDescription}>
@@ -160,7 +181,7 @@ const Search: React.FC = () => {
           </p>
 
           {/* Search Bar */}
-          <div className={styles.searchBar}>
+          <search className={styles.searchBar}>
             <input
               type="text"
               value={query}
@@ -179,13 +200,13 @@ const Search: React.FC = () => {
             >
               Search
             </button>
-          </div>
+          </search>
 
           {/* Suggested Queries */}
           {!hasSearched && (
-            <div className={styles.suggestions}>
+            <aside className={styles.suggestions}>
               <p>Try searching for:</p>
-              <div className={styles.suggestionTags}>
+              <nav className={styles.suggestionTags} aria-label="Suggested searches">
                 {suggestions.map((suggestion) => (
                   <button
                     key={suggestion}
@@ -197,54 +218,54 @@ const Search: React.FC = () => {
                     {suggestion}
                   </button>
                 ))}
-              </div>
-            </div>
+              </nav>
+            </aside>
           )}
 
           {/* Error State */}
           {error && (
-            <div className={styles.error}>
+            <aside className={styles.error} role="alert">
               <p>{error}</p>
-            </div>
+            </aside>
           )}
 
           {/* No Results */}
           {hasSearched && !error && !hasResults && (
-            <div className={styles.empty}>
+            <aside className={styles.empty} role="status">
               <p>No comics found matching your search. Try a different query.</p>
-            </div>
+            </aside>
           )}
 
           {/* Collection Results */}
           {collectionResults.length > 0 && (
-            <div className={styles.results}>
+            <section className={styles.results}>
               <h2>Results for "{query}"</h2>
               {collectionResults.map((result) => (
-                <div key={result.comic_id} className={styles.resultCard}>
-                  <div className={styles.resultHeader}>
+                <article key={result.comic_id} className={styles.resultCard}>
+                  <header className={styles.resultHeader}>
                     <h3>{result.title}</h3>
                     <span className={styles.scoreBadge}>
                       {Math.round(result.similarity_score * 100)}% match
                     </span>
-                  </div>
+                  </header>
                   <p className={styles.description}>{result.description}</p>
-                </div>
+                </article>
               ))}
-            </div>
+            </section>
           )}
 
           {/* Claude Results */}
           {claudeResults.length > 0 && (
-            <div className={styles.results}>
+            <section className={styles.results}>
               <h2>Results for "{query}"</h2>
               {claudeResults.map((result, index) => (
-                <div
+                <article
                   key={index}
                   className={`${styles.resultCard} ${result.already_owned ? styles.owned : ''}`}
                 >
-                  <div className={styles.resultHeader}>
+                  <header className={styles.resultHeader}>
                     <h3>{result.title}</h3>
-                    <div className={styles.badges}>
+                    <aside className={styles.badges}>
                       {result.year && (
                         <span className={styles.yearBadge}>{result.year}</span>
                       )}
@@ -253,15 +274,15 @@ const Search: React.FC = () => {
                           {result.already_owned ? 'Owned' : 'Not Owned'}
                         </span>
                       )}
-                    </div>
-                  </div>
+                    </aside>
+                  </header>
                   {result.publisher && (
                     <p className={styles.publisher}>{result.publisher}</p>
                   )}
                   <p className={styles.description}>{result.description}</p>
-                </div>
+                </article>
               ))}
-            </div>
+            </section>
           )}
 
         </section>
