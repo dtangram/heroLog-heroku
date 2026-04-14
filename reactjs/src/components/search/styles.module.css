@@ -56,113 +56,6 @@
   text-align: center;
 }
 
-.enrichmentSection {
-  background: #2B2B2B;
-  border-radius: 15px;
-  margin-bottom: 25px;
-  padding: 20px;
-}
-
-.enrichmentSection h2 {
-  color: #FFF;
-  font-size: 1.8rem;
-  margin-bottom: 8px;
-}
-
-.enrichmentDescription {
-  color: #D0D2D3;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-}
-
-.enrichmentError {
-  color: #AECEAB;
-  font-size: 1.3rem;
-  margin-bottom: 10px;
-}
-
-.enrichButton {
-  background: #770422;
-  border: none;
-  border-radius: 8px;
-  color: #FFF;
-  cursor: pointer;
-  font-size: 1.3rem;
-  padding: 10px 20px;
-  transition: background 0.3s ease;
-  width: 100%;
-}
-
-.enrichButton:hover {
-  background: #AECEAB;
-  color: #2B2B2B;
-}
-
-.enrichButton:disabled {
-  background: #D0D2D3;
-  cursor: not-allowed;
-}
-
-.progressContainer {
-  width: 100%;
-}
-
-.progressHeader {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-bottom: 10px;
-}
-
-.progressText {
-  color: #FFF;
-  font-size: 1.3rem;
-  margin: 0;
-  text-align: center;
-}
-
-.progressPercentage {
-  color: #AECEAB;
-  font-size: 1.8rem;
-  font-weight: bold;
-}
-
-.progressBar {
-  background: #404041;
-  border-radius: 10px;
-  height: 20px;
-  margin: 0 0 15px;
-  overflow: hidden;
-  padding: 0;
-  width: 100%;
-}
-
-.progressFill {
-  background: #770422;
-  border-radius: 10px;
-  display: block;
-  height: 100%;
-  transition: width 0.5s ease;
-}
-
-.cancelButton {
-  background: transparent;
-  border: 2px solid #AECEAB;
-  border-radius: 8px;
-  color: #AECEAB;
-  cursor: pointer;
-  font-size: 1.3rem;
-  padding: 8px 20px;
-  transition: all 0.3s ease;
-  width: 100%;
-}
-
-.cancelButton:hover {
-  background: #AECEAB;
-  color: #2B2B2B;
-}
-
 .modeSelector {
   display: flex;
   flex-direction: column;
@@ -173,7 +66,6 @@
 .modeButton {
   background: #FFF;
   border: 2px solid #770422;
-  border-radius: 8px;
   color: #770422;
   cursor: pointer;
   font-size: 1.3rem;
@@ -207,11 +99,11 @@
 }
 
 .searchInput {
-  background: rgba(236, 236, 236, .5);
   border: 1px solid #000;
-  border-radius: 8px;
+  border-radius: 4px;
   color: #404041;
   font-size: 1.4rem;
+  margin: 0;
   padding: .8rem;
   transition: all 0.30s ease-in-out;
   width: 100%;
@@ -222,18 +114,6 @@
   outline: none;
 }
 
-.searchButton {
-  background: #770422;
-  border: none;
-  border-radius: 8px;
-  color: #FFF;
-  cursor: pointer;
-  font-size: 1.4rem;
-  padding: .8rem;
-  transition: background 0.3s ease;
-  width: 100%;
-}
-
 .searchButton:hover {
   background: #2B2B2B;
 }
@@ -241,10 +121,6 @@
 .searchButton:disabled {
   background: #D0D2D3;
   cursor: not-allowed;
-}
-
-.suggestions {
-  margin-bottom: 25px;
 }
 
 .suggestions p {
@@ -261,13 +137,11 @@
 
 .suggestionTag {
   background: #770422;
-  border: none;
-  border-radius: 20px;
-  color: #FFF;
-  cursor: pointer;
+  border-radius: 25px;
   font-size: 1.2rem;
-  padding: 5px 12px;
+  padding: 8px 16px;
   transition: background 0.3s ease;
+  width: auto;
 }
 
 .suggestionTag:hover {
@@ -276,6 +150,7 @@
 
 .results {
   background: none !important;
+  padding-top: 0 !important;
 }
 
 .results h2 {
@@ -378,6 +253,20 @@
   text-align: center;
 }
 
+button {
+  background: #770422;
+  border: 1px solid #d0d2d3;
+  border-radius: 4px;
+  color: #FFF;
+  cursor: pointer;
+  font-size: 1.4rem;
+  padding: 5px 0;
+  text-align: center;
+  transition: background 0.3s ease;
+  white-space: nowrap;
+  /* width: 100%; */
+}
+
 /* TABLET (min-width: 600px) */
 @media (min-width: 600px) {
   .cbWrap h1 {
@@ -394,46 +283,20 @@
     font-size: 3rem;
   }
 
-  .enrichmentSection {
-    padding: 25px;
-  }
-
-  .enrichmentSection h2 {
-    font-size: 2rem;
-  }
-
-  .progressHeader {
-    flex-direction: row;
-    justify-content: space-between;
-    position: relative;
-  }
-
-  .progressText {
-    text-align: left;
-  }
-
-  .enrichButton,
-  .cancelButton {
-    width: auto;
-  }
-
   .modeSelector {
     flex-direction: row;
   }
 
   .modeButton {
     flex: 1;
+    font-size: 1.5rem;
     width: auto;
-  }
-
-  .searchBar {
-    flex-direction: row;
   }
 
   .searchButton {
-    padding: .8rem 2rem;
+    font-size: 1.5rem;
     white-space: nowrap;
-    width: auto;
+    width: 100px;
   }
 
   .searchInput {
@@ -485,13 +348,9 @@
     font-size: 4rem;
   }
 
-  .enrichmentSection {
-    padding: 30px;
-  }
-
   .suggestionTag {
     font-size: 1.3rem;
-    padding: 5px 15px;
+    padding: 8px 20px;
   }
 
   .scoreBadge,
