@@ -254,17 +254,29 @@
 }
 
 .buttonStylesSearchPage {
+  align-items: center;
   background: #770422;
   border: 1px solid #d0d2d3;
   border-radius: 4px;
   color: #FFF;
   cursor: pointer;
-  font-size: 1.4rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
   padding: 5px 0;
   text-align: center;
   transition: background 0.3s ease;
   white-space: nowrap;
   /* width: 100%; */
+}
+
+.buttonStylesSearchPage figure {
+  margin: 0 10px 0 0;
+}
+
+.buttonStylesSearchPage p {
+  font-size: 1.4rem;
+  margin: 0;
 }
 
 /* TABLET (min-width: 600px) */
@@ -293,13 +305,16 @@
     width: auto;
   }
 
-  .searchButton {
+  .searchInput {
     font-size: 1.5rem;
+  }
+
+  .searchButton {
     white-space: nowrap;
     width: 100px;
   }
 
-  .searchInput {
+  .buttonStylesSearchPage p {
     font-size: 1.5rem;
   }
 
