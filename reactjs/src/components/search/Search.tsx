@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
-import styles from './styles.module.css';
 import { useSearch } from '../../hooks/useSearch';
 import { useEnrichment } from '../../hooks/useEnrichment';
+import clsx from 'clsx';
+import styles from './styles.module.css';
 
 const Search: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -73,52 +74,10 @@ const Search: React.FC = () => {
 
       <article className={styles.cbList}>
         <section className={styles.wrapper}>
-          {/* Collection Enrichment — only shows when actively running */}
-          {enrichmentJob && enrichmentJob.status === 'running' && (
-            <section className={styles.enrichmentSection}>
-              <h2>Collection Enrichment</h2>
-              <p className={styles.enrichmentDescription}>
-                Enriching your collection to improve search accuracy...
-              </p>
-
-              <article className={styles.progressContainer}>
-                <header className={styles.progressHeader}>
-                  <p className={styles.progressText}>
-                    Processing {enrichmentJob.processed_comics} of {enrichmentJob.total_comics} comics...
-                  </p>
-                  <span className={styles.progressPercentage}>
-                    {enrichmentJob.percentage}%
-                  </span>
-                </header>
-
-                <figure className={styles.progressBar}>
-                  <span
-                    className={styles.progressFill}
-                    style={{ width: `${enrichmentJob.percentage}%` }}
-                    role="progressbar"
-                    aria-valuenow={enrichmentJob.percentage}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`Enrichment progress: ${enrichmentJob.percentage}%`}
-                  />
-                </figure>
-
-                <button
-                  className={styles.cancelButton}
-                  onClick={handleCancelEnrichment}
-                  type="button"
-                  aria-label="Cancel enrichment job"
-                >
-                  Cancel
-                </button>
-              </article>
-            </section>
-          )}
-
           {/* Search Mode Selector */}
           <nav className={styles.modeSelector} aria-label="Search mode">
             <button
-              className={`${styles.modeButton} ${mode === 'collection' ? styles.modeActive : ''}`}
+              className={clsx(styles.modeButton, styles.buttonStylesSearchPage, { [styles.modeActive]: mode === 'collection' })}
               onClick={() => setMode('collection')}
               type="button"
               aria-pressed={mode === 'collection'}
@@ -126,7 +85,7 @@ const Search: React.FC = () => {
               My Collection
             </button>
             <button
-              className={`${styles.modeButton} ${mode === 'all' ? styles.modeActive : ''}`}
+              className={clsx(styles.modeButton, styles.buttonStylesSearchPage, { [styles.modeActive]: mode === 'all' })}
               onClick={() => setMode('all')}
               type="button"
               aria-pressed={mode === 'all'}
@@ -134,7 +93,7 @@ const Search: React.FC = () => {
               All Comics
             </button>
             <button
-              className={`${styles.modeButton} ${mode === 'missing' ? styles.modeActive : ''}`}
+              className={clsx(styles.modeButton, styles.buttonStylesSearchPage, { [styles.modeActive]: mode === 'missing' })}
               onClick={() => setMode('missing')}
               type="button"
               aria-pressed={mode === 'missing'}
@@ -164,7 +123,7 @@ const Search: React.FC = () => {
             <button
               onClick={handleSearch}
               disabled={!query.trim()}
-              className={styles.searchButton}
+              className={clsx(styles.searchButton, styles.buttonStylesSearchPage)}
               type="button"
               aria-label="Search"
             >
@@ -180,7 +139,7 @@ const Search: React.FC = () => {
                 {suggestions.map((suggestion) => (
                   <button
                     key={suggestion}
-                    className={styles.suggestionTag}
+                    className={clsx(styles.suggestionTag, styles.buttonStylesSearchPage)}
                     onClick={() => handleSuggestionClick(suggestion)}
                     type="button"
                     aria-label={`Search for ${suggestion}`}
@@ -240,7 +199,7 @@ const Search: React.FC = () => {
                         <span className={styles.yearBadge}>{result.year}</span>
                       )}
                       {mode === 'missing' && (
-                        <span className={result.already_owned ? styles.ownedBadge : styles.missingBadge}>
+                        <span className={clsx(result.already_owned ? styles.ownedBadge : styles.missingBadge, styles.buttonStylesSearchPage)}>
                           {result.already_owned ? 'Owned' : 'Not Owned'}
                         </span>
                       )}
