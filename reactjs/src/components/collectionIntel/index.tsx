@@ -24,7 +24,7 @@ interface CollectionProps {
 
 const CollectionIntel: React.FC = () => {
   const [insights, setInsights] = useState<CollectionProps | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   
   const userId = localStorage.getItem('id') || getAnonymousUserId();
