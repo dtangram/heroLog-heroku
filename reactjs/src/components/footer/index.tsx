@@ -20,19 +20,19 @@ const SOCIAL_LINKS: SocialLink[] = [
   {
     name: 'Facebook',
     icon: facebook,
-    url: 'https://facebook.com/herolog',
+    url: 'https://www.facebook.com/profile.php?id=100054380207058',
     alt: 'Hero-Log Facebook'
   },
   {
     name: 'Twitter',
     icon: twitter,
-    url: 'https://twitter.com/herolog',
+    url: 'https://x.com/dtDesign1',
     alt: 'Hero-Log Twitter'
   },
   {
     name: 'Instagram',
     icon: instagram,
-    url: 'https://instagram.com/herolog',
+    url: 'https://instagram.com/',
     alt: 'Hero-Log Instagram'
   }
 ];
