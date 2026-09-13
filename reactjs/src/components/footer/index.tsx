@@ -38,9 +38,9 @@ const SOCIAL_LINKS: SocialLink[] = [
 ];
 
 const FOOTER_LINKS: FooterLink[] = [
-  { text: 'Help', title: 'Help', url: '/help' },
-  { text: 'Privacy', title: 'Hero-Log Privacy Policy', url: '/privacy' },
-  { text: 'Terms of Use', title: 'Hero-Log Terms of Use', url: '/terms' }
+  { text: 'Help', title: 'Help', url: 'https://herolog-00c48dc89148.herokuapp.com/landing' },
+  { text: 'Privacy', title: 'Hero-Log Privacy Policy', url: 'https://herolog-00c48dc89148.herokuapp.com/landing' },
+  { text: 'Terms of Use', title: 'Hero-Log Terms of Use', url: 'https://herolog-00c48dc89148.herokuapp.com/landing' }
 ];
 
 const Footer = () => {
