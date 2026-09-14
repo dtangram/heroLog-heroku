@@ -1,12 +1,11 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import debug from 'debug';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import db from './models'; // Import db for health check
-
-// Import routers
+import db from './models';
 import collectionpublisherRouter from './routes/collectionpublishers';
 import comicbooktitleRouter from './routes/comicbooktitles';
 import comicbookRouter from './routes/comicbook';
@@ -19,17 +18,10 @@ import authRouter from './routes/auth';
 import passwordresetRouter from './routes/passwordreset';
 import emailPasswordResetRouter from './routes/emailpasswordreset';
 import searchRouter from './routes/search';
-
-// Import utility routes
 import s3Router from './routes/s3upload';
 import aiScanner from './routes/aiScanner';
 import collectionInsights from './routes/collectionInsights';
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-// Load environment variables
 dotenv.config();
 
 const log = debug('api:server');
@@ -44,17 +36,13 @@ const ENV = {
     : ['http://localhost:3000', 'http://localhost:3001'],
 };
 
-// ============================================================================
-// APP SETUP
-// ============================================================================
-
 const app: Express = express();
+app.set('trust proxy', 1);
 
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
 
-// CORS configuration with multiple origins support
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -62,12 +50,6 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
-    // In production, allow same-origin requests (your Heroku domain)
-    if (ENV.nodeEnv === 'production') {
-      return callback(null, true);  // Allow all origins in production
-    }
-
-    // In development, check allowed list
     if (ENV.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -91,6 +73,25 @@ app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Rate limiting — protects against scanning/enumeration traffic and
+// generic abuse. Applied globally; tighten further on specific routes
+// (e.g. auth, password reset) if needed later.
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // requests per IP per window; tune based on real traffic
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too Many Requests',
+    message: 'Rate limit exceeded. Please try again shortly.',
+  },
+});
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path === '/health') return next();
+  apiLimiter(req, res, next);
+});
+
 // Request logging middleware
 if (ENV.nodeEnv === 'development') {
   app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -100,11 +101,16 @@ if (ENV.nodeEnv === 'development') {
 }
 
 // Global request logger (for debugging)
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`📨 ${req.method} ${req.url}`);
-  console.log(`📨 Body:`, JSON.stringify(req.body));
-  next();
-});
+// NOTE: gated to non-production. This was previously unconditional and
+// logging every request (plus body) twice in production is what drove
+// the Papertrail log quota over its limit.
+if (ENV.nodeEnv !== 'production') {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(`📨 ${req.method} ${req.url}`);
+    console.log(`📨 Body:`, JSON.stringify(req.body));
+    next();
+  });
+}
 
 // ============================================================================
 // ROUTES
@@ -244,9 +250,5 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
   res.status(500).json(errorResponse);
 });
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default app;
