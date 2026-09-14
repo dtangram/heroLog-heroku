@@ -1,11 +1,12 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
 import debug from 'debug';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import db from './models';
+import db from './models'; // Import db for health check
+
+// Import routers
 import collectionpublisherRouter from './routes/collectionpublishers';
 import comicbooktitleRouter from './routes/comicbooktitles';
 import comicbookRouter from './routes/comicbook';
@@ -18,10 +19,17 @@ import authRouter from './routes/auth';
 import passwordresetRouter from './routes/passwordreset';
 import emailPasswordResetRouter from './routes/emailpasswordreset';
 import searchRouter from './routes/search';
+
+// Import utility routes
 import s3Router from './routes/s3upload';
 import aiScanner from './routes/aiScanner';
 import collectionInsights from './routes/collectionInsights';
 
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+// Load environment variables
 dotenv.config();
 
 const log = debug('api:server');
@@ -36,21 +44,17 @@ const ENV = {
     : ['http://localhost:3000', 'http://localhost:3001'],
 };
 
+// ============================================================================
+// APP SETUP
+// ============================================================================
+
 const app: Express = express();
-app.set('trust proxy', 1);
 
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
 
 // CORS configuration with multiple origins support
-// NOTE: the origin check now applies in every environment, including
-// production. Set the CORS_ORIGINS env var (comma-separated) on your
-// production host to your real frontend domain(s) before deploying —
-// e.g. `heroku config:set CORS_ORIGINS=https://your-frontend-domain.com`.
-// Same-origin requests (e.g. your React build served from this same
-// Express app) never hit this check at all, since browsers only send
-// an Origin header on cross-origin requests.
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -58,6 +62,12 @@ const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
+    // In production, allow same-origin requests (your Heroku domain)
+    if (ENV.nodeEnv === 'production') {
+      return callback(null, true);  // Allow all origins in production
+    }
+
+    // In development, check allowed list
     if (ENV.corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -81,43 +91,6 @@ app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting — protects against scanning/enumeration traffic and
-// generic abuse. Applied globally; tighten further on specific routes
-// (e.g. auth, password reset) if needed later.
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 60, // requests per IP per window; tune based on real traffic
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: 'Too Many Requests',
-    message: 'Rate limit exceeded. Please try again shortly.',
-  },
-});
-
-app.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.path === '/health') return next();
-  apiLimiter(req, res, next);
-});
-
-// Tighter limiter specifically for the database-backed routes the bot is
-// hammering (/users, /api/insights, /collectpub). These are more expensive
-// than the global limiter accounts for — each hit costs a Sequelize/Postgres
-// connection — so they get a stricter ceiling on top of the global one.
-// This also caps how many 500-producing requests reach the DB layer at all,
-// which is what was driving both the Papertrail volume and the connection
-// pressure.
-const dbLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 15, // requests per IP per window; tune based on real traffic
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: 'Too Many Requests',
-    message: 'Rate limit exceeded for this resource. Please try again shortly.',
-  },
-});
-
 // Request logging middleware
 if (ENV.nodeEnv === 'development') {
   app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -127,16 +100,11 @@ if (ENV.nodeEnv === 'development') {
 }
 
 // Global request logger (for debugging)
-// NOTE: gated to non-production. This was previously unconditional and
-// logging every request (plus body) twice in production is what drove
-// the Papertrail log quota over its limit.
-if (ENV.nodeEnv !== 'production') {
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    console.log(`📨 ${req.method} ${req.url}`);
-    console.log(`📨 Body:`, JSON.stringify(req.body));
-    next();
-  });
-}
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(`📨 ${req.method} ${req.url}`);
+  console.log(`📨 Body:`, JSON.stringify(req.body));
+  next();
+});
 
 // ============================================================================
 // ROUTES
@@ -171,19 +139,19 @@ app.get('/health', async (_req: Request, res: Response) => {
 });
 
 // API routes
-app.use('/collectpub', dbLimiter, collectionpublisherRouter);
+app.use('/collectpub', collectionpublisherRouter);
 app.use('/comicbooktitles', comicbooktitleRouter);
 app.use('/comicbook', comicbookRouter);
 app.use('/messaging', messagingRouter);
 app.use('/salelist', salelistRouter);
 app.use('/salelistALL', salelistALLRouter);
 app.use('/wishlist', wishlistRouter);
-app.use('/users', dbLimiter, usersRouter);
+app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/api/passwordreset', passwordresetRouter);
 app.use('/emailpasswordreset', emailPasswordResetRouter);
 app.use('/api/ai', aiScanner);
-app.use('/api/insights', dbLimiter, collectionInsights);
+app.use('/api/insights', collectionInsights);
 app.use('/api/search', searchRouter);
 
 // Utility routes
@@ -276,5 +244,9 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
   res.status(500).json(errorResponse);
 });
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
 
 export default app;
