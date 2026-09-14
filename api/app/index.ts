@@ -43,6 +43,14 @@ app.set('trust proxy', 1);
 // MIDDLEWARE
 // ============================================================================
 
+// CORS configuration with multiple origins support
+// NOTE: the origin check now applies in every environment, including
+// production. Set the CORS_ORIGINS env var (comma-separated) on your
+// production host to your real frontend domain(s) before deploying —
+// e.g. `heroku config:set CORS_ORIGINS=https://your-frontend-domain.com`.
+// Same-origin requests (e.g. your React build served from this same
+// Express app) never hit this check at all, since browsers only send
+// an Origin header on cross-origin requests.
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -90,6 +98,24 @@ const apiLimiter = rateLimit({
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.path === '/health') return next();
   apiLimiter(req, res, next);
+});
+
+// Tighter limiter specifically for the database-backed routes the bot is
+// hammering (/users, /api/insights, /collectpub). These are more expensive
+// than the global limiter accounts for — each hit costs a Sequelize/Postgres
+// connection — so they get a stricter ceiling on top of the global one.
+// This also caps how many 500-producing requests reach the DB layer at all,
+// which is what was driving both the Papertrail volume and the connection
+// pressure.
+const dbLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 15, // requests per IP per window; tune based on real traffic
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too Many Requests',
+    message: 'Rate limit exceeded for this resource. Please try again shortly.',
+  },
 });
 
 // Request logging middleware
@@ -145,19 +171,19 @@ app.get('/health', async (_req: Request, res: Response) => {
 });
 
 // API routes
-app.use('/collectpub', collectionpublisherRouter);
+app.use('/collectpub', dbLimiter, collectionpublisherRouter);
 app.use('/comicbooktitles', comicbooktitleRouter);
 app.use('/comicbook', comicbookRouter);
 app.use('/messaging', messagingRouter);
 app.use('/salelist', salelistRouter);
 app.use('/salelistALL', salelistALLRouter);
 app.use('/wishlist', wishlistRouter);
-app.use('/users', usersRouter);
+app.use('/users', dbLimiter, usersRouter);
 app.use('/auth', authRouter);
 app.use('/api/passwordreset', passwordresetRouter);
 app.use('/emailpasswordreset', emailPasswordResetRouter);
 app.use('/api/ai', aiScanner);
-app.use('/api/insights', collectionInsights);
+app.use('/api/insights', dbLimiter, collectionInsights);
 app.use('/api/search', searchRouter);
 
 // Utility routes
