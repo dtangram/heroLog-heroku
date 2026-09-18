@@ -32,7 +32,7 @@ const log = debug('api:server');
 const errorLog = debug('api:error');
 
 const ENV = {
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv: (process.env.NODE_ENV || 'development').trim().toLowerCase(),
   port: process.env.PORT || 4000,
   // Support multiple origins separated by comma
   corsOrigins: process.env.CORS_ORIGINS 
