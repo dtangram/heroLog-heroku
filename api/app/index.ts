@@ -4,9 +4,7 @@ import debug from 'debug';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import db from './models'; // Import db for health check
-
-// Import routers
+import db from './models';
 import collectionpublisherRouter from './routes/collectionpublishers';
 import comicbooktitleRouter from './routes/comicbooktitles';
 import comicbookRouter from './routes/comicbook';
@@ -19,8 +17,6 @@ import authRouter from './routes/auth';
 import passwordresetRouter from './routes/passwordreset';
 import emailPasswordResetRouter from './routes/emailpasswordreset';
 import searchRouter from './routes/search';
-
-// Import utility routes
 import s3Router from './routes/s3upload';
 import aiScanner from './routes/aiScanner';
 import collectionInsights from './routes/collectionInsights';
@@ -54,38 +50,50 @@ const app: Express = express();
 // MIDDLEWARE
 // ============================================================================
 
-// CORS configuration with multiple origins support
-const corsOptions: cors.CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) {
-      return callback(null, true);
+const corsOptionsDelegate = (
+  req: Request,
+  callback: (err: Error | null, options?: cors.CorsOptions) => void
+) => {
+  const requestOrigin = req.headers.origin;
+  let allowed = false;
+
+  if (!requestOrigin) {
+    // No Origin header — mobile app, Postman, server-to-server, etc.
+    allowed = true;
+  } else {
+    try {
+      const originHost = new URL(requestOrigin).hostname;
+      if (originHost === req.hostname) {
+        allowed = true;
+      }
+    } catch {
+      // Malformed Origin header — treat as not allowed.
     }
 
-    // In production, allow same-origin requests (your Heroku domain)
-    if (ENV.nodeEnv === 'production') {
-      return callback(null, true);  // Allow all origins in production
+    if (!allowed && ENV.corsOrigins.includes(requestOrigin)) {
+      allowed = true;
     }
+  }
 
-    // In development, check allowed list
-    if (ENV.corsOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      errorLog(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Length', 'X-Request-Id'],
-  maxAge: 86400, // 24 hours
+  if (!allowed) {
+    errorLog(`CORS blocked origin: ${requestOrigin}`);
+    return callback(new Error('Not allowed by CORS'));
+  }
+
+  callback(null, {
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Length', 'X-Request-Id'],
+    maxAge: 86400, // 24 hours
+  });
 };
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 // Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptionsDelegate));
 
 // Body parsing middleware (built into Express 4.16+)
 app.use(express.json({ limit: '10mb' }));
@@ -100,11 +108,16 @@ if (ENV.nodeEnv === 'development') {
 }
 
 // Global request logger (for debugging)
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`📨 ${req.method} ${req.url}`);
-  console.log(`📨 Body:`, JSON.stringify(req.body));
-  next();
-});
+// NOTE: gated to non-production. This was previously unconditional and
+// logging every request (plus body) twice in production is what drove
+// the Papertrail log quota over its limit.
+if (ENV.nodeEnv !== 'production') {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(`📨 ${req.method} ${req.url}`);
+    console.log(`📨 Body:`, JSON.stringify(req.body));
+    next();
+  });
+}
 
 // ============================================================================
 // ROUTES
@@ -244,9 +257,5 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
   res.status(500).json(errorResponse);
 });
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default app;
