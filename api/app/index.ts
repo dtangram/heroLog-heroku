@@ -54,38 +54,76 @@ const app: Express = express();
 // MIDDLEWARE
 // ============================================================================
 
-// CORS configuration with multiple origins support
-const corsOptions: cors.CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) {
-      return callback(null, true);
+// CORS configuration.
+//
+// The origin check applies in every environment, including production —
+// there is no "allow everything in production" bypass.
+//
+// Three kinds of requests are allowed through:
+//   1. Requests with no Origin header (mobile apps, Postman, server-to-server).
+//   2. Requests whose Origin's hostname matches this server's own Host header
+//      — this app serves both the API and the React build from the same
+//      Express instance, and browsers attach an Origin header even to
+//      same-origin POST/PUT/DELETE/PATCH requests (not just cross-origin
+//      ones). Without this check, a same-origin form submission could be
+//      rejected any time CORS_ORIGINS doesn't happen to list this exact
+//      host/environment — which is what broke /comicbooktitles previously.
+//   3. Requests whose Origin is explicitly listed in CORS_ORIGINS (comma-
+//      separated env var) — for a genuinely separate frontend deployment,
+//      e.g. `heroku config:set CORS_ORIGINS=https://your-other-frontend.com`.
+//
+// Anything else is rejected by passing an Error to the callback, which
+// `cors` forwards to Express's error-handling middleware (our global error
+// handler below), matching the original blocking behavior.
+//
+// NOTE: this uses the "options delegate" form of cors() — passing a
+// function as the whole argument, rather than a static options object with
+// an `origin` function — because only this form receives the `req` object,
+// which is needed to read `req.hostname` for the same-origin comparison.
+const corsOptionsDelegate = (
+  req: Request,
+  callback: (err: Error | null, options?: cors.CorsOptions) => void
+) => {
+  const requestOrigin = req.headers.origin;
+  let allowed = false;
+
+  if (!requestOrigin) {
+    // No Origin header — mobile app, Postman, server-to-server, etc.
+    allowed = true;
+  } else {
+    try {
+      const originHost = new URL(requestOrigin).hostname;
+      if (originHost === req.hostname) {
+        allowed = true;
+      }
+    } catch {
+      // Malformed Origin header — treat as not allowed.
     }
 
-    // In production, allow same-origin requests (your Heroku domain)
-    if (ENV.nodeEnv === 'production') {
-      return callback(null, true);  // Allow all origins in production
+    if (!allowed && ENV.corsOrigins.includes(requestOrigin)) {
+      allowed = true;
     }
+  }
 
-    // In development, check allowed list
-    if (ENV.corsOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      errorLog(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Length', 'X-Request-Id'],
-  maxAge: 86400, // 24 hours
+  if (!allowed) {
+    errorLog(`CORS blocked origin: ${requestOrigin}`);
+    return callback(new Error('Not allowed by CORS'));
+  }
+
+  callback(null, {
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Length', 'X-Request-Id'],
+    maxAge: 86400, // 24 hours
+  });
 };
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 // Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptionsDelegate));
 
 // Body parsing middleware (built into Express 4.16+)
 app.use(express.json({ limit: '10mb' }));
@@ -100,11 +138,16 @@ if (ENV.nodeEnv === 'development') {
 }
 
 // Global request logger (for debugging)
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`📨 ${req.method} ${req.url}`);
-  console.log(`📨 Body:`, JSON.stringify(req.body));
-  next();
-});
+// NOTE: gated to non-production. This was previously unconditional and
+// logging every request (plus body) twice in production is what drove
+// the Papertrail log quota over its limit.
+if (ENV.nodeEnv !== 'production') {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(`📨 ${req.method} ${req.url}`);
+    console.log(`📨 Body:`, JSON.stringify(req.body));
+    next();
+  });
+}
 
 // ============================================================================
 // ROUTES
