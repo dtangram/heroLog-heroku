@@ -4,9 +4,7 @@ import debug from 'debug';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import db from './models'; // Import db for health check
-
-// Import routers
+import db from './models';
 import collectionpublisherRouter from './routes/collectionpublishers';
 import comicbooktitleRouter from './routes/comicbooktitles';
 import comicbookRouter from './routes/comicbook';
@@ -19,8 +17,6 @@ import authRouter from './routes/auth';
 import passwordresetRouter from './routes/passwordreset';
 import emailPasswordResetRouter from './routes/emailpasswordreset';
 import searchRouter from './routes/search';
-
-// Import utility routes
 import s3Router from './routes/s3upload';
 import aiScanner from './routes/aiScanner';
 import collectionInsights from './routes/collectionInsights';
@@ -54,32 +50,6 @@ const app: Express = express();
 // MIDDLEWARE
 // ============================================================================
 
-// CORS configuration.
-//
-// The origin check applies in every environment, including production —
-// there is no "allow everything in production" bypass.
-//
-// Three kinds of requests are allowed through:
-//   1. Requests with no Origin header (mobile apps, Postman, server-to-server).
-//   2. Requests whose Origin's hostname matches this server's own Host header
-//      — this app serves both the API and the React build from the same
-//      Express instance, and browsers attach an Origin header even to
-//      same-origin POST/PUT/DELETE/PATCH requests (not just cross-origin
-//      ones). Without this check, a same-origin form submission could be
-//      rejected any time CORS_ORIGINS doesn't happen to list this exact
-//      host/environment — which is what broke /comicbooktitles previously.
-//   3. Requests whose Origin is explicitly listed in CORS_ORIGINS (comma-
-//      separated env var) — for a genuinely separate frontend deployment,
-//      e.g. `heroku config:set CORS_ORIGINS=https://your-other-frontend.com`.
-//
-// Anything else is rejected by passing an Error to the callback, which
-// `cors` forwards to Express's error-handling middleware (our global error
-// handler below), matching the original blocking behavior.
-//
-// NOTE: this uses the "options delegate" form of cors() — passing a
-// function as the whole argument, rather than a static options object with
-// an `origin` function — because only this form receives the `req` object,
-// which is needed to read `req.hostname` for the same-origin comparison.
 const corsOptionsDelegate = (
   req: Request,
   callback: (err: Error | null, options?: cors.CorsOptions) => void
@@ -287,9 +257,5 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
   res.status(500).json(errorResponse);
 });
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default app;
