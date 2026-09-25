@@ -26,7 +26,7 @@ const ENV = {
   smtpUser: process.env.SMTP_USER || 'apikey',
   smtpPass: process.env.SENDGRID_API_KEY || '',
   fromEmail: process.env.FROM_EMAIL || 'noreply@herolog.com',
-  frontendUrl: process.env.FRONTEND_URL || 'https://herolog-00c48dc89148.herokuapp.com',
+  frontendUrl: process.env.FRONTEND_URL || 'https://herologapp-b9f8cc091dd2.herokuapp.com',
 };
 
 console.log('📧 Email Service Config:', {
