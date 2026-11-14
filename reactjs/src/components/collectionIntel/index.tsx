@@ -9,24 +9,68 @@ interface SeriesAnalysis {
   totalIssues: number;
   ownedIssues: number[];
   missingIssues: number[];
+  missingRanges: string[];
   completionPercentage: number;
+  /** 'run' = collecting consecutive issues; 'scattered' = picking individual issues */
+  pattern: 'run' | 'scattered';
   variants: number;
+}
+
+interface Recommendation {
+  series: string;
+  issues: number[];
+  reason: string;
+}
+
+interface CollectionAnalysis {
+  summary: string;
+  highlights: string[];
+  recommendations: Recommendation[];
+  observation: string;
 }
 
 interface CollectionProps {
   totalComics: number;
+  uniqueIssues: number;
+  variantCopies: number;
+  duplicateCopies: number;
+  unnumberedComics: number;
   uniqueSeries: number;
   seriesBreakdown: SeriesAnalysis[];
   topSeries: SeriesAnalysis[];
-  recommendations: string[];
-  aiInsights: string;
+  analysis: CollectionAnalysis;
+  analysisSource: 'ai' | 'fallback';
 }
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** "5 unique issues · 1 variant · 1 duplicate" — explains how Total Comics is made up. */
+const totalBreakdown = (i: CollectionProps) =>
+  [
+    plural(i.uniqueIssues, 'unique issue'),
+    i.variantCopies ? plural(i.variantCopies, 'variant') : '',
+    i.duplicateCopies ? plural(i.duplicateCopies, 'duplicate') : '',
+    i.unnumberedComics ? `${i.unnumberedComics} without an issue number` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+/** [497, 498, 499, 541] → "#497–#499, #541" */
+const formatIssueRanges = (sorted: number[]) => {
+  const ranges: Array<[number, number]> = [];
+  sorted.forEach(n => {
+    const last = ranges[ranges.length - 1];
+    if (last && n === last[1] + 1) last[1] = n;
+    else ranges.push([n, n]);
+  });
+  return ranges.map(([a, b]) => (a === b ? `#${a}` : `#${a}–#${b}`)).join(', ');
+};
 
 const CollectionIntel: React.FC = () => {
   const [insights, setInsights] = useState<CollectionProps | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  
+
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   useEffect(() => {
@@ -40,7 +84,7 @@ const CollectionIntel: React.FC = () => {
 
       try {
         console.log('📊 Fetching collection insights...');
-        
+
         const response = await API.get(`/api/insights/${userId}`) as any;
 
         console.log('📦 Full response:', response);
@@ -96,7 +140,7 @@ const CollectionIntel: React.FC = () => {
           Collection Intelligence
           <div className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
         </h1>
-        
+
         <div className={styles.error}>
           <p>{error}</p>
         </div>
@@ -112,7 +156,7 @@ const CollectionIntel: React.FC = () => {
         Collection Intelligence
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
       </h1>
-      
+
       <div className={styles.container}>
         <div className={styles.empty}>
           <p>Start building your collection to see insights!</p>
@@ -121,6 +165,8 @@ const CollectionIntel: React.FC = () => {
     </article>
     );
   }
+
+  const { analysis } = insights;
 
   return (
     <article id="cbComicForm" className={styles.cbWrap}>
@@ -138,41 +184,54 @@ const CollectionIntel: React.FC = () => {
                 <div className={styles.statCard}>
                   <div className={styles.statNumber}>{insights.totalComics}</div>
                   <div className={styles.statLabel}>Total Comics</div>
+                  {/* Explains why Total Comics can differ from the issue count */}
+                  <div className={styles.statLabel}>{totalBreakdown(insights)}</div>
                 </div>
-                
+
                 <div className={styles.statCard}>
                   <div className={styles.statNumber}>{insights.uniqueSeries}</div>
                   <div className={styles.statLabel}>Unique Series</div>
                 </div>
-                
+
                 <div className={styles.statCard}>
                   <div className={styles.statNumber}>
-                    {insights.topSeries[0] 
-                      ? `${Math.round(insights.topSeries[0].completionPercentage)}%`
-                      : '-'
-                    }
+                    {insights.topSeries[0] ? insights.topSeries[0].seriesName : '-'}
                   </div>
-                  <div className={styles.statLabel}>Top Series</div>
+                  <div className={styles.statLabel}>
+                    {insights.topSeries[0]
+                      ? `Most Collected · ${plural(insights.topSeries[0].ownedIssues.length, 'issue')}`
+                      : 'Most Collected'}
+                  </div>
                 </div>
               </div>
 
-              {/* AI Insights */}
+              {/* AI Insights: structured text checked against your data, no markdown */}
               <div className={styles.aiInsights}>
                 <h2>Analysis</h2>
                 <div className={styles.insightsText}>
-                  {insights.aiInsights.split('\n').map((paragraph, index) => (
-                    <p key={index}>{paragraph}</p>
+                  <p>{analysis.summary}</p>
+                  {analysis.highlights.map((highlight, index) => (
+                    <p key={index}>{highlight}</p>
                   ))}
+                  {analysis.observation && <p>{analysis.observation}</p>}
+                  {insights.analysisSource === 'fallback' && (
+                    <p><em>AI analysis isn&apos;t available right now, so this summary comes straight from your collection data.</em></p>
+                  )}
                 </div>
               </div>
 
-              {/* Recommendations */}
-              {insights.recommendations.length > 0 && (
+              {/* Recommendations: from the same analysis, so they can't contradict it */}
+              {analysis.recommendations.length > 0 && (
                 <div className={styles.recommendations}>
                   <h2>Smart Recommendations</h2>
                   <ul>
-                    {insights.recommendations.map((rec, index) => (
-                      <li key={index}>{rec}</li>
+                    {analysis.recommendations.map((rec, index) => (
+                      <li key={index}>
+                        <strong>
+                          {rec.issues.length ? `${rec.series} #${rec.issues.join(', #')}` : rec.series}
+                        </strong>
+                        : {rec.reason}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -181,44 +240,51 @@ const CollectionIntel: React.FC = () => {
               {/* Top Series Breakdown */}
               <div className={styles.seriesBreakdown}>
                 <h2>Your Top Series</h2>
-                
-                {insights.topSeries.map((series, index) => (
-                  <div key={index} className={styles.seriesCard}>
-                    <div className={styles.seriesHeader}>
-                      <h3>{series.seriesName}</h3>
-                      <span className={styles.completionBadge}>
-                        {Math.round(series.completionPercentage)}%
-                      </span>
-                    </div>
-                    
-                    <div className={styles.progressBar}>
-                      <div 
-                        className={styles.progressFill}
-                        style={{ width: `${series.completionPercentage}%` }}
-                      />
-                    </div>
-                    
-                    <div className={styles.seriesStats}>
-                      <span>Owned: {series.ownedIssues.length} issues</span>
-                      <span>Missing: {series.missingIssues.length} issues</span>
-                      {series.variants > 0 && (
-                        <span>Variants: {series.variants}</span>
+
+                {insights.topSeries.map((series, index) => {
+                  // A "scattered" series is picked issues across a wide span, so
+                  // completion % and gap counts would be misleading; list what's owned instead.
+                  const isRun = series.pattern === 'run';
+
+                  return (
+                    <div key={index} className={styles.seriesCard}>
+                      <div className={styles.seriesHeader}>
+                        <h3>{series.seriesName}</h3>
+                        <span className={styles.completionBadge}>
+                          {isRun ? `${Math.round(series.completionPercentage)}% of run` : 'Selected issues'}
+                        </span>
+                      </div>
+
+                      {isRun && (
+                        <div className={styles.progressBar}>
+                          <div
+                            className={styles.progressFill}
+                            style={{ width: `${series.completionPercentage}%` }}
+                          />
+                        </div>
+                      )}
+
+                      <div className={styles.seriesStats}>
+                        <span>Owned: {plural(series.ownedIssues.length, 'issue')}</span>
+                        {isRun && <span>Missing: {plural(series.missingIssues.length, 'issue')}</span>}
+                        {series.variants > 0 && (
+                          <span>Variants: {series.variants}</span>
+                        )}
+                      </div>
+
+                      <div className={styles.seriesStats}>
+                        <span>You own: {formatIssueRanges(series.ownedIssues)}</span>
+                      </div>
+
+                      {isRun && series.missingRanges.length > 0 && (
+                        <div className={styles.missingIssues}>
+                          <strong>Missing issues:</strong> {series.missingRanges.slice(0, 6).join(', ')}
+                          {series.missingRanges.length > 6 && ' and more'}
+                        </div>
                       )}
                     </div>
-                    
-                    {series.missingIssues.length > 0 && series.missingIssues.length <= 10 && (
-                      <div className={styles.missingIssues}>
-                        <strong>Missing issues:</strong> #{series.missingIssues.join(', #')}
-                      </div>
-                    )}
-                    
-                    {series.missingIssues.length > 10 && (
-                      <div className={styles.missingIssues}>
-                        <strong>Missing {series.missingIssues.length} issues</strong> (#{series.missingIssues[0]} - #{series.missingIssues[series.missingIssues.length - 1]})
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </article>

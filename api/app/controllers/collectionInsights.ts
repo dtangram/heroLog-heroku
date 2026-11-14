@@ -3,33 +3,31 @@ import Anthropic from '@anthropic-ai/sdk';
 import db from '../models';
 import { Op } from 'sequelize';
 
-interface Comic {
-  id: string;
-  title: string;
-  comicIssue: number;
-  comicBookVolume?: number;
-  comicBookYear?: number;
-  type: 'regular' | 'variant';
-  comicBookTitle?: string;
-  comicbooktitlerelId?: string;
-}
-
-interface SeriesAnalysis {
-  seriesName: string;
-  totalIssues: number;
-  ownedIssues: number[];
-  missingIssues: number[];
-  completionPercentage: number;
-  variants: number;
-}
+import {
+  buildCollectionFacts,
+  CollectionFacts,
+  ComicRecord,
+  SeriesAnalysis,
+} from '../services/collectionFacts';
+import {
+  AnalysisResult,
+  AnalysisSource,
+  buildFallbackAnalysis,
+  CollectionAnalysis,
+  generateCollectionAnalysis,
+} from '../services/collectionAnalysis';
 
 interface CollectionInsights {
   totalComics: number;
+  uniqueIssues: number;
+  variantCopies: number;
+  duplicateCopies: number;
+  unnumberedComics: number;
   uniqueSeries: number;
   seriesBreakdown: SeriesAnalysis[];
   topSeries: SeriesAnalysis[];
-  recommendations: string[];
-  aiInsights: string;
+  analysis: CollectionAnalysis;
+  analysisSource: AnalysisSource;
 }
 
 interface InsightsResponse {
@@ -57,112 +55,35 @@ const getComicBookTitleModel = () => {
   return (db as any).ComicBookTitles || (db as any).ComicBookTitle;
 };
 
-const analyzeSeriesCompleteness = (comics: Comic[]): SeriesAnalysis[] => {
-  const seriesMap = new Map<string, Comic[]>();
-  
-  // Group comics by series
-  comics.forEach(comic => {
-    const seriesKey = comic.title || comic.comicBookTitle || 'Unknown';
-    if (!seriesMap.has(seriesKey)) {
-      seriesMap.set(seriesKey, []);
-    }
-    seriesMap.get(seriesKey)!.push(comic);
-  });
-  
-  // Analyze each series
-  const analyses: SeriesAnalysis[] = [];
-  
-  seriesMap.forEach((seriesComics, seriesName) => {
-    const regularComics = seriesComics.filter(c => c.type === 'regular');
-    const variants = seriesComics.filter(c => c.type === 'variant').length;
-    
-    const ownedIssues = regularComics
-      .map(c => c.comicIssue)
-      .filter(issue => issue && issue > 0)
-      .sort((a, b) => a - b);
-    
-    if (ownedIssues.length === 0) return;
-    
-    const minIssue = Math.min(...ownedIssues);
-    const maxIssue = Math.max(...ownedIssues);
-    
-    // Determine missing issues in the range
-    const missingIssues: number[] = [];
-    for (let i = minIssue; i <= maxIssue; i++) {
-      if (!ownedIssues.includes(i)) {
-        missingIssues.push(i);
-      }
-    }
-    
-    const totalIssues = maxIssue - minIssue + 1;
-    const completionPercentage = (ownedIssues.length / totalIssues) * 100;
-    
-    analyses.push({
-      seriesName,
-      totalIssues,
-      ownedIssues,
-      missingIssues,
-      completionPercentage,
-      variants
-    });
-  });
-  
-  return analyses.sort((a, b) => b.completionPercentage - a.completionPercentage);
-};
+const emptyInsights = (summary: string): CollectionInsights => ({
+  totalComics: 0,
+  uniqueIssues: 0,
+  variantCopies: 0,
+  duplicateCopies: 0,
+  unnumberedComics: 0,
+  uniqueSeries: 0,
+  seriesBreakdown: [],
+  topSeries: [],
+  analysis: { summary, highlights: [], recommendations: [], observation: '' },
+  analysisSource: 'fallback',
+});
 
-const generateAIInsights = async (
-  analyses: SeriesAnalysis[],
-  totalComics: number
-): Promise<string> => {
-  const anthropic = getAnthropicClient();
-  
-  // Prepare data summary for Claude
-  const topSeries = analyses.slice(0, 5);
-  const summaryData = {
-    totalComics,
-    uniqueSeries: analyses.length,
-    topSeries: topSeries.map(s => ({
-      name: s.seriesName,
-      owned: s.ownedIssues.length,
-      total: s.totalIssues,
-      completion: Math.round(s.completionPercentage),
-      missing: s.missingIssues.length
-    }))
-  };
-  
-  try {
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
-      messages: [{
-        role: 'user',
-        content: `You are a comic book collection advisor. Analyze this collection and provide personalized insights.
-
-Collection Summary:
-${JSON.stringify(summaryData, null, 2)}
-
-Provide a brief, friendly analysis covering:
-1. Overall collection health (2-3 sentences)
-2. Notable achievements (e.g., near-complete series)
-3. Smart recommendations for gaps to fill
-4. One interesting observation about the collection
-
-Keep it concise, encouraging, and actionable. Write in 2nd person ("You have...", "Your collection...").`
-      }]
-    });
-    
-    const insightText = message.content
-      .filter(block => block.type === 'text')
-      .map(block => (block as any).text)
-      .join('\n');
-    
-    return insightText;
-    
-  } catch (error) {
-    console.error('Error generating AI insights:', error);
-    return 'Your collection shows great potential! Keep adding to your favorite series.';
-  }
-};
+const toInsights = (
+  facts: CollectionFacts,
+  analysis: CollectionAnalysis,
+  analysisSource: AnalysisSource
+): CollectionInsights => ({
+  totalComics: facts.totalComics,
+  uniqueIssues: facts.uniqueIssues,
+  variantCopies: facts.variantCopies,
+  duplicateCopies: facts.duplicateCopies,
+  unnumberedComics: facts.unnumberedComics,
+  uniqueSeries: facts.uniqueSeries,
+  seriesBreakdown: facts.series,
+  topSeries: facts.series.slice(0, 10),
+  analysis,
+  analysisSource,
+});
 
 // CONTROLLER
 export const getCollectionInsights = async (
@@ -200,14 +121,7 @@ export const getCollectionInsights = async (
     if (userPublishers.length === 0) {
       return res.status(200).json({
         success: true,
-        data: {
-          totalComics: 0,
-          uniqueSeries: 0,
-          seriesBreakdown: [],
-          topSeries: [],
-          recommendations: ['Start building your collection by adding your first comic!'],
-          aiInsights: 'Your collection is just beginning! Add some comics to get personalized insights.'
-        }
+        data: emptyInsights('Your collection is just beginning! Add some comics to get personalized insights.')
       });
     }
     
@@ -224,14 +138,7 @@ export const getCollectionInsights = async (
     if (userTitles.length === 0) {
       return res.status(200).json({
         success: true,
-        data: {
-          totalComics: 0,
-          uniqueSeries: 0,
-          seriesBreakdown: [],
-          topSeries: [],
-          recommendations: ['Start building your collection by adding your first comic!'],
-          aiInsights: 'Your collection is just beginning! Add some comics to get personalized insights.'
-        }
+        data: emptyInsights('Your collection is just beginning! Add some comics to get personalized insights.')
       });
     }
     
@@ -249,14 +156,7 @@ export const getCollectionInsights = async (
     if (comicBooks.length === 0) {
       return res.status(200).json({
         success: true,
-        data: {
-          totalComics: 0,
-          uniqueSeries: 0,
-          seriesBreakdown: [],
-          topSeries: [],
-          recommendations: ['Start adding issues to your comic book titles!'],
-          aiInsights: 'You have publishers and titles set up. Now add some comic book issues to see insights!'
-        }
+        data: emptyInsights('You have publishers and titles set up. Now add some comic book issues to see insights!')
       });
     }
     
@@ -267,54 +167,26 @@ export const getCollectionInsights = async (
     });
     
     // Convert to plain objects with proper title names
-    const comics: Comic[] = comicBooks.map((cb: any) => ({
-      id: cb.id,
+    const comics: ComicRecord[] = comicBooks.map((cb: any) => ({
       title: titleMap.get(cb.comicbooktitlerelId) || cb.title || 'Unknown',
       comicIssue: cb.comicIssue,
-      comicBookVolume: cb.comicBookVolume,
-      comicBookYear: cb.comicBookYear,
       type: cb.type,
-      comicbooktitlerelId: cb.comicbooktitlerelId
     }));
     
-    // Analyze series completeness
-    const seriesAnalyses = analyzeSeriesCompleteness(comics);
-    const topSeries = seriesAnalyses.slice(0, 10);
+    // Every number on the page comes from here, not from the model
+    const facts = buildCollectionFacts(comics);
+    console.log(`Analyzed ${facts.uniqueSeries} unique series`);
     
-    console.log(`Analyzed ${seriesAnalyses.length} unique series`);
-    
-    // Generate recommendations
-    const recommendations: string[] = [];
-    
-    topSeries.forEach(series => {
-      if (series.completionPercentage >= 80 && series.completionPercentage < 100) {
-        const missingCount = series.missingIssues.length;
-        const missingList = series.missingIssues.slice(0, 3).join(', ');
-        recommendations.push(
-          `Complete ${series.seriesName}! You're ${Math.round(series.completionPercentage)}% done. ` +
-          `Missing ${missingCount} issue${missingCount > 1 ? 's' : ''}: #${missingList}${missingCount > 3 ? '...' : ''}`
-        );
-      }
-    });
-    
-    if (recommendations.length === 0) {
-      recommendations.push('Keep building your collection across different series!');
-    }
-    
-    // Generate AI insights
+    // Grounded AI analysis: validated against the facts, with a data-only fallback
     console.log('Generating AI insights...');
-    const aiInsights = await generateAIInsights(seriesAnalyses, comics.length);
+    const result: AnalysisResult = process.env.ANTHROPIC_API_KEY
+      ? await generateCollectionAnalysis(facts, getAnthropicClient())
+      : { analysis: buildFallbackAnalysis(facts), source: 'fallback', attempts: 0, rejected: [] };
+    console.log(
+      `Insights generated (source: ${result.source}, attempts: ${result.attempts}, rejected: ${result.rejected.length})`
+    );
     
-    const insights: CollectionInsights = {
-      totalComics: comics.length,
-      uniqueSeries: seriesAnalyses.length,
-      seriesBreakdown: seriesAnalyses,
-      topSeries,
-      recommendations: recommendations.slice(0, 5),
-      aiInsights
-    };
-    
-    console.log('Insights generated successfully');
+    const insights = toInsights(facts, result.analysis, result.source);
     
     return res.status(200).json({
       success: true,

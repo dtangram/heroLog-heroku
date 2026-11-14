@@ -32,35 +32,75 @@ describe('CollectionInsights', () => {
     expect(screen.getByText(/analyzing your collection/i)).toBeInTheDocument();
   });
 
-  it('displays insights when data is loaded', async () => {
-    const mockInsights = {
-      totalComics: 50,
-      uniqueSeries: 10,
-      topSeries: [
-        {
-          seriesName: 'Batman',
-          totalIssues: 20,
-          completionPercentage: 75,
-          ownedIssues: [1, 2, 3],
-          missingIssues: [4, 5],
-          variants: 2,
-        },
-      ],
-      recommendations: ['Complete Batman series!'],
-      aiInsights: 'Your collection is impressive!',
-    };
+  const batmanSeries = {
+    seriesName: 'Batman',
+    ownedIssues: [497, 500, 541, 600, 619],
+    missingIssues: [],
+    missingRanges: ['#498–#499', '#501–#540'],
+    span: { first: 497, last: 619 },
+    totalIssues: 123,
+    completionPercentage: 4,
+    pattern: 'scattered',
+    variants: 1,
+    duplicateCopies: 1,
+  };
 
+  const mockInsights = {
+    totalComics: 7,
+    uniqueIssues: 5,
+    variantCopies: 1,
+    duplicateCopies: 1,
+    unnumberedComics: 0,
+    uniqueSeries: 1,
+    seriesBreakdown: [batmanSeries],
+    topSeries: [batmanSeries],
+    analysis: {
+      summary: 'Your collection is impressive!',
+      highlights: ['Batman #500 is a milestone issue.'],
+      recommendations: [{ series: 'Batman', issues: [492], reason: 'It starts Knightfall.' }],
+      observation: 'You collect key moments.',
+    },
+    analysisSource: 'ai',
+  };
+
+  it('displays insights when data is loaded', async () => {
     (API.get as jest.Mock).mockResolvedValue(mockInsights);
 
     render(<CollectionInsights />);
 
     await waitFor(() => {
-      expect(screen.getByText('50')).toBeInTheDocument();
+      expect(screen.getByText('7')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('Batman')).toBeInTheDocument();
+    expect(screen.getByText('5 unique issues · 1 variant · 1 duplicate')).toBeInTheDocument();
     expect(screen.getByText(/your collection is impressive/i)).toBeInTheDocument();
+    expect(screen.getByText('Batman #500 is a milestone issue.')).toBeInTheDocument();
+    expect(screen.getByText('Batman #492')).toBeInTheDocument();
+    expect(screen.queryByText(/ai analysis isn't available/i)).not.toBeInTheDocument();
+  });
+
+  it('shows owned issues for a scattered series instead of a misleading gap count', async () => {
+    (API.get as jest.Mock).mockResolvedValue(mockInsights);
+
+    render(<CollectionInsights />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected issues')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('You own: #497, #500, #541, #600, #619')).toBeInTheDocument();
+    expect(screen.queryByText(/missing:/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('labels a summary built from data when AI analysis is unavailable', async () => {
+    (API.get as jest.Mock).mockResolvedValue({ ...mockInsights, analysisSource: 'fallback' });
+
+    render(<CollectionInsights />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/ai analysis isn't available/i)).toBeInTheDocument();
+    });
   });
 
   it('displays error message on failure', async () => {
@@ -77,10 +117,14 @@ describe('CollectionInsights', () => {
     const mockEmptyInsights = {
       totalComics: 0,
       uniqueSeries: 0,
+      uniqueIssues: 0,
+      variantCopies: 0,
+      duplicateCopies: 0,
+      unnumberedComics: 0,
       topSeries: [],
       seriesBreakdown: [],
-      recommendations: ['Start building your collection!'],
-      aiInsights: 'Start building your collection!',
+      analysis: { summary: 'Start building your collection!', highlights: [], recommendations: [], observation: '' },
+      analysisSource: 'fallback',
     };
 
     (API.get as jest.Mock).mockResolvedValue(mockEmptyInsights);
