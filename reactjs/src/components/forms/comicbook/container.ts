@@ -37,28 +37,23 @@ interface RootState {
   };
 }
 
-const mapStateToProps = (state: RootState) => {
-  const { comicbooklistissues } = state;
- 
-  if (!comicbooklistissues) {
-    return { comicbook: null };
-  }
+/**
+ * Every loaded comic book, keyed by its id, across all titles.
+ * The form picks the one matching the :id in the URL. (Previously this
+ * returned whichever comic was stored last, so Edit could open the wrong one.)
+ */
+export const mapStateToProps = (state: RootState) => {
+  const comicBooksById: Record<string, ComicBook> = {};
 
-  // Try to find the most recently loaded comic book across all titles
-  const allTitles = Object.values(comicbooklistissues);
-  
-  for (const title of allTitles) {
-    const comicBookIds = Object.keys(title?.byId || {});
-    if (comicBookIds.length > 0) {
-      const lastComicBookId = comicBookIds[comicBookIds.length - 1];
-      const comicBookState = title.byId[lastComicBookId];
+  Object.values(state.comicbooklistissues || {}).forEach(title => {
+    Object.entries(title?.byId || {}).forEach(([comicBookId, comicBookState]) => {
       if (comicBookState?.data) {
-        return { comicbook: comicBookState.data };
+        comicBooksById[comicBookId] = comicBookState.data;
       }
-    }
-  }
- 
-  return { comicbook: null };
+    });
+  });
+
+  return { comicBooksById };
 };
 
 const mapDispatchToProps = {
