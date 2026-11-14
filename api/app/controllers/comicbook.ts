@@ -463,12 +463,16 @@ export const createComicBook = async (
     });
   }
   
-  // Validate year if provided
-  if (year !== undefined && year !== '' && (typeof year !== 'number' || !isValidYear(Number(year)))) {
-    return res.status(400).json({ 
-      success: false,
-      error: 'Year must be a valid number between 1900 and current year + 1'
-    });
+  // Validate year if provided. Forms send it as a string ("1994"), so convert
+  // before checking, the same way updateComicBook does.
+  if (year !== undefined && year !== null && year !== '') {
+    const yearValue = typeof year === 'string' ? Number(year) : year;
+    if (isNaN(yearValue) || !isValidYear(yearValue)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Year must be a valid number between 1900 and current year + 1'
+      });
+    }
   }
   
   // Validate optional string fields
