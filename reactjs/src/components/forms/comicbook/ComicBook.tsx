@@ -61,7 +61,7 @@ const MAX_YEAR_LENGTH = 4;
 const REDIRECT_DELAY = 1500;
 
 const ComicBookComponent = ({
-  comicbook,
+  comicBooksById,
   createComicBook,
   fetchComicBook,
   fetchComicBooks,
@@ -78,6 +78,9 @@ const ComicBookComponent = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const userId = localStorage.getItem('id') || getAnonymousUserId();
+
+  // The comic being edited: the one whose id is in the URL, never just the last one loaded
+  const comicbook = id ? comicBooksById[id] : undefined;
 
   // Log route params for debugging
   useEffect(() => {
@@ -108,7 +111,8 @@ const ComicBookComponent = ({
 
   // Populate form when editing
   useEffect(() => {
-    if (comicbook && comicbook.id) {
+    // Only fill the form with the comic that matches the URL
+    if (comicbook && String(comicbook.id) === id) {
       console.log('✏️ Populating form with comic book data:', comicbook);
       setFormState({
         title: comicbook.title || '',
@@ -123,7 +127,7 @@ const ComicBookComponent = ({
         type: comicbook.type || '',
       });
     }
-  }, [comicbook]);
+  }, [comicbook, id]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
