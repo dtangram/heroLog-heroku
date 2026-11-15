@@ -181,7 +181,7 @@ const Home = ({
                 className={styles.issueWrap} 
                 key={id}
               >
-                {/* <figure>
+                <figure>
                   <img 
                     src={comicBookCover || logo} 
                     alt={`${comicBookTitle}${comicIssue ? ` Issue ${comicIssue}` : ''} cover`} 
@@ -207,7 +207,7 @@ const Home = ({
                     </RRLink>
                     <p>Send a message to the owner of this comic book.</p>
                   </article>
-                )} */}
+                )}
               </Col>
             ))}
           </Row>
