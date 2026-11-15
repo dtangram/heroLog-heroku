@@ -12,6 +12,11 @@ interface ComicMetadata {
   comicBookVolume: string;
   comicBookYear: string;
   comicBookPublisher: string;
+  /** Creator credits printed on the cover; empty string when not shown */
+  author: string;
+  penciler: string;
+  inker: string;
+  coverartist: string;
   type: 'regular' | 'variant';
   confidence: number;
 }
@@ -74,7 +79,10 @@ const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string
   }
 };
 
-const parseComicMetadata = (text: string): ComicMetadata | null => {
+const asText = (value: unknown): string =>
+  value === undefined || value === null ? '' : String(value).trim();
+
+export const parseComicMetadata = (text: string): ComicMetadata | null => {
   try {
     // Try to find JSON in the response
     const jsonMatch = text.match(/\{[\s\S]*?\}/);
@@ -88,6 +96,10 @@ const parseComicMetadata = (text: string): ComicMetadata | null => {
         comicBookVolume: (parsed.volume?.toString() || parsed.comicBookVolume?.toString() || '').trim(),
         comicBookYear: (parsed.year?.toString() || parsed.comicBookYear?.toString() || '').trim(),
         comicBookPublisher: (parsed.publisher || parsed.comicBookPublisher || '').trim(),
+        author: asText(parsed.author || parsed.writer),
+        penciler: asText(parsed.penciler || parsed.artist),
+        inker: asText(parsed.inker),
+        coverartist: asText(parsed.coverartist || parsed.coverArtist),
         type: parsed.type?.toLowerCase() === 'variant' ? 'variant' : 'regular',
         confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.7
       };
@@ -181,12 +193,21 @@ export const scanComicCover = async (
    - Often appears as a logo
    - Common publishers: Marvel Comics, DC Comics, Image Comics, Dark Horse Comics, IDW Publishing, Boom! Studios, Dynamite Entertainment, Valiant Comics
 
-6. **Type**: Is this a regular issue or variant cover?
+6. **Creators**: Names printed on the cover, usually in a small credit box near a bottom corner or in a strip along the top or bottom
+   - If names have labels, use them: "Writer", "Story", "Script" or "Words" → author; "Art", "Artist", "Pencils" or "Penciller" → penciler; "Inks" or "Inker" → inker; "Cover" or "Cover by" → coverartist
+   - If two names appear stacked or listed without labels (common on DC and Marvel covers from the 1980s and 1990s, e.g. "DOUG MOENCH / JIM APARO"), the first is the writer (author) and the second is the interior artist (penciler)
+   - A credit box names the interior creators, not the cover artist. Only fill coverartist when the cover says who drew the cover or the cover artist's signature is clearly legible
+   - Never fill inker from an unlabeled credit box
+   - Write names in normal capitalization (e.g. "Doug Moench", not "DOUG MOENCH")
+   - Join multiple people in one role with ", "
+   - Only use names printed on the cover; never fill a creator from memory
+
+7. **Type**: Is this a regular issue or variant cover?
    - "variant" if you see: variant cover label, special edition text, alternate cover indicator, limited edition notation
    - "regular" for standard issues
    - Default to "regular" if unsure
 
-7. **Confidence**: Your confidence level (0.0 to 1.0)
+8. **Confidence**: Your confidence level (0.0 to 1.0)
    - 0.9-1.0: Very clear, all text is readable
    - 0.7-0.8: Most information is visible
    - 0.5-0.6: Some text is unclear or partially visible
@@ -200,6 +221,10 @@ export const scanComicCover = async (
   "volume": "number or empty string",
   "year": "YYYY or empty string",
   "publisher": "publisher name",
+  "author": "writer name or empty string",
+  "penciler": "penciler name or empty string",
+  "inker": "inker name or empty string",
+  "coverartist": "cover artist name or empty string",
   "type": "regular or variant",
   "confidence": 0.85
 }

@@ -1,12 +1,25 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ComicBook from './ComicBook';
 import { mapStateToProps } from './container';
 
 jest.mock('../../../API');
 jest.mock('../../../utils/anonymousUser', () => ({ getAnonymousUserId: () => 'anonymous-id' }));
-jest.mock('../../scanCoverButton/ScanCoverButton', () => () => null);
+jest.mock('../../scanCoverButton/ScanCoverButton', () => ({ onScan }: { onScan: () => void }) => (
+  <button type="button" onClick={onScan}>
+    Scan Cover with AI
+  </button>
+));
+
+const mockScanCover = jest.fn();
+jest.mock('../../../hooks/useComicScanner', () => ({
+  useComicScanner: () => ({
+    scanCover: (...args: unknown[]) => mockScanCover(...args),
+    isScanning: false,
+    scanError: '',
+  }),
+}));
 
 // Two Batman issues loaded by the dashboard, #619 stored last — the setup from
 // the bug recording where Edit on #401 opened #619.
@@ -78,5 +91,111 @@ describe('ComicBook edit form', () => {
     renderEditPage('comic-not-loaded-yet');
 
     expect(screen.getByLabelText(/issue/i)).toHaveValue('');
+  });
+});
+
+describe('ComicBook new comic: year validation', () => {
+  const currentYear = new Date().getFullYear();
+
+  beforeAll(() => {
+    window.scrollTo = jest.fn();
+  });
+
+  const fillAndSubmit = (year: string) => {
+    const actions = {
+      createComicBook: jest.fn().mockResolvedValue(undefined),
+      fetchComicBook: jest.fn(),
+      fetchComicBooks: jest.fn(),
+      updateComicBook: jest.fn(),
+      deleteComicBook: jest.fn(),
+    };
+    render(
+      <MemoryRouter initialEntries={['/forms/user-1/pub-1/Marvel/title-asm/Amazing/comicbook/new']}>
+        <Routes>
+          <Route
+            path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new"
+            element={<ComicBook {...(mapStateToProps({ comicbooklistissues: {} } as any) as any)} {...(actions as any)} />}
+          />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'The Amazing Spider-Man' } });
+    fireEvent.change(screen.getByLabelText(/issue/i), { target: { value: '395' } });
+    fireEvent.click(screen.getByLabelText(/regular cover/i));
+    fireEvent.change(screen.getByLabelText(/year/i), { target: { value: year } });
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+    return actions;
+  };
+
+  it('submits a valid year like 1994', async () => {
+    const actions = fillAndSubmit('1994');
+    await waitFor(() =>
+      expect(actions.createComicBook).toHaveBeenCalledWith(expect.objectContaining({ year: '1994' }))
+    );
+    expect(screen.getByLabelText(/year/i)).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it.each(['1850', '0001', String(currentYear + 5)])('blocks submitting year %s and explains why', year => {
+    const actions = fillAndSubmit(year);
+
+    expect(actions.createComicBook).not.toHaveBeenCalled();
+    expect(screen.getByText(`Year must be between 1900 and ${currentYear + 1}`)).toBeInTheDocument();
+    expect(screen.getByLabelText(/year/i)).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('clears the year error once the year is edited', () => {
+    fillAndSubmit('1850');
+    fireEvent.change(screen.getByLabelText(/year/i), { target: { value: '1994' } });
+
+    expect(screen.queryByText(/year must be between/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('ComicBook scan: creator credits', () => {
+  beforeAll(() => {
+    window.scrollTo = jest.fn();
+    window.alert = jest.fn();
+  });
+
+  const scanResult = (overrides = {}) => ({
+    title: 'Batman',
+    comicIssue: '491',
+    comicBookVolume: '',
+    comicBookYear: '',
+    comicBookPublisher: 'DC Comics',
+    author: 'Doug Moench',
+    penciler: 'Jim Aparo',
+    inker: '',
+    coverartist: '',
+    type: 'regular',
+    confidence: 0.9,
+    ...overrides,
+  });
+
+  it('fills Author and Penciler from the cover credit box', async () => {
+    mockScanCover.mockResolvedValue(scanResult());
+    renderEditPage('comic-401');
+    await waitFor(() => expect(screen.getByLabelText(/issue/i)).toHaveValue('401'));
+
+    fireEvent.click(screen.getByRole('button', { name: /scan cover with ai/i }));
+
+    await waitFor(() => expect(screen.getByLabelText(/author/i)).toHaveValue('Doug Moench'));
+    expect(screen.getByLabelText(/penciler/i)).toHaveValue('Jim Aparo');
+    expect(screen.getByLabelText(/inker/i)).toHaveValue('');
+    expect(screen.getByLabelText(/cover artist/i)).toHaveValue('');
+    expect(mockScanCover).toHaveBeenCalledWith('batman-401.jpg');
+  });
+
+  it('keeps names already entered when the cover shows no credits', async () => {
+    mockScanCover.mockResolvedValue(scanResult({ author: '', penciler: '' }));
+    renderEditPage('comic-401');
+    await waitFor(() => expect(screen.getByLabelText(/issue/i)).toHaveValue('401'));
+
+    fireEvent.change(screen.getByLabelText(/author/i), { target: { value: 'Alan Grant' } });
+    fireEvent.click(screen.getByRole('button', { name: /scan cover with ai/i }));
+
+    await waitFor(() => expect(window.alert).toHaveBeenCalled());
+    expect(screen.getByLabelText(/author/i)).toHaveValue('Alan Grant');
   });
 });
