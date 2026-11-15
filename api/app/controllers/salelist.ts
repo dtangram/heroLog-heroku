@@ -195,6 +195,20 @@ const validateNumber = (value: number, fieldName: string, min?: number, max?: nu
   return { isValid: true };
 };
 
+/**
+ * Forms send numbers as strings ("25", or "" when blank). Convert before
+ * validating: "" → null (clears the field), "25" → 25, "25A" → NaN so
+ * validation rejects it. undefined means the field wasn't sent.
+ */
+const toNumberOrNull = (value: unknown): number | null | undefined => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value === 'number') return value;
+  const text = String(value).trim();
+  if (text === '') return null;
+  return /^\d+$/.test(text) ? Number(text) : NaN;
+};
+
 const validateUUID = (value: string, fieldName: string): ValidationResult => {
   if (!isValidUUID(value)) {
     return {
@@ -523,6 +537,14 @@ export const updateSaleList = async (
   }
   
   const updateData: Partial<SaleListAttributes> = { ...req.body };
+
+  // Convert issue, volume and year from form strings, as createSaleList does
+  (['comicIssue', 'comicBookVolume', 'comicBookYear'] as const).forEach(field => {
+    const value = toNumberOrNull(req.body[field]);
+    if (value !== undefined) {
+      updateData[field] = value;
+    }
+  });
   
   if (updateData.comicBookTitle !== undefined) {
     const titleValidation = validateString(updateData.comicBookTitle, 'Comic book title');
