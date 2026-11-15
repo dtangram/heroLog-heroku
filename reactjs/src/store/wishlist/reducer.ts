@@ -235,11 +235,19 @@ const wishlistSuccess = (state: object, action: object): object => {
   const typedState = state as State;
   const typedAction = action as Action;
   const { id = '' } = typedAction.payload || {};
-  const wishlist = typedAction.data as WishlistComic;
-  
-  if (!wishlist?.userId) return typedState;
-  
-  const { userId } = wishlist;
+  const wishlist = typedAction.data as WishlistComic & { wishUsersId?: string };
+  // The API names the owner wishUsersId; the store files wishlists under userId.
+  // Previously anything without userId was dropped, so Edit never filled the
+  // form and the wishlist didn't show changes until the page was refreshed.
+  const userId =
+    wishlist?.userId ||
+    wishlist?.wishUsersId ||
+    typedAction.payload?.wishlist?.userId ||
+    findUserIdByWishlistId(typedState, id) ||
+    '';
+
+  if (!userId) return typedState;
+
   const userState = getUserState(typedState, userId);
   const existingData = userState.byId[id]?.data || {};
 
@@ -253,7 +261,7 @@ const wishlistSuccess = (state: object, action: object): object => {
       ...userState,
       byId: {
         ...userState.byId,
-        [id]: createWishlistComicState({ ...existingData, ...wishlist }),
+        [id]: createWishlistComicState({ ...existingData, ...wishlist, userId } as WishlistComic),
       },
       allIds: newAllIds,
     },

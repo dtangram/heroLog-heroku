@@ -29,11 +29,19 @@ interface FormErrorsState {
 }
 
 interface WishListFormProps {
-  wishlist: WishlistComic;
+  wishlistsById: Record<string, WishlistComic>;
   fetchWishList: (id: string) => void;
   createWishList: (payload: Omit<WishlistComic, 'id' | 'userId'>) => void;
   updateWishList: (payload: Partial<WishlistComic> & { id: string }) => void;
 }
+
+/**
+ * The database stores issue, volume and year as numbers (25), but the form
+ * works with text: its checks call .trim(), which throws on a number. That's
+ * why Update did nothing until a scan replaced the numbers with text.
+ */
+const toFormText = (value: unknown): string =>
+  value === undefined || value === null ? '' : String(value);
 
 const INITIAL_FORM_STATE: FormState = {
   comicBookTitle: '',
@@ -51,9 +59,12 @@ const MIN_TITLE_LENGTH = 1;
 const MAX_YEAR_LENGTH = 4;
 const REDIRECT_DELAY = 1500;
 
-const WishListForm = ({ wishlist, fetchWishList, createWishList, updateWishList }: WishListFormProps) => {
+const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWishList }: WishListFormProps) => {
   const navigate = useNavigate();
   const { id } = useParams<RouteParams>();
+
+  // The comic being edited: the one whose id is in the URL. None on "Add New".
+  const wishlist = id ? wishlistsById[id] : undefined;
   
   const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
   const [formErrors, setFormErrors] = useState<FormErrorsState>({});
@@ -89,19 +100,20 @@ const WishListForm = ({ wishlist, fetchWishList, createWishList, updateWishList 
 
   // Populate form when editing
   useEffect(() => {
-    if (wishlist && wishlist.id) {
+    // Only fill the form with the comic that matches the URL
+    if (wishlist && String(wishlist.id) === id) {
       console.log('✏️ Populating form with wishlist data:', wishlist);
       setFormState({
         comicBookTitle: wishlist.comicBookTitle || '',
-        comicIssue: wishlist.comicIssue || '',
-        comicBookVolume: wishlist.comicBookVolume || '',
-        comicBookYear: wishlist.comicBookYear || '',
+        comicIssue: toFormText(wishlist.comicIssue),
+        comicBookVolume: toFormText(wishlist.comicBookVolume),
+        comicBookYear: toFormText(wishlist.comicBookYear),
         comicBookPublisher: wishlist.comicBookPublisher || '',
         comicBookCover: wishlist.comicBookCover || '',
         type: wishlist.type as 'regular' | 'variant' || '',
       });
     }
-  }, [wishlist]);
+  }, [wishlist, id]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;

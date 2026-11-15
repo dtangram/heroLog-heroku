@@ -32,11 +32,19 @@ interface FormErrorsState {
 }
 
 interface SaleFormProps {
-  sale: SaleComic;
+  salesById: Record<string, SaleComic>;
   createSale: (sale: Omit<SaleComic, 'id'>) => void;
   fetchSale: (id: string) => void;
   updateSale: (sale: SaleComic) => void;
 }
+
+/**
+ * The database stores issue, volume and year as numbers (25), but the form
+ * works with text: its checks call .trim(), which throws on a number. That's
+ * why Update did nothing until a scan replaced the numbers with text.
+ */
+const toFormText = (value: unknown): string =>
+  value === undefined || value === null ? '' : String(value);
 
 const INITIAL_FORM_STATE: FormState = {
   comicBookTitle: '',
@@ -53,9 +61,12 @@ const MAX_FILE_SIZE = 1e6; // 1MB
 const MIN_TITLE_LENGTH = 2;
 const REDIRECT_DELAY = 1500;
 
-const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) => {
+const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProps) => {
   const navigate = useNavigate();
   const { id } = useParams<RouteParams>();
+
+  // The comic being edited: the one whose id is in the URL. None on "Add New".
+  const sale = id ? salesById[id] : undefined;
   
   const [formState, setFormState] = useState<FormState>(INITIAL_FORM_STATE);
   const [formErrors, setFormErrors] = useState<FormErrorsState>({});
@@ -91,19 +102,20 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
 
   // Populate form when editing
   useEffect(() => {
-    if (sale && sale.id) {
+    // Only fill the form with the comic that matches the URL
+    if (sale && String(sale.id) === id) {
       console.log('✏️ Populating form with sale data:', sale);
       setFormState({
         comicBookTitle: sale.comicBookTitle || '',
-        comicIssue: sale.comicIssue || '',
-        comicBookVolume: sale.comicBookVolume || '',
-        comicBookYear: sale.comicBookYear || '',
+        comicIssue: toFormText(sale.comicIssue),
+        comicBookVolume: toFormText(sale.comicBookVolume),
+        comicBookYear: toFormText(sale.comicBookYear),
         comicBookPublisher: sale.comicBookPublisher || '',
         comicBookCover: sale.comicBookCover || '',
         type: sale.type as 'regular' | 'variant' || '',
       });
     }
-  }, [sale, sale.id, sale.comicBookTitle, sale.comicIssue, sale.comicBookVolume, sale.comicBookYear, sale.comicBookPublisher, sale.comicBookCover, sale.type]);
+  }, [sale, id]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;

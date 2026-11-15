@@ -8,23 +8,23 @@ import {
 } from '../../../store/wishlist/actions';
 import WishListForm from './WishListForm';
 
-const mapStateToProps = (state: RootState) => {
-  const userId = localStorage.getItem('id') || '';
- 
-  const defaultWishlist: WishlistComic = {
-    id: '',
-    comicBookTitle: '',
-    comicIssue: '',
-    comicBookVolume: '',
-    comicBookYear: '',
-    comicBookPublisher: '',
-    comicBookCover: '',
-    type: '',
-    userId,
-  };
- 
-  // Return default wishlist since the component will fetch based on id from useParams
-  return { wishlist: defaultWishlist };
+/**
+ * Every loaded wishlist comic, keyed by its id. The form picks the one whose
+ * :id is in the URL; on the "Add New" page there's no id, so it starts empty.
+ * (Previously this always returned an empty wishlist, so Edit never filled in the form.)
+ */
+export const mapStateToProps = (state: RootState) => {
+  const wishlistsById: Record<string, WishlistComic> = {};
+
+  Object.values(state.wishlists || {}).forEach(userState => {
+    Object.entries(userState?.byId || {}).forEach(([comicId, comicState]) => {
+      if (comicState?.data) {
+        wishlistsById[comicId] = comicState.data;
+      }
+    });
+  });
+
+  return { wishlistsById };
 };
 
 const mapDispatchToProps = {
