@@ -476,7 +476,7 @@ const SaleForm = ({ sale, fetchSale, createSale, updateSale }: SaleFormProps) =>
                 id="submitSale"
                 className={styles.submit}
                 type="submit"
-                value={isSubmitting ? 'SUBMITTING...' : (isEditMode ? 'UPDATE' : 'CREATE')}
+                value={isSubmitting ? 'SUBMITTING' : (isEditMode ? 'UPDATE' : 'SUBMIT')}
                 disabled={isSubmitting || isUploading}
               />
             </article>
