@@ -18,6 +18,7 @@ jest.mock('@anthropic-ai/sdk', () => {
 });
 
 import aiScannerRoutes from '../../routes/aiScanner';
+import { parseComicMetadata } from '../aiScanner';
 
 const app = express();
 app.use(express.json());
@@ -109,6 +110,70 @@ describe('AI Scanner Controller', () => {
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBeDefined();
+    });
+  });
+  describe('creator credits', () => {
+    // What Claude returns for Batman #491 (credit box: "DOUG MOENCH / JIM APARO")
+    const batman491 = JSON.stringify({
+      title: 'Batman',
+      issue: '491',
+      volume: '',
+      year: '',
+      publisher: 'DC Comics',
+      author: 'Doug Moench',
+      penciler: 'Jim Aparo',
+      inker: '',
+      coverartist: '',
+      type: 'regular',
+      confidence: 0.9,
+    });
+
+    beforeEach(() => {
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: Buffer.from('fake-image-data'),
+        headers: { 'content-type': 'image/jpeg' },
+      });
+      mockCreate.mockResolvedValue({ content: [{ type: 'text', text: batman491 }] });
+    });
+
+    it('returns the writer and artist read from the cover', async () => {
+      const response = await request(app)
+        .post('/api/ai/scan-comic-cover')
+        .send({ imageUrl: 'https://example.com/batman-491.jpg' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toMatchObject({
+        comicIssue: '491',
+        author: 'Doug Moench',
+        penciler: 'Jim Aparo',
+        inker: '',
+        coverartist: '',
+      });
+    });
+
+    it('asks Claude to read the credit box without guessing the cover artist', async () => {
+      await request(app)
+        .post('/api/ai/scan-comic-cover')
+        .send({ imageUrl: 'https://example.com/batman-491.jpg' });
+
+      const prompt = mockCreate.mock.calls[0][0].messages[0].content[1].text as string;
+      expect(prompt).toMatch(/credit box/i);
+      expect(prompt).toMatch(/"author"/);
+      expect(prompt).toMatch(/not the cover artist/i);
+      expect(prompt).toMatch(/never fill a creator from memory/i);
+    });
+
+    it('accepts writer/artist as alternate keys and blanks missing creators', () => {
+      expect(
+        parseComicMetadata('{"title":"Batman","issue":"491","writer":"Doug Moench","artist":"Jim Aparo"}')
+      ).toMatchObject({ author: 'Doug Moench', penciler: 'Jim Aparo', inker: '', coverartist: '' });
+
+      expect(parseComicMetadata('{"title":"Batman","issue":"423"}')).toMatchObject({
+        author: '',
+        penciler: '',
+        inker: '',
+        coverartist: '',
+      });
     });
   });
 });

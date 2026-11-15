@@ -35,6 +35,7 @@ interface FormErrorsState {
   title?: string;
   type?: string;
   titleID?: string;
+  year?: string;
 }
 
 interface ComicBookFormData extends FormState {
@@ -58,6 +59,9 @@ const INITIAL_FORM_STATE: FormState = {
 const VALID_IMAGE_EXTENSIONS = ['jpg', 'png', 'jpeg'];
 const MAX_FILE_SIZE = 1e6; // 1MB
 const MAX_YEAR_LENGTH = 4;
+// Same range the API accepts (isValidYear in api/app/controllers/comicbook.ts)
+const MIN_YEAR = 1900;
+const getMaxYear = () => new Date().getFullYear() + 1;
 const REDIRECT_DELAY = 1500;
 
 const ComicBookComponent = ({
@@ -148,6 +152,15 @@ const ComicBookComponent = ({
     
     if (value === '' || numericRegex.test(value)) {
       setFormState(prev => ({ ...prev, [fieldName]: value }));
+
+      // Clear the error for this field once the user edits it
+      if (formErrors[fieldName as keyof FormErrorsState]) {
+        setFormErrors(prev => {
+          const next = { ...prev };
+          delete next[fieldName as keyof FormErrorsState];
+          return next;
+        });
+      }
     }
   };
 
@@ -239,6 +252,10 @@ const handleScanCover = useCallback(async () => {
       comicIssue: result.comicIssue || prev.comicIssue,
       volume: result.volume || result.comicBookVolume || prev.volume,
       year: result.year || result.comicBookYear || prev.year,
+      author: result.author || prev.author,
+      penciler: result.penciler || prev.penciler,
+      inker: result.inker || prev.inker,
+      coverartist: result.coverartist || prev.coverartist,
       type: result.type || prev.type
     }));
 
@@ -257,6 +274,15 @@ const handleScanCover = useCallback(async () => {
     // Validate type
     if (!formState.type) {
       errors.type = 'Please select regular or variant';
+    }
+
+    // Validate year (optional, but must be in the range the API accepts)
+    if (formState.year.trim() !== '') {
+      const year = Number(formState.year);
+      const maxYear = getMaxYear();
+      if (!Number.isInteger(year) || year < MIN_YEAR || year > maxYear) {
+        errors.year = `Year must be between ${MIN_YEAR} and ${maxYear}`;
+      }
     }
 
     // Validate titleID (only for new comics, not edits)
@@ -502,6 +528,7 @@ const handleScanCover = useCallback(async () => {
                     name="year"
                     value={formState.year}
                     onChange={(e) => handleNumberChange(e, 'year')}
+                    aria-invalid={!!formErrors.year}
                     disabled={isSubmitting}
                   />
                 </label>

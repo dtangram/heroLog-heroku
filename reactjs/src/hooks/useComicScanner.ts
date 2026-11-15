@@ -10,6 +10,11 @@ interface ScanResult {
   comicBookYear: string;
   year?: string;
   comicBookPublisher: string;
+  /** Creator credits read from the cover; empty when not printed */
+  author?: string;
+  penciler?: string;
+  inker?: string;
+  coverartist?: string;
   type: 'regular' | 'variant';
   confidence: number;
 }
