@@ -181,7 +181,7 @@ const Home = ({
                 className={styles.issueWrap} 
                 key={id}
               >
-                <figure>
+                {/* <figure>
                   <img 
                     src={comicBookCover || logo} 
                     alt={`${comicBookTitle}${comicIssue ? ` Issue ${comicIssue}` : ''} cover`} 
@@ -194,7 +194,7 @@ const Home = ({
                   </h3>
                 ) : (
                   <h3>{comicBookTitle}</h3>
-                )}
+                )} */}
 
                 {user && (
                   <article>
