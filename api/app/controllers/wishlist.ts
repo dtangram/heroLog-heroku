@@ -147,6 +147,47 @@ const validateString = (
 };
 
 // ✅ Added UUID validation
+/**
+ * Forms send numbers as strings ("25", or "" when blank). Convert before
+ * saving: "" → null (clears the field), "25" → 25, "25A" → NaN so the check
+ * below rejects it. undefined means the field wasn't sent.
+ */
+const toNumberOrNull = (value: unknown): number | null | undefined => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value === 'number') return value;
+  const text = String(value).trim();
+  if (text === '') return null;
+  return /^\d+$/.test(text) ? Number(text) : NaN;
+};
+
+/** Same rules and messages as the sale list update. */
+const NUMBER_FIELDS = [
+  { field: 'comicIssue', label: 'Comic issue', min: 1 },
+  { field: 'comicBookVolume', label: 'Comic book volume', min: 1 },
+  { field: 'comicBookYear', label: 'Comic book year', min: 1900 },
+] as const;
+
+const validateNumberField = (
+  value: number,
+  label: string,
+  min: number,
+  isYear: boolean
+): ValidationResult => {
+  if (!Number.isInteger(value)) {
+    return { isValid: false, message: `${label} must be a valid number` };
+  }
+  if (isYear) {
+    const maxYear = new Date().getFullYear() + 1;
+    if (value < min || value > maxYear) {
+      return { isValid: false, message: 'Comic book year must be between 1900 and current year + 1' };
+    }
+  } else if (value < min) {
+    return { isValid: false, message: `${label} must be ${min} or greater` };
+  }
+  return { isValid: true };
+};
+
 const validateUUID = (value: string, fieldName: string = 'ID'): ValidationResult => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   
@@ -429,6 +470,24 @@ export const updateWishList = async (
   }
   
   const updateData: Partial<WishListAttributes> = { ...req.body };
+
+  // Convert issue, volume and year from form strings, so a blank field is
+  // saved as empty instead of '' (which PostgreSQL rejects for INTEGER columns)
+  for (const { field, label, min } of NUMBER_FIELDS) {
+    const value = toNumberOrNull((req.body as Record<string, unknown>)[field]);
+    if (value === undefined) continue;
+
+    if (value !== null) {
+      const numberValidation = validateNumberField(value, label, min, field === 'comicBookYear');
+      if (!numberValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          error: numberValidation.message
+        });
+      }
+    }
+    (updateData as Record<string, number | null>)[field] = value;
+  }
   
   const stringFields = [
     'comicBookTitle',
