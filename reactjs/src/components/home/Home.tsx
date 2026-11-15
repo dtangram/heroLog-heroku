@@ -183,7 +183,7 @@ const Home = ({
               >
                 <figure>
                   <img 
-                    src={comicBookCover} 
+                    src={comicBookCover || logo} 
                     alt={`${comicBookTitle}${comicIssue ? ` Issue ${comicIssue}` : ''} cover`} 
                   />
                 </figure>
