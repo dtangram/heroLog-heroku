@@ -18,7 +18,7 @@ jest.mock('@anthropic-ai/sdk', () => {
 });
 
 import aiScannerRoutes from '../../routes/aiScanner';
-import { parseComicMetadata } from '../aiScanner';
+import { normalizeYear, parseComicMetadata } from '../aiScanner';
 
 const app = express();
 app.use(express.json());
@@ -163,6 +163,47 @@ describe('AI Scanner Controller', () => {
       expect(prompt).toMatch(/never fill a creator from memory/i);
     });
 
+    it('tells Claude a third unlabeled name is the inker', async () => {
+      await request(app)
+        .post('/api/ai/scan-comic-cover')
+        .send({ imageUrl: 'https://example.com/detective-comics.jpg' });
+
+      const prompt = mockCreate.mock.calls[0][0].messages[0].content[1].text as string;
+      expect(prompt).toMatch(/three names[^\n]*writer \(author\), then penciler, then inker/i);
+      expect(prompt).toMatch(/with only two names, leave inker empty/i);
+    });
+
+    it('returns all three creators from a three-name credit box', async () => {
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              title: 'Detective Comics',
+              issue: '601',
+              publisher: 'DC Comics',
+              author: 'Alan Grant',
+              penciler: 'Norm Breyfogle',
+              inker: 'Steve Mitchell',
+              coverartist: '',
+              type: 'regular',
+              confidence: 0.9,
+            }),
+          },
+        ],
+      });
+
+      const response = await request(app)
+        .post('/api/ai/scan-comic-cover')
+        .send({ imageUrl: 'https://example.com/detective-comics.jpg' });
+
+      expect(response.body.data).toMatchObject({
+        author: 'Alan Grant',
+        penciler: 'Norm Breyfogle',
+        inker: 'Steve Mitchell',
+      });
+    });
+
     it('accepts writer/artist as alternate keys and blanks missing creators', () => {
       expect(
         parseComicMetadata('{"title":"Batman","issue":"491","writer":"Doug Moench","artist":"Jim Aparo"}')
@@ -174,6 +215,39 @@ describe('AI Scanner Controller', () => {
         inker: '',
         coverartist: '',
       });
+    });
+  });
+  describe('year from the cover date', () => {
+    it('tells Claude to read two-digit years from the cover date', async () => {
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: Buffer.from('fake-image-data'),
+        headers: { 'content-type': 'image/jpeg' },
+      });
+      mockCreate.mockResolvedValue({
+        content: [{ type: 'text', text: '{"title":"Batman","issue":"491","year":"1993"}' }],
+      });
+
+      await request(app).post('/api/ai/scan-comic-cover').send({ imageUrl: 'https://example.com/b.jpg' });
+
+      const prompt = mockCreate.mock.calls[0][0].messages[0].content[1].text as string;
+      expect(prompt).toMatch(/including the cover date/i);
+      expect(prompt).toMatch(/"93" → "1993"/);
+      expect(prompt).toMatch(/a month alone .* is not a year/i);
+    });
+
+    it('expands two-digit years and keeps four-digit years', () => {
+      expect(normalizeYear('1993')).toBe('1993');
+      expect(normalizeYear('93')).toBe('1993');
+      expect(normalizeYear("'87")).toBe('1987');
+      expect(normalizeYear('05')).toBe('2005');
+      expect(normalizeYear(1994)).toBe('1994');
+    });
+
+    it('leaves the year blank when no year is printed', () => {
+      expect(normalizeYear('')).toBe('');
+      expect(normalizeYear('APR')).toBe('');
+      expect(normalizeYear(undefined)).toBe('');
+      expect(parseComicMetadata('{"title":"Batman","issue":"491","year":"APR"}')?.comicBookYear).toBe('');
     });
   });
 });

@@ -82,6 +82,21 @@ const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string
 const asText = (value: unknown): string =>
   value === undefined || value === null ? '' : String(value).trim();
 
+/**
+ * Normalize a year read from a cover date to 4 digits: "1993" stays,
+ * "93" or "'93" becomes "1993", "05" becomes "2005". Anything else is blank.
+ */
+export const normalizeYear = (value: unknown): string => {
+  const text = asText(value).replace(/^'/, '');
+  if (/^\d{4}$/.test(text)) return text;
+  if (/^\d{2}$/.test(text)) {
+    const twoDigit = Number(text);
+    const currentTwoDigit = new Date().getFullYear() % 100;
+    return String(twoDigit <= currentTwoDigit + 1 ? 2000 + twoDigit : 1900 + twoDigit);
+  }
+  return '';
+};
+
 export const parseComicMetadata = (text: string): ComicMetadata | null => {
   try {
     // Try to find JSON in the response
@@ -94,7 +109,7 @@ export const parseComicMetadata = (text: string): ComicMetadata | null => {
         comicBookTitle: (parsed.title || parsed.comicBookTitle || '').trim(),
         comicIssue: (parsed.issue?.toString() || parsed.comicIssue?.toString() || '').trim(),
         comicBookVolume: (parsed.volume?.toString() || parsed.comicBookVolume?.toString() || '').trim(),
-        comicBookYear: (parsed.year?.toString() || parsed.comicBookYear?.toString() || '').trim(),
+        comicBookYear: normalizeYear(parsed.year || parsed.comicBookYear),
         comicBookPublisher: (parsed.publisher || parsed.comicBookPublisher || '').trim(),
         author: asText(parsed.author || parsed.writer),
         penciler: asText(parsed.penciler || parsed.artist),
@@ -184,10 +199,11 @@ export const scanComicCover = async (
    - Extract only the number
    - Leave empty if not visible
 
-4. **Year**: 4-digit publication year if visible
-   - Sometimes shown in small text
-   - Format: YYYY (e.g., "2023")
-   - Leave empty if not visible
+4. **Year**: The publication year, wherever it appears on the cover, including the cover date
+   - Often small text near the issue number or price (e.g. "APR 1993", "APR 93", "Oct '87")
+   - Always return 4 digits: write two-digit years in full ("93" → "1993", "'05" → "2005")
+   - A month alone (e.g. "APR") is not a year: leave it empty
+   - Leave empty if no year is printed
 
 5. **Publisher**: The company name (Marvel, DC, Image, Dark Horse, IDW, etc.)
    - Often appears as a logo
@@ -195,9 +211,12 @@ export const scanComicCover = async (
 
 6. **Creators**: Names printed on the cover, usually in a small credit box near a bottom corner or in a strip along the top or bottom
    - If names have labels, use them: "Writer", "Story", "Script" or "Words" → author; "Art", "Artist", "Pencils" or "Penciller" → penciler; "Inks" or "Inker" → inker; "Cover" or "Cover by" → coverartist
-   - If two names appear stacked or listed without labels (common on DC and Marvel covers from the 1980s and 1990s, e.g. "DOUG MOENCH / JIM APARO"), the first is the writer (author) and the second is the interior artist (penciler)
+   - If names appear stacked or listed without labels (common on DC and Marvel covers from the 1980s and 1990s), read them in order:
+     - Two names (e.g. "DOUG MOENCH / JIM APARO"): writer (author), then interior artist (penciler)
+     - Three names (e.g. "ALAN GRANT / NORM BREYFOGLE / STEVE MITCHELL"): writer (author), then penciler, then inker
+     - Four or more unlabeled names: fill only author and penciler from the first two, because the rest could be colorists, letterers or co-writers
+   - With only two names, leave inker empty; the artist may have inked their own pencils, but the cover doesn't say so
    - A credit box names the interior creators, not the cover artist. Only fill coverartist when the cover says who drew the cover or the cover artist's signature is clearly legible
-   - Never fill inker from an unlabeled credit box
    - Write names in normal capitalization (e.g. "Doug Moench", not "DOUG MOENCH")
    - Join multiple people in one role with ", "
    - Only use names printed on the cover; never fill a creator from memory
