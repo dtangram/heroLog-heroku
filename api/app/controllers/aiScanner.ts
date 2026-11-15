@@ -203,6 +203,7 @@ export const scanComicCover = async (
    - Often small text near the issue number or price (e.g. "APR 1993", "APR 93", "Oct '87")
    - Always return 4 digits: write two-digit years in full ("93" → "1993", "'05" → "2005")
    - A month alone (e.g. "APR") is not a year: leave it empty
+   - If the only year is the one beside the artist's signature (e.g. "Kelley Jones '93"), use it; when a cover date with a year also appears, use the cover date instead
    - Leave empty if no year is printed
 
 5. **Publisher**: The company name (Marvel, DC, Image, Dark Horse, IDW, etc.)
@@ -216,7 +217,9 @@ export const scanComicCover = async (
      - Three names (e.g. "ALAN GRANT / NORM BREYFOGLE / STEVE MITCHELL"): writer (author), then penciler, then inker
      - Four or more unlabeled names: fill only author and penciler from the first two, because the rest could be colorists, letterers or co-writers
    - With only two names, leave inker empty; the artist may have inked their own pencils, but the cover doesn't say so
-   - A credit box names the interior creators, not the cover artist. Only fill coverartist when the cover says who drew the cover or the cover artist's signature is clearly legible
+   - A credit box names the interior creators, not the cover artist. Fill coverartist from a "Cover by" credit or from the artist's signature on the artwork
+   - Cover artists often sign the art by hand, usually near an edge or corner of the illustration and often with a two-digit year (e.g. "Kelley Jones '93" on Batman #496). Look closely for one; it can be small, slanted or stylized
+   - Only fill coverartist from a signature you can actually read; if it's illegible, leave coverartist empty rather than guessing who drew it
    - Write names in normal capitalization (e.g. "Doug Moench", not "DOUG MOENCH")
    - Join multiple people in one role with ", "
    - Only use names printed on the cover; never fill a creator from memory
