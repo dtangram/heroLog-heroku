@@ -570,7 +570,7 @@ const handleScanCover = useCallback(async () => {
                 id="submitQ1"
                 className={styles.submit}
                 type="submit"
-                value={isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}
+                value={isSubmitting ? 'SUBMITTING' : (isEditMode ? 'UPDATE' : 'SUBMIT')}
                 disabled={isSubmitting || isUploading}
               />
             </article>
