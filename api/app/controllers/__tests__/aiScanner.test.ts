@@ -160,6 +160,9 @@ describe('AI Scanner Controller', () => {
       expect(prompt).toMatch(/credit box/i);
       expect(prompt).toMatch(/"author"/);
       expect(prompt).toMatch(/not the cover artist/i);
+      expect(prompt).toMatch(/artist's signature on the artwork/i);
+      expect(prompt).toMatch(/near an edge or corner/i);
+      expect(prompt).toMatch(/illegible, leave coverartist empty/i);
       expect(prompt).toMatch(/never fill a creator from memory/i);
     });
 
@@ -233,6 +236,7 @@ describe('AI Scanner Controller', () => {
       expect(prompt).toMatch(/including the cover date/i);
       expect(prompt).toMatch(/"93" → "1993"/);
       expect(prompt).toMatch(/a month alone .* is not a year/i);
+      expect(prompt).toMatch(/when a cover date with a year also appears, use the cover date/i);
     });
 
     it('expands two-digit years and keeps four-digit years', () => {
@@ -248,6 +252,46 @@ describe('AI Scanner Controller', () => {
       expect(normalizeYear('APR')).toBe('');
       expect(normalizeYear(undefined)).toBe('');
       expect(parseComicMetadata('{"title":"Batman","issue":"491","year":"APR"}')?.comicBookYear).toBe('');
+    });
+  });
+  describe('Batman #496 (signed cover, three-name credit box)', () => {
+    it('returns the signed cover artist and all three credited creators', async () => {
+      (axios.get as jest.Mock).mockResolvedValue({
+        data: Buffer.from('fake-image-data'),
+        headers: { 'content-type': 'image/jpeg' },
+      });
+      mockCreate.mockResolvedValue({
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              title: 'Batman',
+              issue: '496',
+              year: "'93",
+              publisher: 'DC Comics',
+              author: 'Doug Moench',
+              penciler: 'Jim Aparo',
+              inker: 'Josef Rubinstein',
+              coverartist: 'Kelley Jones',
+              type: 'regular',
+              confidence: 0.9,
+            }),
+          },
+        ],
+      });
+
+      const response = await request(app)
+        .post('/api/ai/scan-comic-cover')
+        .send({ imageUrl: 'https://example.com/batman-496.jpg' });
+
+      expect(response.body.data).toMatchObject({
+        comicIssue: '496',
+        comicBookYear: '1993',
+        author: 'Doug Moench',
+        penciler: 'Jim Aparo',
+        inker: 'Josef Rubinstein',
+        coverartist: 'Kelley Jones',
+      });
     });
   });
 });
