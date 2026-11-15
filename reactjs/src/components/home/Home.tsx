@@ -26,8 +26,9 @@ const Home = ({
     fetchAllSales?.();  // Fixed: was fetchALLSales
   }, [fetchAllSales]);  // Fixed: was fetchALLSales
 
-  // Early return for loading state
-  if (isLoading) {
+  // Show the spinner only on the first load. When the list is reloading,
+  // keep showing the current comics until the fresh list arrives.
+  if (isLoading && salesALL.length === 0) {
     return (
       <article className={styles.homeSection}>
         <section>
