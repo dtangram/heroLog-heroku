@@ -9,10 +9,6 @@ import styles from './styles.module.css';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
 const Home = ({
   fetchAllSales,
   salesALL = [],
@@ -173,7 +169,8 @@ const Home = ({
               comicBookCover,
               comicBookTitle,
               comicIssue,
-              saleUsersId
+              saleUsersId,
+              sellerUsername
             }) => (
               <Col 
                 sm="12" 
@@ -194,6 +191,12 @@ const Home = ({
                   </h3>
                 ) : (
                   <h3>{comicBookTitle}</h3>
+                )}
+
+                {sellerUsername && (
+                  <p className={styles.seller}>
+                    Sold by <strong>{sellerUsername}</strong>
+                  </p>
                 )}
 
                 {user && (

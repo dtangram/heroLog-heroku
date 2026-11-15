@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import * as salelistCtrl from '../controllers/salelist';
 import * as validationCtrl from '../controllers/validation';
+import { authenticateToken } from '../middleware/auth';
+import { assignSaleListOwner, requireSaleListOwner } from '../middleware/saleListOwner';
 
 const router = Router();
 
@@ -12,9 +14,11 @@ router.get(
 );
 
 // POST /salelist/
-// ✅ FIXED: Create a new sale list (not search)
+// Create a new sale list. Requires sign-in; the listing belongs to the signed-in user.
 router.post(
   '/',
+  authenticateToken,
+  assignSaleListOwner,
   validationCtrl.validate('createSaleList'),
   salelistCtrl.createSaleList
 );
@@ -27,18 +31,22 @@ router.get(
 );
 
 // PUT /salelist/:id
-// Update a sale list
+// Update a sale list. Requires sign-in; only the seller can update it.
 router.put(
   '/:id',
+  authenticateToken,
   validationCtrl.validate('editSaleList'),
+  requireSaleListOwner,
   salelistCtrl.updateSaleList
 );
 
 // DELETE /salelist/:id
-// Delete a sale list
+// Delete a sale list. Requires sign-in; only the seller can delete it.
 router.delete(
   '/:id',
+  authenticateToken,
   validationCtrl.validate('deleteSaleList'),
+  requireSaleListOwner,
   salelistCtrl.removeSaleList
 );
 

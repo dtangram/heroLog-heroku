@@ -11,6 +11,8 @@ interface Sale {
   comicIssue?: number;
   type: string;
   saleUsersId: string;
+  /** Seller's public username, from /salelistALL (null if the account is gone) */
+  sellerUsername?: string | null;
 }
 
 interface SalesALLState {
