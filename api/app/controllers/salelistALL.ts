@@ -9,6 +9,13 @@ interface SaleListModel {
   findAll: () => Promise<SaleListInstance[]>;
 }
 
+interface UserModel {
+  findAll: (options: {
+    where: { id: string[] };
+    attributes: string[];
+  }) => Promise<Array<{ id: string; username: string }>>;
+}
+
 // Model instance interface
 interface SaleListInstance {
   id: string;
@@ -38,6 +45,11 @@ interface SaleListAttributes {
   saleUsersId: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// What the Home page receives: the listing plus the seller's public username
+interface PublicSaleListing extends SaleListAttributes {
+  sellerUsername: string | null;
 }
 
 // API response interface
@@ -98,14 +110,30 @@ const handleError = (
 // Get all sale lists for public display
 export const getAllSaleLists = async (
   _req: Request,
-  res: Response<ApiResponse<SaleListAttributes[]>>
+  res: Response<ApiResponse<PublicSaleListing[]>>
 ): Promise<Response> => {
   try {
     const SaleLists = getSaleListModel();  // ✅ Get model with error handling
     const saleListsInstances = await SaleLists.findAll();
     
     // Convert instances to plain objects
-    const saleLists = saleListsInstances.map(instance => instance.toJSON());
+    const listings = saleListsInstances.map(instance => instance.toJSON());
+
+    // Look up sellers' usernames in one query. Only the username is read,
+    // never emails, passwords or other private fields.
+    const sellerIds = Array.from(
+      new Set(listings.map(listing => listing.saleUsersId).filter((id): id is string => Boolean(id)))
+    );
+    const Users = (db as any).Users as UserModel | undefined;
+    const sellers = Users && sellerIds.length
+      ? await Users.findAll({ where: { id: sellerIds }, attributes: ['id', 'username'] })
+      : [];
+    const usernameById = new Map(sellers.map(seller => [seller.id, seller.username]));
+
+    const saleLists: PublicSaleListing[] = listings.map(listing => ({
+      ...listing,
+      sellerUsername: (listing.saleUsersId && usernameById.get(listing.saleUsersId)) || null,
+    }));
     
     return res.status(200).json({
       success: true,

@@ -17,6 +17,7 @@ interface SaleComic {
   comicBookCover: string;
   type: string;
   userId: string;
+  sellerUsername?: string | null;
 }
 
 interface SaleComicState {
