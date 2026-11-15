@@ -5,7 +5,6 @@ import {
   REQ_SALE_ALL_COMICS_ERROR,
 } from '../actionTypes';
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 interface SaleComic {
   id: string;
@@ -51,18 +50,13 @@ const getUserId = (): string => {
   return userId || '';
 };
 
-const isCached = (loadedAt: number): boolean => {
-  return loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
-};
 
-const shouldFetchAllSales = (state: RootState): boolean => {
-  const { loadedAt, isLoading } = state.salesALL;
-  
-  if (isLoading) return false;
-  if (!loadedAt) return true;
-  
-  return !isCached(loadedAt);
-};
+/**
+ * The Home page reloads the sale list every time it opens, so comics added,
+ * edited or deleted on the Sales page (or by other sellers) show up straight
+ * away. It only skips a request that's already in progress.
+ */
+const shouldFetchAllSales = (state: RootState): boolean => !state.salesALL.isLoading;
 
 export const fetchAllSales = (): APIAction => {
   const userId = getUserId();

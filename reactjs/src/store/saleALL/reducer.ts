@@ -74,15 +74,14 @@ const salesAllSuccess = (state: object, action: object): object => {
   const sales = Array.isArray(typedAction.data) ? typedAction.data : [];
   const now = Date.now();
   
-  const newById = sales.reduce((acc, sale) => ({
+  // Replace the list with what the server returned, so deleted listings
+  // disappear (merging kept them until the page was refreshed)
+  const newById = sales.reduce<Record<string, SaleComicState>>((acc, sale) => ({
     ...acc,
     [sale.id]: createSaleComicState(sale),
-  }), typedState.byId);
+  }), {});
   
-  const newAllIds = Array.from(new Set([
-    ...typedState.allIds,
-    ...sales.map(sale => sale.id),
-  ]));
+  const newAllIds = sales.map(sale => sale.id);
 
   return {
     ...typedState,
