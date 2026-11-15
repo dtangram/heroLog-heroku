@@ -194,7 +194,7 @@ const Home = ({
                   </h3>
                 ) : (
                   <h3>{comicBookTitle}</h3>
-                )} */}
+                )}
 
                 {user && (
                   <article>
@@ -207,7 +207,7 @@ const Home = ({
                     </RRLink>
                     <p>Send a message to the owner of this comic book.</p>
                   </article>
-                )}
+                )} */}
               </Col>
             ))}
           </Row>
