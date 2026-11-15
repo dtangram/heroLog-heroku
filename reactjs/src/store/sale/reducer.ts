@@ -190,8 +190,18 @@ const saleSuccess = (state: object, action: object): object => {
   const typedState = state as SalesState;
   const typedAction = action as Action;
   const { id = '' } = typedAction.payload || {};
-  const sale = typedAction.data as SaleComic;
-  const { userId } = sale;
+  const sale = typedAction.data as SaleComic & { saleUsersId?: string };
+  // The API names the owner saleUsersId; the store files sales under userId.
+  // Without this, fetched and updated sales were filed under "undefined",
+  // so the sale list didn't show changes until the page was refreshed.
+  const userId =
+    sale?.userId ||
+    sale?.saleUsersId ||
+    typedAction.payload?.sale?.userId ||
+    typedAction.payload?.userId ||
+    '';
+
+  if (!userId) return typedState;
 
   const userState = getUserState(typedState, userId);
   const existingData = userState.byId[id]?.data || {};
@@ -206,7 +216,7 @@ const saleSuccess = (state: object, action: object): object => {
       ...userState,
       byId: {
         ...userState.byId,
-        [id]: createSaleComicState({ ...existingData, ...sale }),
+        [id]: createSaleComicState({ ...existingData, ...sale, userId } as SaleComic),
       },
       allIds: newAllIds,
     },

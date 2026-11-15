@@ -3,48 +3,23 @@ import { RootState } from '../../../store';
 import { fetchSale, createSale, updateSale, SaleComic } from '../../../store/sale/actions';
 import SaleForm from './SaleForm';
 
-const mapStateToProps = (state: RootState) => {
-  const userId = localStorage.getItem('id') || '';
-  
-  const defaultSale: SaleComic = {
-    id: '',
-    comicBookTitle: '',
-    comicIssue: '',
-    comicBookVolume: '',
-    comicBookYear: '',
-    comicBookPublisher: '',
-    comicBookCover: '',
-    type: '',
-    userId
-  };
-  
-  // Get the current user's sales
-  const userSales = state.sales?.[userId];
-  
-  if (!userSales || !userSales.byId) {
-    console.log('🔍 No sales found for user:', userId);
-    return { sale: defaultSale };
-  }
-  
-  // Find the most recently loaded single sale (from fetchSale action)
-  const sales = Object.values(userSales.byId);
-  const mostRecentSale = sales.reduce((latest, current) => {
-    if (!current?.data) return latest;
-    if (!latest) return current.data;
-    if (current.loadedAt > (sales.find(s => s.data.id === latest.id)?.loadedAt || 0)) {
-      return current.data;
-    }
-    return latest;
-  }, null as SaleComic | null);
-  
-  console.log('🔍 Container mapStateToProps:');
-  console.log('  - User ID:', userId);
-  console.log('  - Most recent sale:', mostRecentSale);
-  console.log('  - All sale IDs:', userSales.allIds);
-  
-  return { 
-    sale: mostRecentSale || defaultSale 
-  };
+/**
+ * Every loaded sale comic, keyed by its id. The form picks the one whose
+ * :id is in the URL; on the "Add New" page there's no id, so it starts empty.
+ * (Previously this returned the most recently loaded sale, so Add New opened with the last sale's details.)
+ */
+export const mapStateToProps = (state: RootState) => {
+  const salesById: Record<string, SaleComic> = {};
+
+  Object.values(state.sales || {}).forEach(userState => {
+    Object.entries(userState?.byId || {}).forEach(([comicId, comicState]) => {
+      if (comicState?.data) {
+        salesById[comicId] = comicState.data;
+      }
+    });
+  });
+
+  return { salesById };
 };
 
 const mapDispatchToProps = {
