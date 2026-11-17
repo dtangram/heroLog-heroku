@@ -184,7 +184,7 @@
   margin-bottom: 20px;
 }
 
-/* "Sold by <username>" under the comic title */
+/* "Seller: <username>" under the comic title */
 .comicSaleWrapper > .container .row .issueWrap .seller{
   color: #2B2B2B;
   font-size: 1.6rem;
@@ -307,5 +307,130 @@
   .comicSaleWrapper > .container .row .issueWrap figure{
     margin: 0;
     width: 100%;
+  }
+}
+/* ============================================================
+   Welcome hero: greeting plus next steps, centered over the collage.
+   The block is positioned the way the heading used to be, and the
+   heading inside it goes back to normal flow.
+   ============================================================ */
+.welcome {
+  left: 50%;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 820px);
+  z-index: 1;
+}
+
+.homeSection section .welcome h1 {
+  left: auto;
+  position: static;
+  top: auto;
+  transform: none;
+}
+
+.homeSection section .welcome h1 .graphic {
+  display: block;
+  margin: 24px auto 0;
+  position: static;
+}
+
+.homeSection .welcome .welcomeIntro {
+  color: #FFF;
+  font-size: 2.2rem;
+  line-height: 1.4;
+  margin: 28px auto 0;
+  max-width: 34ch;
+}
+
+.welcomeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  border-radius: 6px;
+  font-size: 1.8rem;
+  font-weight: bold;
+  padding: 14px 28px;
+  text-decoration: none;
+}
+
+.ctaPrimary {
+  background: #770422;
+  border: 2px solid #770422;
+  color: #FFF;
+}
+
+.ctaSecondary {
+  background: transparent;
+  border: 2px solid #FFF;
+  color: #FFF;
+}
+
+.ctaPrimary:hover,
+.ctaPrimary:focus-visible {
+  background: #FFF;
+  color: #770422;
+}
+
+.ctaSecondary:hover,
+.ctaSecondary:focus-visible {
+  background: #FFF;
+  color: #2B2B2B;
+}
+
+.ctaLink {
+  color: #AECEAB;
+  display: inline-block;
+  font-size: 1.7rem;
+  margin-top: 24px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.ctaLink:hover {
+  color: #FFF;
+}
+
+.ctaPrimary:focus-visible,
+.ctaSecondary:focus-visible,
+.ctaLink:focus-visible {
+  outline: 3px solid #AECEAB;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1440px) {
+  .welcome {
+    top: 45%;
+  }
+}
+
+@media (max-width: 991px) {
+  .welcome {
+    top: 50%;
+  }
+}
+
+@media (max-width: 600px) {
+  .homeSection .welcome .welcomeIntro {
+    font-size: 1.8rem;
+  }
+
+  .welcomeActions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ctaPrimary,
+  .ctaSecondary {
+    font-size: 1.6rem;
+    padding: 12px 20px;
   }
 }

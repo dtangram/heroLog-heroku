@@ -192,7 +192,8 @@
 }
 
 .completionBadge {
-  background: #48bb78;
+  /* Darker green: white text was 2.4:1 on #48bb78, now 6.7:1 (WCAG AA needs 4.5:1) */
+  background: #276749;
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -229,7 +230,7 @@
 .seriesStats span {
   color: #2B2B2B;
   font-family: "Lato", Arial, sans-serif;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
 }
 
 /* Missing Issues */

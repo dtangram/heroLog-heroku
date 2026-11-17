@@ -312,3 +312,40 @@
     font-size: 3.5rem;
   }
 }
+
+/* ============================================================
+   Delete looks like Edit (light-green text with an icon), so the
+   destructive action doesn't stand out more than Edit does.
+   Deleting still asks for confirmation first.
+   ============================================================ */
+button.deleteStyle,
+button.deleteStyle:hover {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #AECEAB;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+button.deleteStyle p,
+button.deleteStyle figure :nth-child(1),
+button.deleteStyle:hover p {
+  background: transparent;
+  color: #AECEAB;
+}
+
+button.deleteStyle:hover p {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+button.deleteStyle:focus-visible {
+  outline: 2px solid #AECEAB;
+  outline-offset: 4px;
+}
+
+button.deleteStyle figure {
+  display: flex;
+}

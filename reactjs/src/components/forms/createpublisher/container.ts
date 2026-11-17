@@ -23,14 +23,22 @@ interface RootState {
   };
 }
 
-const mapStateToProps = (state: RootState) => {
-  const { publishers: { byId, currentId } } = state;
-  
-  // Try to get the current/last loaded publisher
-  const publisherId = currentId || Object.keys(byId)[0];
-  const publisher = publisherId && byId[publisherId] ? byId[publisherId].data : null;
-  
-  return { publisher };
+/**
+ * Every loaded publisher, keyed by id. The form picks the one whose :id is in
+ * the URL; on "Add a Publisher" there's no id, so the form starts empty.
+ * (Previously this returned the current or first publisher in the store, so
+ * the add form could open with an existing publisher's name filled in.)
+ */
+export const mapStateToProps = (state: RootState) => {
+  const publishersById: Record<string, Publisher> = {};
+
+  Object.entries(state.publishers?.byId || {}).forEach(([publisherId, publisherState]) => {
+    if (publisherState?.data) {
+      publishersById[publisherId] = publisherState.data;
+    }
+  });
+
+  return { publishersById };
 };
 
 const mapDispatchToProps = {

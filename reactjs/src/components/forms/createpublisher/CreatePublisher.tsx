@@ -5,14 +5,18 @@ import Link from '../../../link';
 import SuccessDisplay from '../success';
 import { ContainerProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import { APICallResult } from '../../../store/helpers/callAPIMiddleware';
 import styles from './styles.module.css';
 
 interface FormErrorsState {
   publisherName: string;
 }
 
+/** How long the success message shows before going back to the dashboard. */
+const REDIRECT_DELAY_MS = 1500;
+
 const CreatePublisher = ({
-  publisher,
+  publishersById,
   createPublisher,
   fetchPublisher,
   updatePublisher,
@@ -20,9 +24,13 @@ const CreatePublisher = ({
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const userId = localStorage.getItem('id') || getAnonymousUserId();
+
+  // The publisher being edited: the one whose id is in the URL. None when adding.
+  const publisher = id ? publishersById[id] : undefined;
  
   const [publisherName, setPublisherName] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrorsState>({
     publisherName: '',
   });
@@ -40,10 +48,11 @@ const CreatePublisher = ({
   }, [id, fetchPublisher]);
 
   useEffect(() => {
-    if (publisher?.publisherName) {
+    // Only fill the form with the publisher that matches the URL
+    if (publisher?.publisherName && String(publisher.id) === id) {
       setPublisherName(publisher.publisherName);
     }
-  }, [publisher]);
+  }, [publisher, id]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -60,55 +69,65 @@ const CreatePublisher = ({
     return isPublisherNameValid;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-   
-    const isValid = validateFields();
-   
-    if (!isValid) {
+
+    if (isSaving || !validateFields()) {
+      return;
+    }
+
+    const name = publisherName.trim();
+    setIsSaving(true);
+    setSuccessMessage('');
+
+    // Wait for the save to finish before saying it worked
+    const result = (id
+      ? updatePublisher({ id, publisherName: name })
+      : createPublisher({ publisherName: name, collectpubUsersId: userId })) as unknown as
+      Promise<APICallResult> | undefined;
+    const outcome = await result;
+
+    if (outcome && !outcome.ok) {
+      setIsSaving(false);
+      setFormErrors({ publisherName: `Couldn't save ${name}: ${outcome.error}` });
       return;
     }
 
     if (id) {
-      // Update existing publisher
-      updatePublisher({
-        id,
-        publisherName: publisherName.trim(),
-      });
+      setSuccessMessage(`Saved your changes to ${name}.`);
     } else {
-      // Create new publisher
-      createPublisher({
-        publisherName: publisherName.trim(),
-        collectpubUsersId: userId
-      });
+      setSuccessMessage(`${name} was added. Next, add a title to it from your dashboard.`);
+      // Clear the field so it doesn't look like the publisher is still unsaved
+      setPublisherName('');
     }
-   
-    setSuccessMessage('success');
 
-    // Navigate back after successful submission
     setTimeout(() => {
       navigate(`/dashboard/${userId}`);
-    }, 1500);
+    }, REDIRECT_DELAY_MS);
   };
 
-  const showSuccess = !formErrors.publisherName && successMessage === 'success';
+  const showSuccess = !formErrors.publisherName && Boolean(successMessage);
 
   return (
     <article id="cbCreate" className={styles.cbWrapper}>
       <h1>
-        {id ? `Edit ${publisherName}` : 'Create Collection'}
-        <figure
-          className={styles.graphic}
-          aria-label="Small burgundy rectangle graphic"
-        />
+        {id ? `Edit ${publisher?.publisherName || 'Publisher'}` : 'Add a Publisher'}
+        <span className={styles.graphic} aria-hidden="true" />
       </h1>
 
       <article className={styles.cbList}>
-        {showSuccess && <SuccessDisplay />}
+        {showSuccess && <SuccessDisplay message={successMessage} />}
 
         <section className={styles.wrapper}>
           <form method="POST" onSubmit={handleSubmit}>
             <FormErrors formErrors={formErrors} />
+
+            {!id && (
+              <p className={styles.intro}>
+                Your collection is organized by publisher, then title, then issue.
+                Start with a publisher, like DC Comics or Marvel.
+              </p>
+            )}
 
             <fieldset>
               <label htmlFor="publisherName">
@@ -137,7 +156,9 @@ const CreatePublisher = ({
                 id="submitQ1"
                 className={styles.submit}
                 type="submit"
-                value="SUBMIT"
+                value={isSaving ? 'SAVING…' : 'SUBMIT'}
+                disabled={isSaving}
+                aria-busy={isSaving}
               />
             </article>
           </form>

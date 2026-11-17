@@ -9,6 +9,33 @@ import styles from './styles.module.css';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 
+/**
+ * The greeting over the comics collage, with somewhere to go next:
+ * the dashboard, collection intel, or the comics for sale below.
+ */
+const WelcomeHero = ({ firstname, userId }: { firstname: string; userId: string }) => (
+  <div className={styles.welcome}>
+    <h1>
+      Welcome, {firstname}
+      <span className={styles.graphic} aria-hidden="true" />
+    </h1>
+    <p className={styles.welcomeIntro}>
+      Scan a cover, track what you own, and find what you're missing.
+    </p>
+    <div className={styles.welcomeActions}>
+      <RRLink className={styles.ctaPrimary} to={`/dashboard/${userId}`}>
+        Open your dashboard
+      </RRLink>
+      <RRLink className={styles.ctaSecondary} to={`/intel/${userId}`}>
+        See your collection intel
+      </RRLink>
+    </div>
+    <a className={styles.ctaLink} href="#forSale">
+      Browse comics for sale
+    </a>
+  </div>
+);
+
 const Home = ({
   fetchAllSales,
   salesALL = [],
@@ -32,20 +59,12 @@ const Home = ({
     return (
       <article className={styles.homeSection}>
         <section>
-          {user && (
-            <h1>
-              Welcome, {user.firstname}
-              <Col 
-                className={styles.graphic} 
-                aria-label="Small burgundy rectangle graphic" 
-              />
-            </h1>
-          )}
+          {user && <WelcomeHero firstname={user.firstname} userId={user.id} />}
 
           <figure id="bck" aria-label="Collage of X-Men Comic Books" />
         </section>
 
-        <section className={styles.comicSaleWrapper}>
+        <section id="forSale" className={styles.comicSaleWrapper}>
           <figure className={styles.logo_graphic}>
             <img src={logo} alt="Logo graphic" />
           </figure>
@@ -87,20 +106,12 @@ const Home = ({
     return (
       <article className={styles.homeSection}>
         <section>
-          {user && (
-            <h1>
-              Welcome, {user.firstname}
-              <Col 
-                className={styles.graphic} 
-                aria-label="Small burgundy rectangle graphic" 
-              />
-            </h1>
-          )}
+          {user && <WelcomeHero firstname={user.firstname} userId={user.id} />}
 
           <figure id="bck" aria-label="Collage of X-Men Comic Books" />
         </section>
 
-        <section className={styles.comicSaleWrapper}>
+        <section id="forSale" className={styles.comicSaleWrapper}>
           <figure className={styles.logo_graphic}>
             <img src={logo} alt="Logo graphic" />
           </figure>
@@ -132,20 +143,12 @@ const Home = ({
   return (
     <article className={styles.homeSection}>
       <section>
-        {user && (
-          <h1>
-            Welcome, {user.firstname}
-            <Col 
-              className={styles.graphic} 
-              aria-label="Small burgundy rectangle graphic" 
-            />
-          </h1>
-        )}
+        {user && <WelcomeHero firstname={user.firstname} userId={user.id} />}
 
         <figure id="bck" aria-label="Collage of X-Men Comic Books" />
       </section>
 
-      <section className={styles.comicSaleWrapper}>
+      <section id="forSale" className={styles.comicSaleWrapper}>
         <figure className={styles.logo_graphic}>
           <img src={logo} alt="Logo graphic" />
         </figure>
@@ -196,7 +199,7 @@ const Home = ({
 
                 {sellerUsername && (
                   <p className={styles.seller}>
-                    Sold by <strong>{sellerUsername}</strong>
+                    Seller: <strong>{sellerUsername}</strong>
                   </p>
                 )}
 
@@ -204,6 +207,7 @@ const Home = ({
                   <article>
                     <RRLink 
                       to={`/forms/messaging/${saleUsersId}/${comicBookTitle}/${comicIssue ?? ''}/${user.id}/${user.username}/${user.email}`}
+                      aria-label={`Message the seller of ${comicBookTitle}${comicIssue ? ` #${comicIssue}` : ''}`}
                     >
                       <figure className="link">
                         <QuestionAnswerIcon />
