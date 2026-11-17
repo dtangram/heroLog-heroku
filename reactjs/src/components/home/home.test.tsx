@@ -38,15 +38,15 @@ describe('Home page', () => {
   it("shows each seller's username on their card", () => {
     renderHome([sale('a', 25, 'dtangram'), sale('b', 75, 'comicfan99')]);
 
-    expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Sold by comicfan99')).toBeInTheDocument();
-    expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Sold by dtangram')).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Seller: comicfan99')).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Seller: dtangram')).toBeInTheDocument();
   });
 
-  it('leaves out "Sold by" when the seller account no longer exists', () => {
+  it('leaves out "Seller:" when the seller account no longer exists', () => {
     renderHome([sale('a', 75, null)]);
 
     expect(screen.getByText('Superman #75')).toBeInTheDocument();
-    expect(screen.queryByText(/sold by/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/seller:/i)).not.toBeInTheDocument();
   });
 
   it('keeps showing the comics while the list reloads, instead of a spinner', () => {
