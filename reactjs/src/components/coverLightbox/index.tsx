@@ -1,1 +1,1 @@
-export { default } from './Coverlightbox';
+export { default } from './CoverLightbox';

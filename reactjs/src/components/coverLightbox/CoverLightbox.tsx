@@ -2,24 +2,12 @@ import React, { MouseEvent, ReactNode, useCallback, useEffect, useRef, useState 
 import styles from './styles.module.css';
 
 interface CoverLightboxProps {
-  /** Full-size cover image */
   src: string;
-  /** Alt text for the enlarged image */
   alt: string;
-  /** Shown under the image and used as the dialog's name, e.g. "Batman #423" */
   caption: string;
-  /** The thumbnail that opens the lightbox */
   children: ReactNode;
 }
 
-/**
- * Click a cover to see it larger without leaving the page.
- *
- * Uses the browser's <dialog> in modal mode, which provides the overlay,
- * keeps keyboard focus inside, and closes on Esc. It also closes when the
- * overlay or the close button is clicked, and focus returns to the cover.
- * Ctrl/Cmd/Shift-click or middle-click still opens the image in a new tab.
- */
 const CoverLightbox = ({ src, alt, caption, children }: CoverLightboxProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLAnchorElement>(null);
