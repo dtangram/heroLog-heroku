@@ -1,10 +1,38 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
-import { useSearch } from '../../hooks/useSearch';
+import { useSearch, SearchMode } from '../../hooks/useSearch';
 import SearchIcon from '@mui/icons-material/Search';
 import clsx from 'clsx';
 import styles from './styles.module.css';
+
+/** Results each search returns: 5 from your collection, 10 from Claude (show a screenful). */
+const SKELETON_COUNT: Record<SearchMode, number> = { collection: 5, all: 6, missing: 6 };
+
+const SLOW_MESSAGE: Record<SearchMode, string> = {
+  collection: 'Still searching your collection…',
+  all: 'Claude is still searching every comic. This can take up to 20 seconds.',
+  missing: 'Claude is still checking which comics you own. This can take up to 20 seconds.',
+};
+
+/** Placeholder cards shaped like real results while a search runs. */
+const ResultSkeletons: React.FC<{ count: number }> = ({ count }) => (
+  <>
+    {Array.from({ length: count }, (_, index) => (
+      <article
+        key={index}
+        className={clsx(styles.resultCard, styles.skeletonCard)}
+        aria-hidden="true"
+        data-testid="result-skeleton"
+      >
+        <span className={clsx(styles.skeletonLine, styles.skeletonTitle)} />
+        <span className={clsx(styles.skeletonLine, styles.skeletonBadge)} />
+        <span className={styles.skeletonLine} />
+        <span className={clsx(styles.skeletonLine, styles.skeletonShort)} />
+      </article>
+    ))}
+  </>
+);
 
 const Search: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -17,9 +45,12 @@ const Search: React.FC = () => {
     collectionResults,
     claudeResults,
     isLoading,
+    isSlow,
     error,
     hasSearched,
     hasResults,
+    searchedQuery,
+    searchedMode,
     handleSearch,
     handleKeyDown,
     handleSuggestionClick
@@ -35,24 +66,6 @@ const Search: React.FC = () => {
     'Knightfall saga',
     'milestone collector issues'
   ];
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <article id="cbSearch" className={styles.cbWrap}>
-        <h1>
-          Search the Multiverse
-          <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
-        </h1>
-        <article className={styles.cbList}>
-          <section className={styles.loadWrap}>
-            <p className={styles.loadMessage}>Searching the Multiverse</p>
-            <BeatLoader size={10} color="#770422" />
-          </section>
-        </article>
-      </article>
-    );
-  }
 
   return (
     <article id="cbSearch" className={styles.cbWrap}>
@@ -111,13 +124,14 @@ const Search: React.FC = () => {
             />
             <button
               onClick={handleSearch}
-              disabled={!query.trim()}
+              disabled={!query.trim() || isLoading}
               className={clsx(styles.searchButton, styles.buttonStylesSearchPage)}
               type="button"
-              aria-label="Search"
+              aria-label={isLoading ? 'Searching' : 'Search'}
+              aria-busy={isLoading}
             >
               <figure><SearchIcon /></figure>
-              <p>Search</p>
+              <p>{isLoading ? 'Searching…' : 'Search'}</p>
             </button>
           </search>
 
@@ -148,8 +162,21 @@ const Search: React.FC = () => {
             </aside>
           )}
 
+          {/* Searching: keep the form, show placeholder cards where results will appear */}
+          {isLoading && (
+            <section className={styles.results} aria-busy="true">
+              <p className={styles.searchStatus} role="status">
+                <BeatLoader size={8} color="#770422" aria-hidden="true" />
+                <span>
+                  {isSlow ? SLOW_MESSAGE[searchedMode] : `Searching the Multiverse for "${searchedQuery}"…`}
+                </span>
+              </p>
+              <ResultSkeletons count={SKELETON_COUNT[searchedMode]} />
+            </section>
+          )}
+
           {/* No Results */}
-          {hasSearched && !error && !hasResults && (
+          {hasSearched && !isLoading && !error && !hasResults && (
             <aside className={styles.empty} role="status">
               <p>No comics found matching your search. Try a different query.</p>
             </aside>
@@ -158,7 +185,7 @@ const Search: React.FC = () => {
           {/* Collection Results */}
           {collectionResults.length > 0 && (
             <section className={styles.results}>
-              <h2>Results for "{query}"</h2>
+              <h2>Results for "{searchedQuery}"</h2>
               {collectionResults.map((result) => (
                 <article key={result.comic_id} className={styles.resultCard}>
                   <section className={styles.resultHeader}>
@@ -176,7 +203,7 @@ const Search: React.FC = () => {
           {/* Claude Results */}
           {claudeResults.length > 0 && (
             <section className={styles.results}>
-              <h2>Results for "{query}"</h2>
+              <h2>Results for "{searchedQuery}"</h2>
               {claudeResults.map((result, index) => (
                 <article
                   key={index}
@@ -188,7 +215,7 @@ const Search: React.FC = () => {
                       {result.year && (
                         <span className={styles.yearBadge}>{result.year}</span>
                       )}
-                      {mode === 'missing' && (
+                      {searchedMode === 'missing' && (
                         <span className={result.already_owned ? styles.ownedBadge : styles.missingBadge}>
                           {result.already_owned ? 'Owned' : 'Not Owned'}
                         </span>
