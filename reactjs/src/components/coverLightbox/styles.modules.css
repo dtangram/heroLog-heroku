@@ -1,0 +1,98 @@
+/* The cover on the card: a zoom cursor hints that it opens larger */
+.trigger {
+  cursor: zoom-in;
+  display: inline-block;
+}
+
+.trigger:focus-visible {
+  outline: 3px solid #AECEAB;
+  outline-offset: 4px;
+}
+
+/* The dialog is just a frame; the image and overlay do the visual work.
+   margin: auto + inset: 0 center it; the site's CSS reset removes the
+   browser's own centering (margin: 0 on everything). */
+.dialog {
+  background: transparent;
+  border: none;
+  inset: 0;
+  margin: auto;
+  max-height: none;
+  max-width: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.dialog[open] {
+  animation: lightboxFadeIn 0.15s ease-out;
+}
+
+.figure {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+/* Original size, but never larger than the screen (leaves room for the caption) */
+.image {
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  display: block;
+  height: auto;
+  max-height: calc(100vh - 110px);
+  max-width: calc(100vw - 48px);
+  object-fit: contain;
+  width: auto;
+}
+
+.caption {
+  color: #FFF;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+/* Fixed to the window corner, so it's always reachable even on a tall cover */
+.close {
+  align-items: center;
+  background: #FFF;
+  border: none;
+  border-radius: 50%;
+  color: #2B2B2B;
+  cursor: pointer;
+  display: flex;
+  font-size: 3rem;
+  height: 44px;
+  justify-content: center;
+  line-height: 1;
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  width: 44px;
+}
+
+.close:hover {
+  background: #AECEAB;
+}
+
+.close:focus-visible {
+  outline: 3px solid #AECEAB;
+  outline-offset: 3px;
+}
+
+@keyframes lightboxFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open] {
+    animation: none;
+  }
+}

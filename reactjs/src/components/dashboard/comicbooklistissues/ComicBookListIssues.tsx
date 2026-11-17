@@ -9,11 +9,8 @@ import Empty from '../../empty';
 import logo from '../../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
+import CoverLightbox from '../../coverLightbox';
 import styles from './styles.module.css';
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
 
 export interface ComicBook {
   id: string;
@@ -43,10 +40,6 @@ interface RouteParams extends Record<string, string | undefined> {
   coboTitleId: string;
   cbTitle: string;
 }
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
 
 const ComicBookListIssues = ({
   fetchComicBooks,
@@ -78,11 +71,13 @@ const ComicBookListIssues = ({
   }, [navigate]);
 
   // Handle comic book deletion
-  const handleDelete = useCallback((id: string, title: string): void => {
+  const handleDelete = useCallback((id: string, title: string, issue?: string | number): void => {
     if (!id) return;
 
+    // Name the issue, so it doesn't sound like the whole series is being deleted
+    const label = issue ? `${title} #${issue}` : title;
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${title}"?`
+      `Delete ${label}? This can't be undone.`
     );
 
     if (!confirmed) return;
@@ -200,13 +195,22 @@ const ComicBookListIssues = ({
               <section className={styles.comicSec} key={id}>
                 <article className={styles.comicWrap}>
                   <section className={styles.comicImgWrap}>
-                    <a href={comicBookCover} target="_blank" rel="noopener noreferrer">
-                      <img
-                        className={comicBookCover && styles.cbCoverImg}
-                        src={comicBookCover || logo} 
-                        alt={`${title} Issue ${comicIssue} cover`} 
-                      />
-                    </a>
+                    {comicBookCover ? (
+                      <CoverLightbox
+                        src={comicBookCover}
+                        alt={`${title} #${comicIssue} cover`}
+                        caption={`${title} #${comicIssue}`}
+                      >
+                        <img
+                          className={styles.cbCoverImg}
+                          src={comicBookCover}
+                          alt={`${title} #${comicIssue} cover`}
+                        />
+                      </CoverLightbox>
+                    ) : (
+                      // No cover yet: show the logo, with nothing to enlarge
+                      <img src={logo} alt={`${title} #${comicIssue}: no cover yet`} />
+                    )}
                   </section>
 
                   <section className={styles.paraWrap}>
@@ -235,8 +239,8 @@ const ComicBookListIssues = ({
                       <button 
                         className={styles.deleteStyle}
                         type="button" 
-                        onClick={() => handleDelete(id, title)}
-                        aria-label={`Delete ${title} Issue ${comicIssue}`}
+                        onClick={() => handleDelete(id, title, comicIssue)}
+                        aria-label={`Delete ${title} #${comicIssue}`}
                       >
                         <figure><DeleteIcon /></figure>
                         <p>Delete</p>
