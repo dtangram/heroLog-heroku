@@ -1,0 +1,128 @@
+import React from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import axios from 'axios';
+import Search from './Search';
+import { SLOW_SEARCH_MS } from '../../hooks/useSearch';
+
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+/** A request we resolve by hand, to look at the page while a search is running. */
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(r => { resolve = r; });
+  return { promise, resolve };
+};
+
+const collectionResponse = (titles: string[]) => ({
+  data: {
+    status: 'Success',
+    results: titles.map((title, i) => ({
+      comic_id: `id-${i}`,
+      title,
+      description: 'A dark story.',
+      similarity_score: 0.9,
+    })),
+  },
+});
+
+const renderSearch = () =>
+  render(
+    <MemoryRouter initialEntries={['/search/user-1']}>
+      <Routes>
+        <Route path="/search/:userId" element={<Search />} />
+      </Routes>
+    </MemoryRouter>
+  );
+
+const search = (text: string) => {
+  fireEvent.change(screen.getByLabelText('Search comics'), { target: { value: text } });
+  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+};
+
+describe('Search page while a search runs', () => {
+  beforeAll(() => {
+    window.scrollTo = jest.fn();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (mockedAxios.isCancel as unknown as jest.Mock).mockReturnValue(false);
+  });
+
+  it('keeps the form visible and shows skeleton cards where results will appear', async () => {
+    const request = deferred<any>();
+    mockedAxios.get.mockReturnValue(request.promise);
+    renderSearch();
+
+    search('dark 90s Batman');
+
+    // Form is still there and usable
+    expect(screen.getByLabelText('Search comics')).toHaveValue('dark 90s Batman');
+    expect(screen.getByRole('button', { name: 'My Collection' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Searching' })).toBeDisabled();
+
+    // Status line and 5 placeholder cards (collection search returns 5)
+    expect(screen.getByRole('status')).toHaveTextContent('Searching the Multiverse for "dark 90s Batman"');
+    expect(screen.queryAllByTestId('result-skeleton')).toHaveLength(5);
+
+    await act(async () => request.resolve(collectionResponse(['Batman #497', 'Batman #500'])));
+
+    expect(screen.queryAllByTestId('result-skeleton')).toHaveLength(0);
+    expect(screen.getByText('Batman #497')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Search' })).toBeEnabled();
+  });
+
+  it('keeps the results heading on the searched words while the user types', async () => {
+    mockedAxios.get.mockResolvedValue(collectionResponse(['Batman #497']));
+    renderSearch();
+
+    search('Knightfall saga');
+    expect(await screen.findByText('Batman #497')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search comics'), { target: { value: '' } });
+
+    expect(screen.getByRole('heading', { name: 'Results for "Knightfall saga"' })).toBeInTheDocument();
+    expect(screen.queryByText('Results for ""')).not.toBeInTheDocument();
+  });
+
+  it('explains a slow Claude search after 8 seconds', () => {
+    jest.useFakeTimers();
+    try {
+      mockedAxios.get.mockReturnValue(new Promise(() => {}));
+      renderSearch();
+
+      fireEvent.click(screen.getByRole('button', { name: 'All Comics' }));
+      search('Knightfall saga');
+      expect(screen.queryAllByTestId('result-skeleton')).toHaveLength(6);
+
+      act(() => {
+        jest.advanceTimersByTime(SLOW_SEARCH_MS);
+      });
+
+      expect(screen.getByRole('status')).toHaveTextContent('can take up to 20 seconds');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('shows only the newest search when an older one finishes late', async () => {
+    const first = deferred<any>();
+    const second = deferred<any>();
+    mockedAxios.get.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    renderSearch();
+
+    search('Superman');
+    fireEvent.change(screen.getByLabelText('Search comics'), { target: { value: 'Batman' } });
+    fireEvent.keyDown(screen.getByLabelText('Search comics'), { key: 'Enter' });
+
+    await act(async () => second.resolve(collectionResponse(['Batman #500'])));
+    await act(async () => first.resolve(collectionResponse(['Superman #75'])));
+
+    expect(screen.getByText('Batman #500')).toBeInTheDocument();
+    expect(screen.queryByText('Superman #75')).not.toBeInTheDocument();
+    const firstSignal = mockedAxios.get.mock.calls[0][1]?.signal as AbortSignal;
+    expect(firstSignal.aborted).toBe(true);
+  });
+});

@@ -123,6 +123,26 @@
   cursor: not-allowed;
 }
 
+/* Dark text on the gray disabled button (white on gray was about 1.5:1 contrast) */
+.searchButton:disabled,
+.searchButton:disabled p,
+.searchButton:disabled svg {
+  color: #2B2B2B;
+}
+
+/* While a search runs, keep the button burgundy so "Searching…" stays readable */
+.searchButton[aria-busy="true"],
+.searchButton[aria-busy="true"]:hover {
+  background: #770422;
+  cursor: progress;
+  opacity: 0.85;
+}
+
+.searchButton[aria-busy="true"] p,
+.searchButton[aria-busy="true"] svg {
+  color: #FFF;
+}
+
 .suggestions p {
   color: #2B2B2B;
   font-size: 1.4rem;
@@ -310,8 +330,12 @@
   }
 
   .searchButton {
+    align-self: flex-start;
+    min-width: 100px;
+    padding-left: 12px;
+    padding-right: 12px;
     white-space: nowrap;
-    width: 100px;
+    width: auto;
   }
 
   .buttonStylesSearchPage p {
@@ -374,5 +398,67 @@
   .yearBadge {
     font-size: 1.3rem;
     padding: 5px 15px;
+  }
+}
+/* ============================================================
+   Searching: status line and skeleton result cards
+   ============================================================ */
+.searchStatus {
+  align-items: center;
+  color: #2B2B2B;
+  display: flex;
+  font-size: 1.6rem;
+  gap: 12px;
+  line-height: 1.4;
+  margin: 0 0 20px;
+  text-align: left;
+}
+
+/* Keep the loading dots in a row; only the text wraps on narrow screens */
+.searchStatus > :first-child {
+  flex-shrink: 0;
+}
+
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeletonLine {
+  background: linear-gradient(90deg, rgba(174, 206, 171, 0.25) 25%, rgba(174, 206, 171, 0.5) 50%, rgba(174, 206, 171, 0.25) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  display: block;
+  height: 1.3rem;
+  width: 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonTitle {
+  background-color: rgba(255, 255, 255, 0.3);
+  height: 1.8rem;
+  width: 55%;
+}
+
+.skeletonBadge {
+  border-radius: 12px;
+  height: 1.4rem;
+  width: 18%;
+}
+
+.skeletonShort {
+  width: 70%;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* No shimmer for people who've asked their system to reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeletonLine {
+    animation: none;
   }
 }
