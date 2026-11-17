@@ -22,6 +22,7 @@
 }
 
 .cbWrapper h1 .graphic{
+  display: block;
   background: #770422;
   margin: 15px auto 0;
   height: 10px;
@@ -168,4 +169,17 @@
   cursor: pointer;
   text-align: center;
   width: 100px;
+}
+
+/* Explains where a publisher fits in the collection (Add a Publisher only) */
+.wrapper form .intro {
+  color: #2B2B2B;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.submit:disabled {
+  cursor: progress;
+  opacity: 0.85;
 }

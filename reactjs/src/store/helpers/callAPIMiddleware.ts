@@ -32,6 +32,19 @@ interface AxiosError extends Error {
   };
 }
 
+/**
+ * What dispatching an API action resolves to, so a form can wait for the save
+ * to finish before saying it worked. It always resolves (never rejects), so
+ * code that ignores the return value behaves exactly as before.
+ */
+export type APICallResult =
+  | { ok: true; data: DispatchAction['data'] }
+  | { ok: false; error: string };
+
+/** Turn the middleware's error (a string or a list of field errors) into one message. */
+const toErrorMessage = (err: DispatchAction['err']): string =>
+  Array.isArray(err) ? err.map(e => e.message).join(', ') : err || 'Something went wrong';
+
 const isAPIAction = (action: ReduxAction): action is APIAction => {
   return (
     'types' in action && 
@@ -93,7 +106,7 @@ const extractErrorFromResponse = (error: AxiosError | Error): string | Array<{ f
 
 const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; getState: () => object }) => 
   (next: (action: ReduxAction) => void) => 
-  (action: ReduxAction): void => {
+  (action: ReduxAction): void | Promise<APICallResult> => {
     if (!isAPIAction(action)) {
       next(action);
       return;
@@ -148,8 +161,8 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
       type: requestType,
     } as DispatchAction);
 
-    callAPI()
-      .then((response) => {
+    return callAPI()
+      .then((response): APICallResult => {
         let data = extractActionData(response);
         
         if (transformResponse && typeof transformResponse === 'function') {
@@ -166,7 +179,7 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
               type: failureType,
               err: errorMessage,
             } as DispatchAction);
-            return;
+            return { ok: false, error: errorMessage };
           }
         }
         
@@ -175,8 +188,9 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
           type: successType,
           data,
         } as DispatchAction);
+        return { ok: true, data };
       })
-      .catch((error) => {
+      .catch((error): APICallResult => {
         // ✅ Use updated function that preserves error structure
         const errorData = extractErrorFromResponse(error as AxiosError);
         
@@ -187,6 +201,7 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
           type: failureType,
           err: errorData,  // ✅ Can be string OR array of { field, message }
         } as DispatchAction);
+        return { ok: false, error: toErrorMessage(errorData) };
       });
   };
 
