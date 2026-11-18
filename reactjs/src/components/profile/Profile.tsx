@@ -6,17 +6,9 @@ import styles from './styles.module.css';
 import type { ConnectorProps } from './container';
 import { AccountCircle } from '@mui/icons-material';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface RouteParams extends Record<string, string | undefined> {
   id: string;
 }
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
 
 const Profile = ({
   fetchUser,
@@ -151,9 +143,9 @@ const Profile = ({
                   <button 
                     type="button" 
                     onClick={() => handleDelete(profileId, username)}
-                    aria-label={`Delete profile for ${username}`}
+                    aria-label={`Delete the account for ${username}`}
                   >
-                    Delete
+                    Delete account
                   </button>
                 </p>
               </section>
