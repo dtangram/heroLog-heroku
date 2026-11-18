@@ -28,28 +28,23 @@ interface RootState {
   };
 }
 
-const mapStateToProps = (state: RootState) => {
-  const { comicbooklists } = state;
- 
-  if (!comicbooklists) {
-    return { comicbooklist: null };
-  }
+/**
+ * Every loaded title, keyed by its id, across all publishers.
+ * The form picks the one matching the :id in the URL. (Previously this
+ * returned whichever title was stored last, so Edit could show the wrong one.)
+ */
+export const mapStateToProps = (state: RootState) => {
+  const titlesById: Record<string, ComicBookTitle> = {};
 
-  // Try to find the most recently loaded title across all publishers
-  const allPublishers = Object.values(comicbooklists);
-  
-  for (const publisher of allPublishers) {
-    const titleIds = Object.keys(publisher?.byId || {});
-    if (titleIds.length > 0) {
-      const lastTitleId = titleIds[titleIds.length - 1];
-      const titleState = publisher.byId[lastTitleId];
+  Object.values(state.comicbooklists || {}).forEach(publisher => {
+    Object.entries(publisher?.byId || {}).forEach(([titleId, titleState]) => {
       if (titleState?.data) {
-        return { comicbooklist: titleState.data };
+        titlesById[titleId] = titleState.data;
       }
-    }
-  }
- 
-  return { comicbooklist: null };
+    });
+  });
+
+  return { titlesById };
 };
 
 const mapDispatchToProps = {
