@@ -1508,3 +1508,49 @@ footer {
     @media (max-width: 800px) {
       footer ul {
         justify-content: center; } }
+
+/* ============================================================
+   Sale, Wish List and Messages: Delete looks like Edit
+   (light-green text with an icon) instead of a filled button, so
+   the destructive action doesn't stand out. It still asks to confirm.
+   "button" in each selector makes these win over the rules above.
+   ============================================================ */
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle,
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #AECEAB;
+  cursor: pointer;
+  padding: 0;
+}
+
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle p,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle p,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle p,
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover p,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover p,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover p,
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle figure :nth-child(1),
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle figure :nth-child(1),
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle figure :nth-child(1) {
+  color: #AECEAB;
+}
+
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover p,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover p,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:hover p {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+#cbSale .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:focus-visible,
+#cbWishList .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:focus-visible,
+#cbVeiwMessage .cbList section > article .comicSec .comicWrap .paraWrap > section button.deleteStyle:focus-visible {
+  outline: 2px solid #AECEAB;
+  outline-offset: 4px;
+}
