@@ -11,8 +11,8 @@ const SKELETON_COUNT: Record<SearchMode, number> = { collection: 5, all: 6, miss
 
 const SLOW_MESSAGE: Record<SearchMode, string> = {
   collection: 'Still searching your collection…',
-  all: 'Claude is still searching every comic. This can take up to 20 seconds.',
-  missing: 'Claude is still checking which comics you own. This can take up to 20 seconds.',
+  all: 'Still searching every comic. This can take up to 20 seconds.',
+  missing: 'Still checking which comics you own. This can take up to 20 seconds.',
 };
 
 /** Placeholder cards shaped like real results while a search runs. */
