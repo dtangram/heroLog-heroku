@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import API from '../API';
 
-interface ScanResult {
+export interface ScanResult {
   comicBookTitle?: string;
   title?: string;
   comicIssue: string;
