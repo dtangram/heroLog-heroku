@@ -10,7 +10,7 @@ import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
 import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
-import { getSubmitLabel, toFormText } from '../../../utils/forms';
+import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
 import styles from './styles.module.css';
 
@@ -88,7 +88,7 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
         comicBookYear: toFormText(wishlist.comicBookYear),
         comicBookPublisher: wishlist.comicBookPublisher || '',
         comicBookCover: wishlist.comicBookCover || '',
-        type: (wishlist.type as FormState['type']) || '',
+        type: toCoverType(wishlist.type),
       }),
   });
 
@@ -107,7 +107,7 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
           comicBookVolume: result.comicBookVolume || result.volume || prev.comicBookVolume,
           comicBookYear: result.comicBookYear || result.year || prev.comicBookYear,
           comicBookPublisher: result.comicBookPublisher || prev.comicBookPublisher,
-          type: result.type || prev.type,
+          type: toCoverType(result.type) || prev.type,
         })),
       [setFormState]
     )

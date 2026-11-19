@@ -11,7 +11,7 @@ import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
 import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
-import { getSubmitLabel, toFormText } from '../../../utils/forms';
+import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
 import styles from './styles.module.css';
 
@@ -110,7 +110,7 @@ const ComicBookComponent = ({
         volume: toFormText(comicbook.volume),
         year: toFormText(comicbook.year),
         comicBookCover: comicbook.comicBookCover || '',
-        type: comicbook.type || '',
+        type: toCoverType(comicbook.type),
       }),
   });
 
@@ -132,7 +132,7 @@ const ComicBookComponent = ({
           penciler: result.penciler || prev.penciler,
           inker: result.inker || prev.inker,
           coverartist: result.coverartist || prev.coverartist,
-          type: result.type || prev.type,
+          type: toCoverType(result.type) || prev.type,
         })),
       [setFormState]
     )

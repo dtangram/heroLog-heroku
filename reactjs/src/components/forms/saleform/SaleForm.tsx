@@ -11,7 +11,7 @@ import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
 import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
-import { getSubmitLabel, toFormText } from '../../../utils/forms';
+import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import { PRICE_INPUT, SALE_CONDITIONS, validatePrice } from '../../../utils/sale';
 import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
 import styles from './styles.module.css';
@@ -123,7 +123,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
         comicBookYear: toFormText(sale.comicBookYear),
         comicBookPublisher: sale.comicBookPublisher || '',
         comicBookCover: sale.comicBookCover || '',
-        type: (sale.type as FormState['type']) || '',
+        type: toCoverType(sale.type),
         price: toFormText(sale.price),
         comicCondition: sale.comicCondition || '',
       }),
@@ -144,7 +144,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
           comicBookVolume: result.comicBookVolume || prev.comicBookVolume,
           comicBookYear: result.comicBookYear || prev.comicBookYear,
           comicBookPublisher: result.comicBookPublisher || prev.comicBookPublisher,
-          type: result.type || prev.type,
+          type: toCoverType(result.type) || prev.type,
         })),
       [setFormState]
     )
@@ -240,7 +240,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
               />
             </figure>
 
-            <article>
+            <article className={styles.fields}>
               <fieldset>
                 <label htmlFor="comicBookCover">
                   {isEditMode ? 'Change Comic Book Cover' : 'Upload Comic Book Cover'}

@@ -101,6 +101,8 @@ describe('SaleForm', () => {
     expect(field('comicBookVolume')).toHaveValue('');
     expect(field('price')).toHaveValue('12.50');
     expect(field('comicCondition')).toHaveValue('Near Mint');
+    // Saved as "regular"; the radio button is "Regular"
+    expect(screen.getByLabelText('Regular')).toBeChecked();
   });
 
   it('submits Update without needing a scan first', async () => {

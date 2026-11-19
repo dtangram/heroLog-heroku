@@ -78,6 +78,8 @@ describe('WishListForm', () => {
     expect(field('comicIssue')).toHaveValue('25');
     expect(field('comicBookYear')).toHaveValue('2025');
     expect(field('comicBookVolume')).toHaveValue('');
+    // Saved as "regular"; the radio button is "Regular"
+    expect(screen.getByLabelText('Regular Cover')).toBeChecked();
   });
 
   it('submits Update without needing a scan first', async () => {
