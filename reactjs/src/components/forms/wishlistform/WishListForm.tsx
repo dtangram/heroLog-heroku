@@ -25,7 +25,7 @@ interface FormState extends Record<string, string> {
   comicBookYear: string;
   comicBookPublisher: string;
   comicBookCover: string;
-  type: 'regular' | 'variant' | '';
+  type: 'Regular' | 'Variant' | '';
 }
 
 interface FormErrorsState extends Partial<Record<string, string>> {
@@ -284,8 +284,8 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
                 <input
                   id="regularcover"
                   type="radio"
-                  value="regular"
-                  checked={type === 'regular'}
+                  value="Regular"
+                  checked={type === 'Regular'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />
@@ -296,8 +296,8 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
                 <input
                   id="variantcover"
                   type="radio"
-                  value="variant"
-                  checked={type === 'variant'}
+                  value="Variant"
+                  checked={type === 'Variant'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />

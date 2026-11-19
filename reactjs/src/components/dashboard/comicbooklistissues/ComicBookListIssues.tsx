@@ -6,6 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Link from '../../../link';
 import Empty from '../../empty';
+import { showConfirm } from '../../dialog';
 import logo from '../../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
@@ -71,14 +72,16 @@ const ComicBookListIssues = ({
   }, [navigate]);
 
   // Handle comic book deletion
-  const handleDelete = useCallback((id: string, title: string, issue?: string | number): void => {
+  const handleDelete = useCallback(async (id: string, title: string, issue?: string | number): Promise<void> => {
     if (!id) return;
 
     // Name the issue, so it doesn't sound like the whole series is being deleted
     const label = issue ? `${title} #${issue}` : title;
-    const confirmed = window.confirm(
-      `Delete ${label}? This can't be undone.`
-    );
+    const confirmed = await showConfirm(`${label} will be removed from your collection. This can't be undone.`, {
+      title: `Delete ${label}?`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
 
     if (!confirmed) return;
 

@@ -33,7 +33,7 @@ interface FormState extends Record<string, string> {
   volume: string;
   year: string;
   comicBookCover: string;
-  type: 'regular' | 'variant' | '';
+  type: 'Regular' | 'Variant' | '';
 }
 
 interface FormErrorsState extends Partial<Record<string, string>> {
@@ -360,8 +360,8 @@ const ComicBookComponent = ({
                 <input
                   id="regularcover"
                   type="radio"
-                  value="regular"
-                  checked={formState.type === 'regular'}
+                  value="Regular"
+                  checked={formState.type === 'Regular'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />
@@ -372,8 +372,8 @@ const ComicBookComponent = ({
                 <input
                   id="variantcover"
                   type="radio"
-                  value="variant"
-                  checked={formState.type === 'variant'}
+                  value="Variant"
+                  checked={formState.type === 'Variant'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />

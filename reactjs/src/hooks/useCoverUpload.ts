@@ -1,8 +1,14 @@
 import { ChangeEvent, useCallback, useState } from 'react';
 import API from '../API';
+import { showAlert } from '../components/dialog';
 
 export const VALID_IMAGE_EXTENSIONS = ['jpg', 'png', 'jpeg'];
 export const MAX_COVER_SIZE = 1e6; // 1MB
+
+/**
+ * Uploads a cover image to S3: checks the type and size, gets a signed URL
+ * from the API, uploads the file, then passes the image's URL to onUploaded.
+ */
 export const useCoverUpload = (onUploaded: (url: string) => void) => {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -13,11 +19,13 @@ export const useCoverUpload = (onUploaded: (url: string) => void) => {
 
       const extension = file.name.split('.').pop()?.toLowerCase() || '';
       if (!VALID_IMAGE_EXTENSIONS.includes(extension)) {
-        alert(`Image must have one of these extensions: ${VALID_IMAGE_EXTENSIONS.join(', ')}`);
+        event.target.value = ''; // so the rejected file isn't left showing in the picker
+        showAlert('Please choose a JPG or PNG image.', { title: "That file type won't work" });
         return;
       }
       if (file.size > MAX_COVER_SIZE) {
-        alert('Image size must be smaller than 1MB');
+        event.target.value = '';
+        showAlert('Please choose an image smaller than 1MB.', { title: 'That image is too large' });
         return;
       }
 
@@ -38,7 +46,7 @@ export const useCoverUpload = (onUploaded: (url: string) => void) => {
         onUploaded(url);
       } catch (error) {
         console.error('❌ Upload error:', error);
-        alert('Failed to upload image. Please try again.');
+        showAlert('Something went wrong while uploading the image. Please try again.', { title: "The image didn't upload" });
       } finally {
         setIsUploading(false);
       }

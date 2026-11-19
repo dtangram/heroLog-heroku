@@ -442,7 +442,7 @@ export const createComicBook = async (
   if (!type || !isValidComicBookType(type)) {
     return res.status(400).json({ 
       success: false,
-      error: 'Type must be either "regular" or "variant"'
+      error: 'Type must be either "Regular" or "Variant"'
     });
   }
   
