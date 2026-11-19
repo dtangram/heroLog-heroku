@@ -390,11 +390,6 @@
   color: #AECEAB;
 }
 
-.cbWrap .cbList .wrapper article section button.deleteStyle:hover p {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
 .cbWrap .cbList .wrapper article section button.deleteStyle:focus-visible {
   outline: 2px solid #AECEAB;
   outline-offset: 4px;
@@ -402,4 +397,27 @@
 
 .cbWrap .cbList .wrapper article section button.deleteStyle figure {
   display: flex;
+}
+
+/* Delete gets the same hover as Edit beside it: a green line grows from
+   the center under the text. */
+.cbWrap .cbList .wrapper article section button.deleteStyle p::after {
+  background: #AECEAB;
+  content: '';
+  display: block;
+  height: 2px;
+  margin: auto;
+  transition: width 0.5s ease;
+  width: 0;
+}
+
+.cbWrap .cbList .wrapper article section button.deleteStyle:hover p::after,
+.cbWrap .cbList .wrapper article section button.deleteStyle:focus-visible p::after {
+  width: 90%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cbWrap .cbList .wrapper article section button.deleteStyle p::after {
+    transition: none;
+  }
 }
