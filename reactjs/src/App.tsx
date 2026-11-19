@@ -34,6 +34,7 @@ import Footer from './components/footer';
 import { getAnonymousUserId } from './utils/anonymousUser';
 import CollectionIntel from './components/collectionIntel';
 import ScrollToTop from './components/ScrollToTop';
+import DialogHost from './components/dialog';
 import Search from './components/search';
 
 const App = () => {
@@ -68,6 +69,7 @@ const App = () => {
     <Provider store={store}>
       <Router>
         <ScrollToTop />
+        <DialogHost />
         <div id="main">
           <Header />
           <Routes>
