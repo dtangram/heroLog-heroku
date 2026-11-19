@@ -8,6 +8,12 @@ import db from '../models';
 
 type SaleListType = 'regular' | 'variant';
 
+/** Standard comic grades, best to worst. The sale form offers the same list. */
+export const SALE_CONDITIONS = ['Mint', 'Near Mint', 'Very Fine', 'Fine', 'Very Good', 'Good', 'Fair', 'Poor'] as const;
+type SaleCondition = typeof SALE_CONDITIONS[number];
+
+const MAX_PRICE = 99999.99;
+
 interface SaleListModel {
   findAll: (options: { where: WhereOptions<SaleListAttributes> }) => Promise<SaleListInstance[]>;
   findByPk: (id: string) => Promise<SaleListInstance | null>;
@@ -28,6 +34,9 @@ interface SaleListInstance {
   comicBookPublisher: string;
   comicBookCover: string | null;
   type: SaleListType;
+  /** Dollars; Postgres DECIMAL comes back as a string, e.g. "12.50" */
+  price: string | number | null;
+  comicCondition: SaleCondition | null;
   saleUsersId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +52,8 @@ interface SaleListAttributes {
   comicBookPublisher: string;
   comicBookCover: string | null;
   type: SaleListType;
+  price: string | number | null;
+  comicCondition: SaleCondition | null;
   saleUsersId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -56,6 +67,8 @@ interface SaleListCreationAttributes {
   comicBookPublisher: string;
   comicBookCover?: string | null;
   type: SaleListType;
+  price: number;
+  comicCondition: SaleCondition;
   saleUsersId: string;
 }
 
@@ -220,6 +233,41 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
   return { isValid: true };
 };
 
+/**
+ * Reads a price as the form sends it: "12", "12.5", "12.50", "$1,250.00".
+ * Blank means no price (null). Anything else must be dollars and up to two
+ * cents digits, between $0.01 and $99,999.99.
+ */
+const parsePrice = (value: unknown): { price: number | null } | { error: string } => {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return { price: null };
+  }
+  const text = String(value).trim().replace(/^\$/, '').replace(/,/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(text)) {
+    return { error: 'Price must be a dollar amount, like 12.50' };
+  }
+  const price = Number(text);
+  if (price < 0.01) {
+    return { error: 'Price must be at least $0.01' };
+  }
+  if (price > MAX_PRICE) {
+    return { error: 'Price must be $99,999.99 or less' };
+  }
+  return { price };
+};
+
+/** Matches a condition to the standard grade names, ignoring case. Blank means none (null). */
+const parseCondition = (value: unknown): { condition: SaleCondition | null } | { error: string } => {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return { condition: null };
+  }
+  const text = String(value).trim().toLowerCase();
+  const condition = SALE_CONDITIONS.find(grade => grade.toLowerCase() === text);
+  return condition
+    ? { condition }
+    : { error: `Condition must be one of: ${SALE_CONDITIONS.join(', ')}` };
+};
+
 const validateType = (type: string): ValidationResult => {
   if (!isValidSaleListType(type.toLowerCase() as SaleListType)) {
     return {
@@ -377,6 +425,8 @@ export const createSaleList = async (
     comicBookPublisher,
     comicBookCover,
     type,
+    price,
+    comicCondition,
     saleUsersId,
   } = req.body;
   
@@ -479,6 +529,23 @@ export const createSaleList = async (
     }
   }
   
+  // Buyers need a price and a condition, so new listings must have both
+  const priceResult = parsePrice(price);
+  if ('error' in priceResult) {
+    return res.status(400).json({ success: false, error: priceResult.error });
+  }
+  if (priceResult.price === null) {
+    return res.status(400).json({ success: false, error: 'Price is required' });
+  }
+
+  const conditionResult = parseCondition(comicCondition);
+  if ('error' in conditionResult) {
+    return res.status(400).json({ success: false, error: conditionResult.error });
+  }
+  if (conditionResult.condition === null) {
+    return res.status(400).json({ success: false, error: 'Condition is required' });
+  }
+  
   try {
     const SaleLists = getSaleListModel();
     
@@ -491,6 +558,8 @@ export const createSaleList = async (
       comicBookPublisher: comicBookPublisher.trim(),
       comicBookCover: comicBookCover?.trim() || null,
       type: type.toLowerCase() as SaleListType,
+      price: priceResult.price,
+      comicCondition: conditionResult.condition,
       saleUsersId: saleUsersId,
     });
     
@@ -591,6 +660,30 @@ export const updateSaleList = async (
         error: 'Comic book year must be between 1900 and current year + 1' 
       });
     }
+  }
+  
+  // Price and condition are optional in an update, but once sent they can't
+  // be blank: a listing that has them keeps them.
+  if (req.body.price !== undefined) {
+    const priceResult = parsePrice(req.body.price);
+    if ('error' in priceResult) {
+      return res.status(400).json({ success: false, error: priceResult.error });
+    }
+    if (priceResult.price === null) {
+      return res.status(400).json({ success: false, error: 'Price is required' });
+    }
+    updateData.price = priceResult.price;
+  }
+
+  if (req.body.comicCondition !== undefined) {
+    const conditionResult = parseCondition(req.body.comicCondition);
+    if ('error' in conditionResult) {
+      return res.status(400).json({ success: false, error: conditionResult.error });
+    }
+    if (conditionResult.condition === null) {
+      return res.status(400).json({ success: false, error: 'Condition is required' });
+    }
+    updateData.comicCondition = conditionResult.condition;
   }
   
   if (updateData.type !== undefined) {

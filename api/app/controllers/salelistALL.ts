@@ -26,6 +26,10 @@ interface SaleListInstance {
   comicBookPublisher: string;
   comicBookCover: string | null;
   type: SaleListType;
+  /** Dollars; Postgres DECIMAL comes back as a string, e.g. "12.50" (null on older listings) */
+  price: string | number | null;
+  /** Standard comic grade, e.g. "Near Mint" (null on older listings) */
+  comicCondition: string | null;
   saleUsersId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -42,6 +46,10 @@ interface SaleListAttributes {
   comicBookPublisher: string;
   comicBookCover: string | null;
   type: SaleListType;
+  /** Dollars; Postgres DECIMAL comes back as a string, e.g. "12.50" (null on older listings) */
+  price: string | number | null;
+  /** Standard comic grade, e.g. "Near Mint" (null on older listings) */
+  comicCondition: string | null;
   saleUsersId: string | null;
   createdAt: Date;
   updatedAt: Date;

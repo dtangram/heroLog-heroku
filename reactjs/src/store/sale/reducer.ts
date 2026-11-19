@@ -26,6 +26,8 @@ interface SaleComic {
   comicBookPublisher: string;
   comicBookCover: string;
   type: string;
+  price: string;
+  comicCondition: string;
   userId: string;
 }
 

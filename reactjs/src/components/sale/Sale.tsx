@@ -4,6 +4,7 @@ import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import Empty from '../empty';
 import ComicCard, { ComicCardGrid } from '../comicCard';
+import { formatPrice } from '../../utils/sale';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
@@ -18,6 +19,10 @@ interface SaleItem {
   comicBookPublisher: string;
   type: string;
   comicBookCover: string;
+  /** Dollars as text, e.g. "12.50" (null on listings made before prices existed) */
+  price?: string | null;
+  /** Standard comic grade, e.g. "Near Mint" */
+  comicCondition?: string | null;
 }
 
 interface SaleData {
@@ -190,15 +195,19 @@ const Sale = ({
             comicBookYear,
             comicBookPublisher,
             type,
-            comicBookCover
+            comicBookCover,
+            price,
+            comicCondition
           }) => (
             <ComicCard
               key={id}
               title={comicBookTitle}
               issue={comicIssue}
               cover={comicBookCover}
-              meta={[comicBookPublisher, comicBookVolume ? `Vol. ${comicBookVolume}` : null, comicBookYear]}
+              meta={[comicCondition, comicBookPublisher, comicBookVolume ? `Vol. ${comicBookVolume}` : null, comicBookYear]}
               type={type}
+              price={formatPrice(price)}
+              noPriceText="No price yet. Edit to add one."
               editUrl={`/forms/saleform/edit/${id}`}
               onDelete={() => handleDelete(id, comicIssue ? `${comicBookTitle} #${comicIssue}` : comicBookTitle)}
             />

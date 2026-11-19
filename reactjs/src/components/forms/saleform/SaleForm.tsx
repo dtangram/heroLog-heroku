@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { ChangeEvent, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import Link from '../../../link';
@@ -12,6 +12,7 @@ import { useCoverUpload } from '../../../hooks/useCoverUpload';
 import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toFormText } from '../../../utils/forms';
+import { PRICE_INPUT, SALE_CONDITIONS, validatePrice } from '../../../utils/sale';
 import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
 import styles from './styles.module.css';
 
@@ -27,6 +28,9 @@ interface FormState extends Record<string, string> {
   comicBookPublisher: string;
   comicBookCover: string;
   type: 'Regular' | 'Variant' | '';
+  /** Dollars as typed, e.g. "12.50" */
+  price: string;
+  comicCondition: string;
 }
 
 interface FormErrorsState extends Partial<Record<string, string>> {
@@ -34,6 +38,8 @@ interface FormErrorsState extends Partial<Record<string, string>> {
   comicIssue?: string;
   comicBookPublisher?: string;
   type?: string;
+  price?: string;
+  comicCondition?: string;
 }
 
 interface SaleFormProps {
@@ -51,6 +57,8 @@ const INITIAL_FORM_STATE: FormState = {
   comicBookPublisher: '',
   comicBookCover: '',
   type: '',
+  price: '',
+  comicCondition: '',
 };
 
 const MIN_TITLE_LENGTH = 2;
@@ -73,7 +81,33 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
     handleTypeChange,
   } = useFormFields<FormState, FormErrorsState>(INITIAL_FORM_STATE);
 
-  const { comicBookTitle, comicIssue, comicBookVolume, comicBookYear, comicBookPublisher, comicBookCover, type } = formState;
+  const {
+    comicBookTitle,
+    comicIssue,
+    comicBookVolume,
+    comicBookYear,
+    comicBookPublisher,
+    comicBookCover,
+    type,
+    price,
+    comicCondition,
+  } = formState;
+
+  // Price: only dollars and up to two cents digits can be typed, e.g. 12.50
+  const handlePriceChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value.replace(/^\$/, '');
+      if (PRICE_INPUT.test(value)) {
+        setField('price', value);
+      }
+    },
+    [setField]
+  );
+
+  const handleConditionChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => setField('comicCondition', event.target.value),
+    [setField]
+  );
 
   // Load the sale being edited (the one whose id is in the URL) and fill the form
   useEditRecord<SaleComic>({
@@ -90,6 +124,8 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
         comicBookPublisher: sale.comicBookPublisher || '',
         comicBookCover: sale.comicBookCover || '',
         type: (sale.type as FormState['type']) || '',
+        price: toFormText(sale.price),
+        comicCondition: sale.comicCondition || '',
       }),
   });
 
@@ -129,6 +165,13 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
     if (!type) {
       errors.type = 'Please select regular or variant';
     }
+    const priceError = validatePrice(price);
+    if (priceError) {
+      errors.price = priceError;
+    }
+    if (!comicCondition) {
+      errors.comicCondition = 'Please choose a condition';
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -143,6 +186,8 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
       comicBookPublisher: comicBookPublisher.trim(),
       comicBookCover,
       type,
+      price: price.trim(),
+      comicCondition,
       userId,
       saleUsersId: userId,
     };
@@ -289,6 +334,43 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
                     disabled={isSubmitting}
                     required
                   />
+                </label>
+
+                <label htmlFor="price">
+                  Price in US dollars *
+                  <input
+                    id="price"
+                    className={styles.inputBorder}
+                    type="text"
+                    inputMode="decimal"
+                    name="price"
+                    placeholder="12.50"
+                    autoComplete="off"
+                    value={price}
+                    onChange={handlePriceChange}
+                    disabled={isSubmitting}
+                    required
+                  />
+                </label>
+
+                <label htmlFor="comicCondition">
+                  Condition *
+                  <select
+                    id="comicCondition"
+                    className={styles.inputBorder}
+                    name="comicCondition"
+                    value={comicCondition}
+                    onChange={handleConditionChange}
+                    disabled={isSubmitting}
+                    required
+                  >
+                    <option value="">Choose a condition</option>
+                    {SALE_CONDITIONS.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </fieldset>
             </article>

@@ -146,6 +146,25 @@
   border: 2px solid #AECEAB;
 }
 
+/* The Condition dropdown looks like the text inputs around it */
+.wrapper form > article > fieldset > label select{
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #770422;
+  border-radius: 0;
+  color: #2B2B2B;
+  cursor: pointer;
+  font-size: 1.5rem;
+  margin: .5% 0 2%;
+  padding: .4rem;
+  transition: all 0.30s ease-in-out;
+  width: 100%;
+}
+
+.wrapper form > article > fieldset > label select.inputBorder:focus{
+  border: 2px solid #AECEAB;
+}
+
 .wrapper form > article label.labelRadio{
   color: #770422;
   font-size: 1.5rem;

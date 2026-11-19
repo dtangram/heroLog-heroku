@@ -59,6 +59,26 @@ const createSaleListsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes)
         },
       },
     },
+    // Asking price in dollars, e.g. 12.50 (null on listings made before prices existed)
+    price: {
+      type: dataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      validate: {
+        min: { args: [0.01], msg: 'Price must be at least $0.01' },
+        max: { args: [99999.99], msg: 'Price must be $99,999.99 or less' },
+      },
+    },
+    // Standard comic grade name, e.g. "Near Mint"
+    comicCondition: {
+      type: dataTypes.STRING(20),
+      allowNull: true,
+      validate: {
+        isIn: {
+          args: [['Mint', 'Near Mint', 'Very Fine', 'Fine', 'Very Good', 'Good', 'Fair', 'Poor']],
+          msg: 'Condition must be one of the standard comic grades',
+        },
+      },
+    },
     saleUsersId: {
       type: dataTypes.UUID,
       allowNull: true,
