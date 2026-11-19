@@ -2,13 +2,12 @@ import { useEffect, useCallback } from 'react';
 import { Link as RRLink } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Link from '../../link';
 import Empty from '../empty';
+import ComicCard, { ComicCardGrid } from '../comicCard';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
+import { showAlert, showConfirm } from '../dialog';
 
 interface SaleItem {
   id: string;
@@ -48,12 +47,14 @@ const Sale = ({
   }, [fetchSales]);
 
   // Handle sale deletion
-  const handleDelete = useCallback((id: string, title: string): void => {
+  const handleDelete = useCallback(async (id: string, title: string): Promise<void> => {
     if (!id) return;
 
-    const confirmed = window?.confirm?.(
-      `Are you sure you want to delete "${title}" from your sale list?`
-    );
+    const confirmed = await showConfirm(`"${title}" will be removed from your sale list. This can't be undone.`, {
+      title: 'Remove this comic from sale?',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
 
     if (!confirmed) return;
 
@@ -69,7 +70,7 @@ const Sale = ({
         : 'An unexpected error occurred';
       
       console.error('Failed to delete sale:', errorMessage);
-      window?.alert?.('Failed to delete sale. Please try again.');
+      showAlert('Something went wrong while deleting this comic. Please try again.', { title: "The comic wasn't deleted" });
     }
   }, [deleteSale, fetchSales]);
 
@@ -84,9 +85,14 @@ const Sale = ({
   });
 
   // Transform ids into array of sale objects
-  const currentSales = allIds
+  // Grouped by title, then in issue order
+  const currentSales = (allIds
     .map(id => byId[id]?.data)
-    .filter(Boolean) as SaleItem[];
+    .filter(Boolean) as SaleItem[])
+    .sort((a, b) =>
+      (a.comicBookTitle || '').localeCompare(b.comicBookTitle || '') ||
+      (Number(a.comicIssue) || 0) - (Number(b.comicIssue) || 0)
+    );
 
   console.log('📦 Current sales:', currentSales.length);
 
@@ -175,98 +181,29 @@ const Sale = ({
       </h2>
 
       <div className="cbList">
-        <section>
-          <article>
-            {currentSales.map(({
-              id,
-              comicBookTitle,
-              comicIssue,
-              comicBookVolume,
-              comicBookYear,
-              comicBookPublisher,
-              type,
-              comicBookCover
-            }) => (
-              <section className="comicSec" key={id}>
-                <article className="comicWrap">
-                  <section className="comicImgWrap">
-                    <img 
-                      src={comicBookCover || logo} 
-                      alt={`${comicBookTitle} Issue ${comicIssue} cover`} 
-                    />
-                  </section>
-
-                  <section className="paraWrap">
-                    <p>
-                      <span>Title:</span>
-                      &nbsp;
-                      {comicBookTitle}
-                    </p>
-
-                    {comicIssue && (
-                      <p>
-                        <span>Issue:</span>
-                        &nbsp;
-                        {comicIssue}
-                      </p>
-                    )}
-
-                    {comicBookVolume && (
-                      <p>
-                        <span>Volume:</span>
-                        &nbsp;
-                        {comicBookVolume}
-                      </p>
-                    )}
-
-                    {comicBookYear && (
-                      <p>
-                        <span>Year:</span>
-                        &nbsp;
-                        {comicBookYear}
-                      </p>
-                    )}
-
-                    <p>
-                      <span>Publisher:</span>
-                      &nbsp;
-                      {comicBookPublisher}
-                    </p>
-
-                    <p>
-                      <span>Cover:</span>
-                      &nbsp;
-                      {type}
-                    </p>
-
-                    <section>
-                      <section className="editStyle">
-                        <figure><EditIcon /></figure>
-                        <p className="link">
-                          <Link 
-                            className="link" 
-                            url={`/forms/saleform/edit/${id}`} 
-                            title="Edit" 
-                          />
-                        </p>
-                      </section>
-                      
-                      <button 
-                        className="deleteStyle" 
-                        type="button" 
-                        onClick={() => handleDelete(id, comicBookTitle)}
-                        aria-label={`Delete ${comicBookTitle} Issue ${comicIssue}`}
-                      >
-                        <figure><DeleteIcon /></figure>
-                        <p>Delete</p>
-                      </button>
-                    </section>
-                  </section>
-                </article>
-              </section>
-            ))}
-          </article>
-        </section>
+        <ComicCardGrid label="Your comics for sale">
+          {currentSales.map(({
+            id,
+            comicBookTitle,
+            comicIssue,
+            comicBookVolume,
+            comicBookYear,
+            comicBookPublisher,
+            type,
+            comicBookCover
+          }) => (
+            <ComicCard
+              key={id}
+              title={comicBookTitle}
+              issue={comicIssue}
+              cover={comicBookCover}
+              meta={[comicBookPublisher, comicBookVolume ? `Vol. ${comicBookVolume}` : null, comicBookYear]}
+              type={type}
+              editUrl={`/forms/saleform/edit/${id}`}
+              onDelete={() => handleDelete(id, comicIssue ? `${comicBookTitle} #${comicIssue}` : comicBookTitle)}
+            />
+          ))}
+        </ComicCardGrid>
       </div>
     </div>
   );

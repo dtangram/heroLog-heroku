@@ -1,0 +1,277 @@
+/* ComicCard, written mobile first:
+   - default (under 500px): stacked, the cover centered above the panel
+   - 500px and up: side by side, the cover frame standing out from the panel
+   - 541px and up: the full-size card, two per row when there's room */
+
+/* ------------------------------------------------------------------ */
+/* Default: phones under 500px                                         */
+/* ------------------------------------------------------------------ */
+
+.grid {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 0 auto 80px;
+  padding: 24px 0;
+  width: min(1120px, 92%);
+}
+
+.card {
+  --mat-width: 150px;
+  --overhang: 18px;
+  align-items: stretch;
+  display: grid;
+  font-family: "Lato", Arial, sans-serif;
+  gap: 10px;
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+/* The cover's green frame */
+.mat {
+  background: #AECEAB;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  grid-column: 1;
+  grid-row: 1;
+  justify-content: center;
+  justify-self: center;
+  padding: 12px;
+  position: relative;
+  width: var(--mat-width);
+  z-index: 1;
+}
+
+.mat > a {
+  display: block;
+}
+
+.cover {
+  aspect-ratio: 2 / 3;
+  border-radius: 4px;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+/* No cover yet: the logo, contained and faded */
+.placeholder {
+  background: #FFF;
+  box-sizing: border-box;
+  object-fit: contain;
+  opacity: 0.6;
+  padding: 12px;
+}
+
+/* The burgundy panel, below the cover with its text centered */
+.panel {
+  align-items: center;
+  background: #770422;
+  border-radius: 15px;
+  box-sizing: border-box;
+  color: #FFF;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  min-height: 0;
+  padding: 16px 16px 6px;
+  text-align: center;
+}
+
+.name {
+  color: #FFF;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  text-align: center;
+}
+
+.issue {
+  color: #AECEAB;
+  white-space: nowrap;
+}
+
+.facts {
+  align-items: center;
+  color: #FFF;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 1.6rem;
+  gap: 8px;
+  justify-content: center;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.tag {
+  border: 1px solid #AECEAB;
+  border-radius: 999px;
+  color: #AECEAB;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  text-transform: uppercase;
+}
+
+.credits {
+  display: grid;
+  gap: 6px 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-items: center;
+  margin: 0;
+  /* Keeps the two columns together when a card spans a wide row (tablets) */
+  max-width: 440px;
+  width: 100%;
+}
+
+.credit {
+  min-width: 0;
+}
+
+.credit dt {
+  color: #AECEAB;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.credit dd {
+  color: #FFF;
+  font-size: 1.5rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 4px;
+  width: 100%;
+}
+
+.action {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #AECEAB;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  text-decoration: none;
+}
+
+.action:hover {
+  color: #AECEAB;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.action:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #AECEAB;
+  outline-offset: 4px;
+}
+
+@media (min-width: 500px) {
+  .card {
+    --mat-width: 160px;
+    gap: 0;
+    grid-template-columns: var(--mat-width) 1fr;
+  }
+
+  .mat {
+    justify-self: stretch;
+  }
+
+  .panel {
+    align-items: stretch;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin: var(--overhang) 0 var(--overhang) 16px;
+    min-height: 150px;
+    padding: 14px 14px 6px calc(var(--mat-width) + 2px);
+    text-align: left;
+  }
+
+  .name {
+    text-align: left;
+  }
+
+  .facts,
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .credits {
+    justify-items: stretch;
+    width: auto;
+  }
+
+  .actions {
+    width: auto;
+  }
+}
+
+@media (min-width: 541px) {
+  .grid {
+    gap: 56px 40px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr));
+  }
+
+  .card {
+    --mat-width: 210px;
+    --overhang: 28px;
+  }
+
+  .mat {
+    border-radius: 15px;
+    padding: 20px;
+  }
+
+  .panel {
+    margin-left: 28px;
+    min-height: 220px;
+    padding: 20px 24px 12px calc(var(--mat-width) + 4px);
+  }
+
+  .name {
+    font-size: 2.4rem;
+  }
+
+  .credits {
+    gap: 8px 16px;
+  }
+
+  .credit dt {
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    white-space: normal;
+  }
+
+  .credit dd {
+    font-size: 1.6rem;
+  }
+
+  .actions {
+    gap: 24px;
+  }
+}
