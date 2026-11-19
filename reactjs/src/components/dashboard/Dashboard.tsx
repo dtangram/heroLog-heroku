@@ -7,6 +7,7 @@ import Link from '../../link';
 import Empty from '../empty';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
+import { showAlert, showConfirm } from '../dialog';
 import styles from './styles.module.css';
 
 // ============================================================================
@@ -66,12 +67,14 @@ const Dashboard = ({
   // }, [fetchPublishers]);
 
   // Handle publisher deletion with confirmation and error handling
-  const handleDelete = useCallback((id: string, name: string): void => {
+  const handleDelete = useCallback(async (id: string, name: string): Promise<void> => {
     if (!id) return;
     
-    const confirmed = window?.confirm?.(
-      `Are you sure you want to delete "${name}"?`
-    );
+    const confirmed = await showConfirm(`"${name}" will be removed from your collection. This can't be undone.`, {
+      title: 'Delete this publisher?',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
     
     if (!confirmed) return;
 
@@ -85,7 +88,7 @@ const Dashboard = ({
         : 'An unexpected error occurred';
       
       console.error('Failed to delete publisher:', errorMessage);
-      window?.alert?.('Failed to delete publisher. Please try again.');
+      showAlert('Something went wrong while deleting this publisher. Please try again.', { title: "The publisher wasn't deleted" });
     }
   }, [deletePublisher, fetchPublishers]);
 

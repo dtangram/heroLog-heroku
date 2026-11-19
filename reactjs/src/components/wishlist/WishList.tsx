@@ -2,17 +2,12 @@ import { useEffect, useCallback } from 'react';
 import { Link as RRLink } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Link from '../../link';
 import Empty from '../empty';
+import ComicCard, { ComicCardGrid } from '../comicCard';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
+import { showAlert, showConfirm } from '../dialog';
 
 interface WishListItem {
   id: string;
@@ -31,10 +26,6 @@ interface WishListData {
   byId: Record<string, { data: WishListItem }>;
   isLoading: boolean;
 }
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
 
 const WishList = ({
   fetchWishlists,
@@ -57,12 +48,14 @@ const WishList = ({
   }, [fetchWishlists]);
 
   // Handle wish list deletion
-  const handleDelete = useCallback((id: string, title: string): void => {
+  const handleDelete = useCallback(async (id: string, title: string): Promise<void> => {
     if (!id) return;
 
-    const confirmed = window?.confirm?.(
-      `Are you sure you want to delete "${title}" from your wish list?`
-    );
+    const confirmed = await showConfirm(`"${title}" will be removed from your wish list. This can't be undone.`, {
+      title: 'Remove from your wish list?',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
 
     if (!confirmed) return;
 
@@ -78,7 +71,7 @@ const WishList = ({
         : 'An unexpected error occurred';
       
       console.error('Failed to delete wish list item:', errorMessage);
-      window?.alert?.('Failed to delete wish list item. Please try again.');
+      showAlert('Something went wrong while deleting this comic. Please try again.', { title: "The comic wasn't deleted" });
     }
   }, [deleteWishlist, fetchWishlists]);
 
@@ -93,9 +86,14 @@ const WishList = ({
   });
 
   // Transform ids into array of wish list objects
-  const currentWishlists = allIds
+  // Grouped by title, then in issue order
+  const currentWishlists = (allIds
     .map(id => byId[id]?.data)
-    .filter(Boolean) as WishListItem[];
+    .filter(Boolean) as WishListItem[])
+    .sort((a, b) =>
+      (a.comicBookTitle || '').localeCompare(b.comicBookTitle || '') ||
+      (Number(a.comicIssue) || 0) - (Number(b.comicIssue) || 0)
+    );
 
   console.log('📦 Current wishlists:', currentWishlists.length);
 
@@ -184,98 +182,29 @@ const WishList = ({
       </h2>
 
       <article className="cbList">
-        <section>
-          <article>
-            {currentWishlists.map(({
-              id,
-              comicBookTitle,
-              comicIssue,
-              comicBookVolume,
-              comicBookYear,
-              comicBookPublisher,
-              type,
-              comicBookCover
-            }) => (
-              <section className="comicSec" key={id}>
-                <article className="comicWrap">
-                  <section className="comicImgWrap">
-                    <img 
-                      src={comicBookCover || logo} 
-                      alt={`${comicBookTitle} Issue ${comicIssue} cover`} 
-                    />
-                  </section>
-
-                  <section className="paraWrap">
-                    <p>
-                      <span>Title:</span>
-                      &nbsp;
-                      {comicBookTitle}
-                    </p>
-
-                    {comicIssue && (
-                      <p>
-                        <span>Issue:</span>
-                        &nbsp;
-                        {comicIssue}
-                      </p>
-                    )}
-
-                    {comicBookVolume && (
-                      <p>
-                        <span>Volume:</span>
-                        &nbsp;
-                        {comicBookVolume}
-                      </p>
-                    )}
-
-                    {comicBookYear && (
-                      <p>
-                        <span>Year:</span>
-                        &nbsp;
-                        {comicBookYear}
-                      </p>
-                    )}
-
-                    <p>
-                      <span>Publisher:</span>
-                      &nbsp;
-                      {comicBookPublisher}
-                    </p>
-
-                    <p>
-                      <span>Cover:</span>
-                      &nbsp;
-                      {type}
-                    </p>
-
-                    <section>
-                      <section className="editStyle">
-                        <figure><EditIcon /></figure>
-                        <p className="link">
-                          <Link 
-                            className="link" 
-                            url={`/forms/wishListform/edit/${id}`} 
-                            title="Edit" 
-                          />
-                        </p>
-                      </section>
-                      
-                      <button 
-                        className="deleteStyle" 
-                        type="button" 
-                        onClick={() => handleDelete(id, comicBookTitle)}
-                        aria-label={`Delete ${comicBookTitle} Issue ${comicIssue} from wish list`}
-                      >
-                        <figure><DeleteIcon /></figure>
-                        <p>Delete</p>
-                      </button>
-                    </section>
-                  </section>
-                </article>
-              </section>
-            ))}
-          </article>
-        </section>
+        <ComicCardGrid label="Your wish list">
+          {currentWishlists.map(({
+            id,
+            comicBookTitle,
+            comicIssue,
+            comicBookVolume,
+            comicBookYear,
+            comicBookPublisher,
+            type,
+            comicBookCover
+          }) => (
+            <ComicCard
+              key={id}
+              title={comicBookTitle}
+              issue={comicIssue}
+              cover={comicBookCover}
+              meta={[comicBookPublisher, comicBookVolume ? `Vol. ${comicBookVolume}` : null, comicBookYear]}
+              type={type}
+              editUrl={`/forms/wishListform/edit/${id}`}
+              onDelete={() => handleDelete(id, comicIssue ? `${comicBookTitle} #${comicIssue}` : comicBookTitle)}
+            />
+          ))}
+        </ComicCardGrid>
       </article>
     </article>
   );

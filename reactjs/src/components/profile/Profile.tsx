@@ -4,6 +4,7 @@ import Link from '../../link';
 import Empty from '../empty';
 import styles from './styles.module.css';
 import type { ConnectorProps } from './container';
+import { showAlert, showConfirm } from '../dialog';
 import { AccountCircle } from '@mui/icons-material';
 
 interface RouteParams extends Record<string, string | undefined> {
@@ -28,11 +29,12 @@ const Profile = ({
   }, [id, fetchUser]);
 
   // Handle user deletion
-  const handleDelete = useCallback((userId: string, username: string): void => {
+  const handleDelete = useCallback(async (userId: string, username: string): Promise<void> => {
     if (!userId) return;
 
-    const confirmed = window?.confirm?.(
-      `Are you sure you want to delete the profile for "${username}"? This action cannot be undone.`
+    const confirmed = await showConfirm(
+      `The profile for "${username}" will be permanently deleted. This can't be undone.`,
+      { title: 'Delete your profile?', confirmLabel: 'Delete Profile', tone: 'danger' }
     );
 
     if (!confirmed) return;
@@ -49,7 +51,7 @@ const Profile = ({
         : 'An unexpected error occurred';
       
       console.error('Failed to delete profile:', errorMessage);
-      window?.alert?.('Failed to delete profile. Please try again.');
+      showAlert('Something went wrong while deleting your profile. Please try again.', { title: "Your profile wasn't deleted" });
     }
   }, [deleteUser, fetchUser, id]);
 

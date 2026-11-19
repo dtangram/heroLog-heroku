@@ -2,15 +2,12 @@ import { useEffect, useCallback } from 'react';
 import { Link as RRLink, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Link from '../../../link';
 import Empty from '../../empty';
 import { showConfirm } from '../../dialog';
+import ComicCard, { ComicCardGrid } from '../../comicCard';
 import logo from '../../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
-import CoverLightbox from '../../coverLightbox';
 import styles from './styles.module.css';
 
 export interface ComicBook {
@@ -100,9 +97,11 @@ const ComicBookListIssues = ({
   const { allIds = [], byId = {}, isLoading = false } = currentComicBookIssueData;
 
   // Transform ids into array of comic book objects
-  const comicBooks = allIds
+  // In issue order (#1, #2 ... #423, #491), not the order they were added
+  const comicBooks = (allIds
     .map(id => byId[id]?.data)
-    .filter(Boolean) as ComicBook[];
+    .filter(Boolean) as ComicBook[])
+    .sort((a, b) => (Number(a.comicIssue) || 0) - (Number(b.comicIssue) || 0));
 
   // Common header section to avoid repetition
   const renderHeader = () => (
@@ -180,81 +179,38 @@ const ComicBookListIssues = ({
     <article id="cbComBookListIssues">
       {renderHeader()}
       <article className={styles.cbList}>
-        <section className={styles.wrapper}>
-          <article className={styles.articleWrap}>
-            {comicBooks.map(({
-              id,
-              title,
-              comicIssue,
-              author,
-              penciler,
-              coverartist,
-              inker,
-              volume,
-              year,
-              type,
-              comicBookCover
-            }) => (
-              <section className={styles.comicSec} key={id}>
-                <article className={styles.comicWrap}>
-                  <section className={styles.comicImgWrap}>
-                    {comicBookCover ? (
-                      <CoverLightbox
-                        src={comicBookCover}
-                        alt={`${title} #${comicIssue} cover`}
-                        caption={`${title} #${comicIssue}`}
-                      >
-                        <img
-                          className={styles.cbCoverImg}
-                          src={comicBookCover}
-                          alt={`${title} #${comicIssue} cover`}
-                        />
-                      </CoverLightbox>
-                    ) : (
-                      // No cover yet: show the logo, with nothing to enlarge
-                      <img src={logo} alt={`${title} #${comicIssue}: no cover yet`} />
-                    )}
-                  </section>
-
-                  <section className={styles.paraWrap}>
-                    <p><span>Title:</span> {title || 'N/A'}</p>
-                    <p><span>Issue:</span> {comicIssue || 'N/A'}</p>
-                    <p><span>Author:</span> {author || 'N/A'}</p>
-                    <p><span>Penciler:</span> {penciler || 'N/A'}</p>
-                    <p><span>Cover Artist:</span> {coverartist || 'N/A'}</p>
-                    <p><span>Inker:</span> {inker || 'N/A'}</p>
-                    <p><span>Volume:</span> {volume || 'N/A'}</p>
-                    <p><span>Year:</span> {year || 'N/A'}</p>
-                    <p><span>Cover:</span> {type || 'N/A'}</p>
-                  </section>
-                  <section className={styles.paragraphFooter}>
-                    <section className={styles.editStyle}>
-                      <p className={styles.linkWrapper}>
-                        <Link className={styles.editLink}
-                          url={`/forms/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`}
-                          icon={<EditIcon />}
-                          title="Edit" 
-                        />
-                      </p>
-                    </section>
-                    
-                    <section className={styles.deleteWrapper}>
-                      <button 
-                        className={styles.deleteStyle}
-                        type="button" 
-                        onClick={() => handleDelete(id, title, comicIssue)}
-                        aria-label={`Delete ${title} #${comicIssue}`}
-                      >
-                        <figure><DeleteIcon /></figure>
-                        <p>Delete</p>
-                      </button>
-                    </section>
-                  </section>
-                </article>
-              </section>
-            ))}
-          </article>
-        </section>
+        <ComicCardGrid label={`${cbTitle} issues`}>
+          {comicBooks.map(({
+            id,
+            title,
+            comicIssue,
+            author,
+            penciler,
+            coverartist,
+            inker,
+            volume,
+            year,
+            type,
+            comicBookCover
+          }) => (
+            <ComicCard
+              key={id}
+              title={title || cbTitle}
+              issue={comicIssue}
+              cover={comicBookCover}
+              meta={[volume ? `Vol. ${volume}` : null, year]}
+              type={type}
+              credits={[
+                { label: 'Writer', value: author },
+                { label: 'Penciler', value: penciler },
+                { label: 'Inker', value: inker },
+                { label: 'Cover Artist', value: coverartist },
+              ]}
+              editUrl={`/forms/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/edit/${id}`}
+              onDelete={() => handleDelete(id, title, comicIssue)}
+            />
+          ))}
+        </ComicCardGrid>
       </article>
     </article>
   );

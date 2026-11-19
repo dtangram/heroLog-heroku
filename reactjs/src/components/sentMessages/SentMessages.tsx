@@ -7,6 +7,7 @@ import Empty from '../empty';
 import styles from './styles.module.css';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
+import { showAlert, showConfirm } from '../dialog';
 
 interface RouteParams extends Record<string, string | undefined> {
   userId: string;
@@ -32,12 +33,14 @@ const SentMessages = ({
   }, [userId, fetchUser, fetchMessagingsSent]);
 
   // Handle message deletion
-  const handleDelete = useCallback((id: string, subject: string): void => {
+  const handleDelete = useCallback(async (id: string, subject: string): Promise<void> => {
     if (!id) return;
 
-    const confirmed = window?.confirm?.(
-      `Are you sure you want to delete the message "${subject}"?`
-    );
+    const confirmed = await showConfirm(`"${subject}" will be deleted. This can't be undone.`, {
+      title: 'Delete this message?',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
 
     if (!confirmed) return;
 
@@ -51,7 +54,7 @@ const SentMessages = ({
         : 'An unexpected error occurred';
       
       console.error('Failed to delete message:', errorMessage);
-      window?.alert?.('Failed to delete message. Please try again.');
+      showAlert('Something went wrong while deleting this message. Please try again.', { title: "The message wasn't deleted" });
     }
   }, [deleteMessaging, fetchMessagingsSent]);
 
