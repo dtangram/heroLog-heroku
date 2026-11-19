@@ -1,0 +1,204 @@
+/* The <dialog> fills the screen; its ::backdrop is the overlay.
+   margin: auto + inset: 0 center it, since the site's CSS reset
+   removes the browser's own centering (margin: 0 on everything). */
+.dialog {
+  background: transparent;
+  border: none;
+  inset: 0;
+  margin: auto;
+  max-height: none;
+  max-width: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dialog[open] {
+  animation: dialogIn 0.15s ease-out;
+}
+
+.panel {
+  background: #FFF;
+  border-radius: 6px;
+  border-top: 6px solid #770422;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  max-width: min(480px, calc(100vw - 32px));
+  padding: 24px 24px 20px;
+  width: 480px;
+}
+
+.title {
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  text-align: left;
+}
+
+.message {
+  /* Set here because the site's global p and h2 rules use white text and centering */
+  color: #2B2B2B;
+  font-size: 1.8rem;
+  line-height: 1.5;
+  margin: 0 0 24px;
+  text-align: left;
+  white-space: pre-line;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.button {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  min-height: 44px;
+  min-width: 96px;
+  padding: 8px 20px;
+  text-transform: uppercase;
+}
+
+.button:focus-visible {
+  outline: 3px solid #AECEAB;
+  outline-offset: 2px;
+}
+
+.primary {
+  background: #2B2B2B;
+  color: #FFF;
+}
+
+.primary:hover {
+  background: #000;
+}
+
+.danger {
+  background: #770422;
+  color: #FFF;
+}
+
+.danger:hover {
+  background: #5A0319;
+}
+
+.secondary {
+  background: #FFF;
+  border-color: #2B2B2B;
+  color: #2B2B2B;
+}
+
+.secondary:hover {
+  background: #F1F1F1;
+}
+
+/* Toasts: top right, just under the header, so they don't cover the
+   form's buttons (like Scan) the user just pressed. They never block the page. */
+.toasts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  position: fixed;
+  right: 24px;
+  top: 112px;
+  width: min(420px, calc(100vw - 32px));
+  z-index: 1100;
+}
+
+@media (max-width: 600px) {
+  .toasts {
+    right: 16px;
+    top: 100px;
+  }
+}
+
+.toast {
+  align-items: flex-start;
+  animation: toastIn 0.2s ease-out;
+  text-align: left;
+  background: #2B2B2B;
+  border-left: 6px solid #AECEAB;
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  color: #FFF;
+  display: flex;
+  gap: 12px;
+  padding: 12px 8px 12px 16px;
+  pointer-events: auto;
+  width: 100%;
+}
+
+.success {
+  border-left-color: #AECEAB;
+}
+
+.info {
+  border-left-color: #FFF;
+}
+
+.toastMessage {
+  color: #FFF;
+  flex: 1;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  margin: 0;
+  padding-top: 8px;
+  white-space: pre-line;
+}
+
+.toastClose {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #FFF;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 2.6rem;
+  height: 44px;
+  line-height: 1;
+  width: 44px;
+}
+
+.toastClose:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.toastClose:focus-visible {
+  outline: 3px solid #AECEAB;
+  outline-offset: 0;
+}
+
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open],
+  .toast {
+    animation: none;
+  }
+}
