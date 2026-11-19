@@ -26,7 +26,7 @@ interface FormState extends Record<string, string> {
   comicBookYear: string;
   comicBookPublisher: string;
   comicBookCover: string;
-  type: 'regular' | 'variant' | '';
+  type: 'Regular' | 'Variant' | '';
 }
 
 interface FormErrorsState extends Partial<Record<string, string>> {
@@ -298,8 +298,8 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
                 <input
                   id="regular"
                   type="radio"
-                  value="regular"
-                  checked={type === 'regular'}
+                  value="Regular"
+                  checked={type === 'Regular'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />
@@ -310,8 +310,8 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
                 <input
                   id="variant"
                   type="radio"
-                  value="variant"
-                  checked={type === 'variant'}
+                  value="Variant"
+                  checked={type === 'Variant'}
                   onChange={handleTypeChange}
                   disabled={isSubmitting}
                 />

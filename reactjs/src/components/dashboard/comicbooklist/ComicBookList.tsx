@@ -6,6 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Link from '../../../link';
 import Empty from '../../empty';
+import { showAlert, showConfirm } from '../../dialog';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
 import styles from './styles.module.css';
@@ -65,8 +66,9 @@ const ComicBookList = ({
   const handleDelete = useCallback(async (id: string, title: string): Promise<void> => {
     if (!id) return;
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${title}"?`
+    const confirmed = await showConfirm(
+      `"${title}" will be removed from your collection. This can't be undone.`,
+      { title: 'Delete this title?', confirmLabel: 'Delete', tone: 'danger' }
     );
 
     if (!confirmed) return;
@@ -86,7 +88,7 @@ const ComicBookList = ({
         : 'An unexpected error occurred';
       
       console.error('Failed to delete comic book title:', errorMessage);
-      window.alert('Failed to delete comic book title. Please try again.');
+      showAlert('Something went wrong while deleting this title. Please try again.', { title: "The title wasn't deleted" });
     }
   }, [deleteComicBookTitle, fetchComicBookTitles, pubId]);
 

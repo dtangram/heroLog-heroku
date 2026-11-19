@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ComicBook from './ComicBook';
 import { mapStateToProps } from './container';
+import DialogHost, { resetDialogs } from '../../dialog';
 
 jest.mock('../../../API');
 jest.mock('../../../utils/anonymousUser', () => ({ getAnonymousUserId: () => 'anonymous-id' }));
@@ -58,6 +59,7 @@ const renderEditPage = (comicId: string) => {
   };
   render(
     <MemoryRouter initialEntries={[`/forms/user-1/pub-1/DC/title-batman/Batman/comicbook/edit/${comicId}`]}>
+      <DialogHost />
       <Routes>
         <Route
           path="/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id"
@@ -155,8 +157,9 @@ describe('ComicBook new comic: year validation', () => {
 describe('ComicBook scan: creator credits', () => {
   beforeAll(() => {
     window.scrollTo = jest.fn();
-    window.alert = jest.fn();
   });
+
+  afterEach(() => resetDialogs());
 
   const scanResult = (overrides = {}) => ({
     title: 'Batman',
@@ -195,7 +198,8 @@ describe('ComicBook scan: creator credits', () => {
     fireEvent.change(screen.getByLabelText(/author/i), { target: { value: 'Alan Grant' } });
     fireEvent.click(screen.getByRole('button', { name: /scan cover with ai/i }));
 
-    await waitFor(() => expect(window.alert).toHaveBeenCalled());
+    // The scan confirms itself with a toast instead of a browser alert
+    expect(await screen.findByText(/cover scanned \(90% confidence\)/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/author/i)).toHaveValue('Alan Grant');
   });
 });

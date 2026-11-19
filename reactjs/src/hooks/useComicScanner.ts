@@ -15,7 +15,7 @@ export interface ScanResult {
   penciler?: string;
   inker?: string;
   coverartist?: string;
-  type: 'regular' | 'variant';
+  type: 'Regular' | 'Variant';
   confidence: number;
 }
 

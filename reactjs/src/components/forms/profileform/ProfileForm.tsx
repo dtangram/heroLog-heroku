@@ -6,6 +6,7 @@ import Link from '../../../link';
 import SuccessDisplay from '../success';
 import styles from './styles.module.css';
 import API from '../../../API';
+import { showAlert } from '../../dialog';
 
 interface FormErrorsType {
   firstname: string;
@@ -133,13 +134,13 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
 
   if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
     fileInputRef.current.disabled = false;
-    alert('Image needs to have a .jpeg, .jpg or .png file extension.');
+    showAlert('Please choose a JPG or PNG image.', { title: "That file type won't work" });
     return;
   }
 
   if (file.size > MAX_FILE_SIZE) {
     fileInputRef.current.disabled = false;
-    alert('Image size needs to be smaller than 1MB');
+    showAlert('Please choose an image smaller than 1MB.', { title: 'That image is too large' });
     return;
   }
 

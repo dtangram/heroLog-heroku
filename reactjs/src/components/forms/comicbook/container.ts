@@ -18,7 +18,7 @@ interface ComicBook {
   volume: number;
   year: number;
   comicBookCover: string;
-  type: 'regular' | 'variant' | '';
+  type: 'Regular' | 'Variant' | '';
 }
 
 interface ComicBookState {
