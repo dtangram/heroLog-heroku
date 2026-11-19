@@ -29,6 +29,10 @@ export interface SaleComic {
   comicBookPublisher: string;
   comicBookCover: string;
   type: string;
+  /** Dollars as text, e.g. "12.50" (empty on listings made before prices existed) */
+  price: string;
+  /** Standard comic grade, e.g. "Near Mint" */
+  comicCondition: string;
   userId: string;
 }
 
@@ -139,6 +143,8 @@ export const createSale = (sale: Omit<SaleComic, 'id'>): APIAction => {
     comicBookPublisher: sale.comicBookPublisher,
     comicBookCover: sale.comicBookCover,
     type: sale.type,
+    price: sale.price,
+    comicCondition: sale.comicCondition,
     saleUsersId: sale.userId,  // ✅ Map userId → saleUsersId
   };
   
@@ -170,6 +176,8 @@ export const updateSale = (sale: SaleComic): APIAction => {
     comicBookPublisher,
     comicBookCover,
     type,
+    price,
+    comicCondition,
     userId,  // ✅ Get userId
   } = sale;
 
@@ -182,6 +190,8 @@ export const updateSale = (sale: SaleComic): APIAction => {
     comicBookPublisher: comicBookPublisher?.trim(),
     comicBookCover: comicBookCover?.trim(),
     type: type?.trim(),
+    price: price?.trim(),
+    comicCondition: comicCondition?.trim(),
     saleUsersId: userId,  // ✅ Map userId → saleUsersId
   };
 

@@ -15,6 +15,10 @@ interface SaleComic {
   comicBookPublisher: string;
   comicBookCover: string;
   type: string;
+  /** Dollars as text, e.g. "12.50" (null on older listings) */
+  price?: string | null;
+  /** Standard comic grade, e.g. "Near Mint" (null on older listings) */
+  comicCondition?: string | null;
   userId: string;
   sellerUsername?: string | null;
 }

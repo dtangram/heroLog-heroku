@@ -68,4 +68,20 @@ describe('ComicCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete Batman #491' }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a listing\'s price as a price tag, labelled for screen readers', () => {
+    setupCard({ price: '$12.50' });
+    expect(screen.getByText('$12.50')).toBeInTheDocument();
+    expect(screen.getByText('Price:')).toBeInTheDocument();
+  });
+
+  it('says when a listing has no price yet', () => {
+    setupCard({ price: null, noPriceText: 'No price yet. Edit to add one.' });
+    expect(screen.getByText('No price yet. Edit to add one.')).toBeInTheDocument();
+  });
+
+  it('shows no price area on pages without prices', () => {
+    setupCard({ noPriceText: 'No price yet. Edit to add one.' });
+    expect(screen.queryByText(/price/i)).not.toBeInTheDocument();
+  });
 });

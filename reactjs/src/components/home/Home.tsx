@@ -5,6 +5,7 @@ import { BeatLoader } from 'react-spinners';
 import MessageIcon from '@mui/icons-material/Message';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import EmptySalesHomepage from '../emptySalesHomepage';
+import { formatPrice } from '../../utils/sale';
 import styles from './styles.module.css';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
@@ -174,7 +175,9 @@ const Home = ({
               comicBookTitle,
               comicIssue,
               saleUsersId,
-              sellerUsername
+              sellerUsername,
+              price,
+              comicCondition
             }) => (
               <Col 
                 sm="12" 
@@ -196,6 +199,23 @@ const Home = ({
                 ) : (
                   <h3>{comicBookTitle}</h3>
                 )}
+
+                <p className={styles.priceLine}>
+                  {formatPrice(price) ? (
+                    <strong className={styles.price}>
+                      <span className="visually-hidden">Price: </span>
+                      {formatPrice(price)}
+                    </strong>
+                  ) : (
+                    <span className={styles.noPrice}>Ask the seller for a price</span>
+                  )}
+                  {comicCondition && (
+                    <span className={styles.condition}>
+                      <span className="visually-hidden">Condition: </span>
+                      {comicCondition}
+                    </span>
+                  )}
+                </p>
 
                 {sellerUsername && (
                   <p className={styles.seller}>

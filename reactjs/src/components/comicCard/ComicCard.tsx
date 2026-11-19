@@ -23,6 +23,10 @@ interface ComicCardProps {
   type?: string | null;
   /** Creators; only the ones that are filled in are shown */
   credits?: Credit[];
+  /** Formatted price for a listing, e.g. "$12.50". Leave out on pages without prices. */
+  price?: string | null;
+  /** Shown instead when a listing has no price yet */
+  noPriceText?: string;
   editUrl: string;
   onDelete: () => void;
 }
@@ -35,7 +39,18 @@ const hasValue = (value: Value): value is string | number =>
  * the details and actions. Used on the Sale page and the issue list, so
  * both look and work the same.
  */
-const ComicCard = ({ title, issue, cover, meta = [], type, credits = [], editUrl, onDelete }: ComicCardProps) => {
+const ComicCard = ({
+  title,
+  issue,
+  cover,
+  meta = [],
+  type,
+  credits = [],
+  price,
+  noPriceText,
+  editUrl,
+  onDelete,
+}: ComicCardProps) => {
   const name = hasValue(issue) ? `${title} #${issue}` : title;
   const facts = meta.filter(hasValue);
   const filledCredits = credits.filter(credit => hasValue(credit.value));
@@ -57,6 +72,15 @@ const ComicCard = ({ title, issue, cover, meta = [], type, credits = [], editUrl
           {title}
           {hasValue(issue) && <span className={styles.issue}> #{issue}</span>}
         </h3>
+
+        {price ? (
+          <p className={styles.price}>
+            <span className={styles.srOnly}>Price: </span>
+            {price}
+          </p>
+        ) : (
+          price === null && noPriceText && <p className={styles.noPrice}>{noPriceText}</p>
+        )}
 
         {(facts.length > 0 || type) && (
           <p className={styles.facts}>

@@ -10,6 +10,10 @@ interface Sale {
   comicBookPublisher: string;
   comicIssue?: number;
   type: string;
+  /** Dollars as text, e.g. "12.50" (null on listings made before prices existed) */
+  price?: string | null;
+  /** Standard comic grade, e.g. "Near Mint" */
+  comicCondition?: string | null;
   saleUsersId: string;
   /** Seller's public username, from /salelistALL (null if the account is gone) */
   sellerUsername?: string | null;

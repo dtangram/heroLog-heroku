@@ -10,6 +10,10 @@ interface Sale {
   comicBookPublisher: string;
   type: string;
   comicBookCover: string;
+  /** Dollars as text, e.g. "12.50" (null on listings made before prices existed) */
+  price?: string | null;
+  /** Standard comic grade, e.g. "Near Mint" */
+  comicCondition?: string | null;
 }
 
 interface SaleData {

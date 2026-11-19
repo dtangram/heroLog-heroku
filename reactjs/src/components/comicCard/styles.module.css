@@ -91,6 +91,40 @@
   white-space: nowrap;
 }
 
+/* A sale listing's price, styled like a price tag so it's the first thing seen */
+.price {
+  align-self: center;
+  background: #FFF;
+  border-radius: 999px;
+  color: #770422;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+  padding: 2px 14px;
+}
+
+/* An older listing without a price */
+.noPrice {
+  color: #AECEAB;
+  font-size: 1.4rem;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Read by screen readers, not shown */
+.srOnly {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .facts {
   align-items: center;
   color: #FFF;
@@ -231,6 +265,10 @@
 
   .name {
     text-align: left;
+  }
+
+  .price {
+    align-self: flex-start;
   }
 
   .facts,
