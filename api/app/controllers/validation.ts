@@ -70,11 +70,14 @@ const checks = {
     .withMessage('Message is required to be at least 10 characters.')
     .trim(),
     
+  // Lowercase first, then check: the forms send "Regular" / "Variant", and the
+  // database stores "regular" / "variant". (Checking first rejected "Regular".)
   typeRV: check('type')
     .exists().withMessage('Comic Book type is required.')
+    .trim()
+    .toLowerCase()
     .isIn(['regular', 'variant'])
-    .withMessage('Comic Book must be regular or variant.')
-    .toLowerCase(),
+    .withMessage('Comic Book must be regular or variant.'),
     
   userId: check('userId')
     .exists().withMessage('User ID is required.')

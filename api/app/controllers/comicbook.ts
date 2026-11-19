@@ -609,7 +609,7 @@ export const updateComicBook = async (
   if (req.body.type && !isValidComicBookType(req.body.type)) {
     return res.status(400).json({ 
       success: false,
-      error: 'Type must be either "regular" or "variant"'
+      error: 'Type must be either "Regular" or "Variant"'
     });
   }
   

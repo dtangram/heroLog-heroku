@@ -255,6 +255,12 @@
   .cbList .wrapper{
     width: 390px;
   }
+
+  /* Phones: one column of fields instead of two narrow ones */
+  .wrapper form > article.fields{
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 500px){
