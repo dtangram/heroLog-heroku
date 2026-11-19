@@ -79,11 +79,11 @@ const ComicCard = ({ title, issue, cover, meta = [], type, credits = [], editUrl
         <div className={styles.actions}>
           <RRLink className={styles.action} to={editUrl} aria-label={`Edit ${name}`}>
             <EditIcon fontSize="inherit" aria-hidden="true" />
-            Edit
+            <span className={styles.label}>Edit</span>
           </RRLink>
           <button className={styles.action} type="button" onClick={onDelete} aria-label={`Delete ${name}`}>
             <DeleteIcon fontSize="inherit" aria-hidden="true" />
-            Delete
+            <span className={styles.label}>Delete</span>
           </button>
         </div>
       </div>

@@ -1,12 +1,3 @@
-/* ComicCard, written mobile first:
-   - default (under 500px): stacked, the cover centered above the panel
-   - 500px and up: side by side, the cover frame standing out from the panel
-   - 541px and up: the full-size card, two per row when there's room */
-
-/* ------------------------------------------------------------------ */
-/* Default: phones under 500px                                         */
-/* ------------------------------------------------------------------ */
-
 .grid {
   display: grid;
   gap: 32px;
@@ -181,8 +172,34 @@
 
 .action:hover {
   color: #AECEAB;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+}
+
+/* Hover, like the menu links and the Edit links on the Dashboard:
+   a green line grows from the center under the word. Hovering the
+   icon counts too. */
+.label {
+  display: inline-block;
+}
+
+.label::after {
+  background: #AECEAB;
+  content: '';
+  display: block;
+  height: 2px;
+  margin: auto;
+  transition: width 0.5s ease;
+  width: 0;
+}
+
+.action:hover .label::after,
+.action:focus-visible .label::after {
+  width: 90%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label::after {
+    transition: none;
+  }
 }
 
 .action:focus-visible {
