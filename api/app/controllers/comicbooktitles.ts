@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import { loadTitleSummaries } from '../services/collectionSummary';
 
 // Properly typed model interface
 interface ComicBookTitleModel {
@@ -182,7 +183,12 @@ export const getCollectPublisherComicBookTitles = async (
       order: [['cbTitle', 'ASC']]
     });
     
-    const data = comicbooktitleComicBookTitles.map(title => title.toJSON());
+    // Each title comes with its issue count, issue range and newest cover
+    const summaries = await loadTitleSummaries(comicbooktitleComicBookTitles.map(title => title.id));
+    const data = comicbooktitleComicBookTitles.map(title => ({
+      ...title.toJSON(),
+      ...(summaries[title.id] || { issueCount: 0, coverUrl: null, firstIssue: null, lastIssue: null }),
+    }));
     
     console.log(`✅ Found ${data.length} comic book titles`);
     

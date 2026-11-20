@@ -21,6 +21,10 @@ interface ComicBookTitle {
   id: string;
   cbTitle: string;
   collectpubId: string;
+  issueCount?: number;
+  coverUrl?: string | null;
+  firstIssue?: number | null;
+  lastIssue?: number | null;
 }
 
 interface ComicBookTitleState {

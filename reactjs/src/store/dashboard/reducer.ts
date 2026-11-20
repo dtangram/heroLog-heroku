@@ -21,6 +21,9 @@ interface Publisher {
   id: string;
   publisherName: string;
   userId: string;
+  titleCount?: number;
+  issueCount?: number;
+  coverUrl?: string | null;
 }
 
 interface PublisherState {

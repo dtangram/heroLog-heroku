@@ -2,22 +2,23 @@ import { useEffect, useCallback } from 'react';
 import { Link as RRLink, useNavigate, useParams } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Link from '../../../link';
+import '../../../link/styles.module.css';
 import Empty from '../../empty';
+import ComicCard, { ComicCardGrid } from '../../comicCard';
+import { countLabel, issueRange } from '../../../utils/collection';
 import { showAlert, showConfirm } from '../../dialog';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
 import styles from './styles.module.css';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 export interface ComicBookTitle {
   id: string;
   cbTitle: string;
+  /** From the API: how many issues, the newest cover and the issue range */
+  issueCount?: number;
+  coverUrl?: string | null;
+  firstIssue?: number | null;
+  lastIssue?: number | null;
 }
 
 export interface ComicBookData {
@@ -35,10 +36,6 @@ interface RouteParams extends Record<string, string | undefined> {
   publisherName: string;
 }
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
 const ComicBookList = ({
   fetchComicBookTitles,
   comicbooklists = {},
@@ -53,7 +50,8 @@ const ComicBookList = ({
     window.scrollTo({ top: 0 });
     
     if (pubId) {
-      fetchComicBookTitles(pubId);
+      // Always fresh here, so issue counts include anything just added
+      fetchComicBookTitles(pubId, true);
     }
   }, [pubId, fetchComicBookTitles]);
 
@@ -101,6 +99,9 @@ const ComicBookList = ({
     .map(id => byId[id]?.data)
     .filter(Boolean) as ComicBookTitle[];
 
+  // Totals for the summary under the heading
+  const totalIssues = comicBookTitles.reduce((sum, title) => sum + (title.issueCount || 0), 0);
+
   // Common header to avoid repetition
   const renderHeader = () => (
     <>
@@ -119,6 +120,12 @@ const ComicBookList = ({
           aria-label="Small burgundy rectangle graphic" 
         />
       </h1>
+
+      {comicBookTitles.length > 0 && (
+        <p className={styles.summary}>
+          {countLabel(comicBookTitles.length, 'title')} · {countLabel(totalIssues, 'issue')}
+        </p>
+      )}
 
       <h2>
         <section>
@@ -158,47 +165,24 @@ const ComicBookList = ({
     );
   }
 
-  // Main render with comic book titles list
+  // Main render: one card per title (the API sends them A to Z)
   return (
     <article id="cbComBookList" className={styles.cbWrap}>
       {renderHeader()}
       <article className={styles.cbList}>
-        <section className={styles.wrapper}>
-          <article>
-            {comicBookTitles.map(({ id, cbTitle }) => (
-              <section key={id}>
-                <p>
-                  <RRLink 
-                    to={`/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`} 
-                    className={styles.link}
-                  >
-                    {cbTitle}
-                  </RRLink>
-                </p>
-
-                <section className={styles.editStyle}>
-                  <figure><EditIcon /></figure>
-                  <p className={styles.link}>
-                    <Link 
-                      url={`/forms/${userId}/${pubId}/${publisherName}/comicbooklisttitle/edit/${id}`} 
-                      title="Edit" 
-                    />
-                  </p>
-                </section>
-
-                <button 
-                  className={styles.deleteStyle} 
-                  type="button"
-                  onClick={() => handleDelete(id, cbTitle)}
-                  aria-label={`Delete ${cbTitle}`}
-                >
-                  <figure><DeleteIcon /></figure>
-                  <p>Delete</p>
-                </button>
-              </section>
-            ))}
-          </article>
-        </section>
+        <ComicCardGrid label={`${publisherName} titles`}>
+          {comicBookTitles.map(({ id, cbTitle, issueCount = 0, coverUrl, firstIssue, lastIssue }) => (
+            <ComicCard
+              key={id}
+              title={cbTitle}
+              cover={coverUrl}
+              href={`/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`}
+              meta={issueCount > 0 ? [countLabel(issueCount, 'issue'), issueRange(firstIssue, lastIssue)] : ['No issues yet']}
+              editUrl={`/forms/${userId}/${pubId}/${publisherName}/comicbooklisttitle/edit/${id}`}
+              onDelete={() => handleDelete(id, cbTitle)}
+            />
+          ))}
+        </ComicCardGrid>
       </article>
     </article>
   );

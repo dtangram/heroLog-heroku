@@ -84,4 +84,12 @@ describe('ComicCard', () => {
     setupCard({ noPriceText: 'No price yet. Edit to add one.' });
     expect(screen.queryByText(/price/i)).not.toBeInTheDocument();
   });
+
+  it('opens a page from the name and cover when given a link (publishers and titles)', () => {
+    setupCard({ issue: undefined, href: '/dashboard/titles', credits: [] });
+
+    expect(screen.getByRole('link', { name: 'Batman' })).toHaveAttribute('href', '/dashboard/titles');
+    // The cover is a second click target for mouse and touch, hidden from screen readers
+    expect(screen.queryByRole('link', { name: /view larger/i })).not.toBeInTheDocument();
+  });
 });

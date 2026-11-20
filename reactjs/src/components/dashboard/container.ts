@@ -1,14 +1,14 @@
 import { connect, ConnectedProps } from 'react-redux';
 import { fetchPublishers, deletePublisher } from '../../store/dashboard/actions';
-import Dashboard from './Dashboard';  // ✅ Import the component
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
+import Dashboard from './Dashboard';  
 
 interface Publisher {
   id: string;
   publisherName: string;
+  /** From the API: how many titles and issues, and the newest cover */
+  titleCount?: number;
+  issueCount?: number;
+  coverUrl?: string | null;
 }
 
 interface PublisherState {
@@ -37,10 +37,6 @@ interface RootState {
   userProfile: User;
 }
 
-// ============================================================================
-// MAP STATE TO PROPS
-// ============================================================================
-
 function mapStateToProps(state: RootState) {
   const { publishers, userProfile } = state;
   
@@ -56,18 +52,10 @@ function mapStateToProps(state: RootState) {
   };
 }
 
-// ============================================================================
-// MAP DISPATCH TO PROPS
-// ============================================================================
-
 const mapDispatchToProps = {
   fetchPublishers,
   deletePublisher,
 };
-
-// ============================================================================
-// CONNECTOR
-// ============================================================================
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
 

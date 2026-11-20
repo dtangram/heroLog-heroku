@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import { loadPublisherSummaries } from '../services/collectionSummary';
 
 // Properly typed model interface
 interface CollectionPublisherModel {
@@ -173,7 +174,13 @@ export const getCollectionPublishers = async (
     
     console.log(`Found ${collectPublishers.length} publishers for user ${userId}`);
     
-    const data = collectPublishers.map(publisher => publisher.toJSON());
+    // Each publisher comes with its title count, issue count and newest cover,
+    // so the Dashboard can show an overview rather than a bare list of names
+    const summaries = await loadPublisherSummaries(collectPublishers.map(publisher => publisher.id));
+    const data = collectPublishers.map(publisher => ({
+      ...publisher.toJSON(),
+      ...(summaries[publisher.id] || { titleCount: 0, issueCount: 0, coverUrl: null }),
+    }));
     
     return res.status(200).json({
       success: true,
