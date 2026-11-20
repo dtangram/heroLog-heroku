@@ -1,7 +1,10 @@
 import { useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import Link from '../../link';
+import { Link as RRLink, useParams } from 'react-router-dom';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import Empty from '../empty';
+// The profile uses the same card as comics, publishers and titles
+import cardStyles from '../comicCard/styles.module.css';
 import styles from './styles.module.css';
 import type { ConnectorProps } from './container';
 import { showAlert, showConfirm } from '../dialog';
@@ -10,6 +13,12 @@ import { AccountCircle } from '@mui/icons-material';
 interface RouteParams extends Record<string, string | undefined> {
   id: string;
 }
+
+/** "regular" -> "Regular member", "admin" -> "Admin member" */
+const accountLabel = (type: string | null | undefined): string | null => {
+  const text = (type || '').trim();
+  return text ? `${text.charAt(0).toUpperCase()}${text.slice(1).toLowerCase()} member` : null;
+};
 
 const Profile = ({
   fetchUser,
@@ -67,11 +76,7 @@ const Profile = ({
           />
         </h1>
         <article className={styles.cbList}>
-          <section className={styles.wrapper}>
-            <article>
-              <p className={styles.loadMessage}>Loading...</p>
-            </article>
-          </section>
+          <p className={styles.loadMessage} role="status">Loading…</p>
         </article>
       </article>
     );
@@ -107,53 +112,70 @@ const Profile = ({
       </h1>
       
       <article className={styles.cbList}>
-        <section className={styles.wrapper}>
-          <article>
-            {signups.map(({
-              id: profileId,
-              firstname,
-              lastname,
-              username,
-              email,
-              type,
-              profilePic
-            }) => (
-              <section key={profileId}>
-                <figure>
-                  <img 
-                    src={!profilePic ? `${<AccountCircle />}` : profilePic} 
-                    alt={`${firstname} ${lastname}'s profile`} 
-                  />
-                </figure>
-                <br />
-                
-                <p>
-                  {firstname}
-                  <br />
-                  {lastname}
-                  <br />
-                  {username}
-                  <br />
-                  {email}
-                  <br />
-                  {type}
-                  <br />
-                  <Link 
-                    url={`/forms/profileform/edit/${profileId}`} 
-                    title="Update Profile" 
-                  />
-                  <button 
-                    type="button" 
+        {signups.map(({
+          id: profileId,
+          firstname,
+          lastname,
+          username,
+          email,
+          type,
+          profilePic
+        }) => {
+          const fullName = [firstname, lastname].filter(Boolean).join(' ') || username;
+          const account = accountLabel(type);
+
+          return (
+            <div key={profileId} className={`${cardStyles.card} ${styles.profileCard}`}>
+              <div className={`${cardStyles.mat} ${styles.avatarMat}`}>
+                {profilePic ? (
+                  <img className={styles.avatar} src={profilePic} alt={fullName} />
+                ) : (
+                  // No photo yet: a person icon instead of a broken image
+                  <span className={styles.avatarEmpty}>
+                    <AccountCircle className={styles.avatarIcon} titleAccess={`${fullName} has no profile photo yet`} />
+                  </span>
+                )}
+              </div>
+
+              <div className={cardStyles.panel}>
+                <h2 className={cardStyles.name}>{fullName}</h2>
+
+                {account && (
+                  <p className={cardStyles.facts}>
+                    <span className={cardStyles.tag}>{account}</span>
+                  </p>
+                )}
+
+                <dl className={`${cardStyles.credits} ${styles.details}`}>
+                  <div className={cardStyles.credit}>
+                    <dt>Username</dt>
+                    <dd>{username}</dd>
+                  </div>
+                  <div className={cardStyles.credit}>
+                    <dt>Email</dt>
+                    <dd>{email}</dd>
+                  </div>
+                </dl>
+
+                <div className={cardStyles.actions}>
+                  <RRLink className={cardStyles.action} to={`/forms/profileform/edit/${profileId}`}>
+                    <EditIcon fontSize="inherit" aria-hidden="true" />
+                    <span className={cardStyles.label}>Update Profile</span>
+                  </RRLink>
+                  <button
+                    className={`${cardStyles.action} ${styles.naturalWidth}`}
+                    type="button"
                     onClick={() => handleDelete(profileId, username)}
                     aria-label={`Delete the account for ${username}`}
                   >
-                    Delete account
+                    <DeleteIcon fontSize="inherit" aria-hidden="true" />
+                    <span className={cardStyles.label}>Delete account</span>
                   </button>
-                </p>
-              </section>
-            ))}
-          </article>
-        </section>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </article>
     </article>
   );
