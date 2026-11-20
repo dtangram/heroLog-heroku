@@ -19,7 +19,7 @@ interface ComicCardProps {
   cover?: string | null;
   /** Short facts shown under the title, e.g. publisher, volume, year. Empty ones are skipped. */
   meta?: Value[];
-  /** "Regular" or "Variant"; shown as a small tag */
+  /** "regular" or "variant". Only variants get a tag: regular is the default cover. */
   type?: string | null;
   /** Creators; only the ones that are filled in are shown */
   credits?: Credit[];
@@ -72,6 +72,7 @@ const ComicCard = ({
   const altText = coverAlt || `${name} cover`;
   const facts = meta.filter(hasValue);
   const filledCredits = credits.filter(credit => hasValue(credit.value));
+  const isVariant = String(type ?? '').trim().toLowerCase() === 'variant';
 
   return (
     <li className={styles.card}>
@@ -112,10 +113,10 @@ const ComicCard = ({
           price === null && noPriceText && <p className={styles.noPrice}>{noPriceText}</p>
         )}
 
-        {(facts.length > 0 || type) && (
+        {(facts.length > 0 || isVariant) && (
           <p className={styles.facts}>
             {facts.join(' · ')}
-            {type && <span className={styles.tag}>{type}</span>}
+            {isVariant && <span className={styles.tag}>Variant cover</span>}
           </p>
         )}
 
