@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
-import { Container, Row, Col } from 'reactstrap';
+import { Container, Row } from 'reactstrap';
 import { Link as RRLink } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import MessageIcon from '@mui/icons-material/Message';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import EditIcon from '@mui/icons-material/Edit';
+import ComicCard, { ComicCardGrid, CardActionLink } from '../comicCard';
 import EmptySalesHomepage from '../emptySalesHomepage';
 import { formatPrice } from '../../utils/sale';
 import styles from './styles.module.css';
@@ -167,79 +169,60 @@ const Home = ({
           </RRLink>
         </article>
 
-        <Container fluid className={styles.container}>
-          <Row className={styles.row}>
-            {salesALL.map(({
-              id,
-              comicBookCover,
-              comicBookTitle,
-              comicIssue,
-              saleUsersId,
-              sellerUsername,
-              price,
-              comicCondition
-            }) => (
-              <Col 
-                sm="12" 
-                md="3" 
-                className={styles.issueWrap} 
+        {/* The same cards as the Sale page, so a listing looks the same everywhere */}
+        <ComicCardGrid label="Comics for sale">
+          {salesALL.map(({
+            id,
+            comicBookCover,
+            comicBookTitle,
+            comicIssue,
+            comicBookPublisher,
+            comicBookYear,
+            type,
+            saleUsersId,
+            sellerUsername,
+            price,
+            comicCondition
+          }) => {
+            const name = comicIssue ? `${comicBookTitle} #${comicIssue}` : comicBookTitle;
+            const isYours = Boolean(user && saleUsersId === user.id);
+
+            return (
+              <ComicCard
                 key={id}
-              >
-                <figure>
-                  <img 
-                    src={comicBookCover || logo} 
-                    alt={`${comicBookTitle}${comicIssue ? ` Issue ${comicIssue}` : ''} cover`} 
-                  />
-                </figure>
-
-                {comicIssue ? (
-                  <h3>
-                    {comicBookTitle} #{comicIssue}
-                  </h3>
-                ) : (
-                  <h3>{comicBookTitle}</h3>
-                )}
-
-                <p className={styles.priceLine}>
-                  {formatPrice(price) ? (
-                    <strong className={styles.price}>
-                      <span className="visually-hidden">Price: </span>
-                      {formatPrice(price)}
-                    </strong>
-                  ) : (
-                    <span className={styles.noPrice}>Ask the seller for a price</span>
-                  )}
-                  {comicCondition && (
-                    <span className={styles.condition}>
-                      <span className="visually-hidden">Condition: </span>
-                      {comicCondition}
-                    </span>
-                  )}
-                </p>
-
-                {sellerUsername && (
-                  <p className={styles.seller}>
-                    Seller: <strong>{sellerUsername}</strong>
-                  </p>
-                )}
-
-                {user && (
-                  <article>
-                    <RRLink 
+                title={comicBookTitle}
+                issue={comicIssue}
+                cover={comicBookCover}
+                meta={[
+                  comicCondition,
+                  comicBookPublisher,
+                  comicBookYear,
+                  isYours ? 'Your listing' : sellerUsername && `Seller:\u00A0${sellerUsername}`,
+                ]}
+                type={type}
+                price={formatPrice(price)}
+                noPriceText={isYours ? 'No price yet. Edit to add one.' : 'Ask the seller for a price'}
+                actions={
+                  isYours ? (
+                    <CardActionLink
+                      to={`/forms/saleform/edit/${id}`}
+                      icon={<EditIcon fontSize="inherit" aria-hidden="true" />}
+                      label="Edit listing"
+                      ariaLabel={`Edit your listing for ${name}`}
+                    />
+                  ) : user ? (
+                    <CardActionLink
                       to={`/forms/messaging/${saleUsersId}/${comicBookTitle}/${comicIssue ?? ''}/${user.id}/${user.username}/${user.email}`}
-                      aria-label={`Message the seller of ${comicBookTitle}${comicIssue ? ` #${comicIssue}` : ''}`}
-                    >
-                      <figure className="link">
-                        <QuestionAnswerIcon />
-                      </figure>
-                    </RRLink>
-                    <p>Send a message to the owner of this comic book.</p>
-                  </article>
-                )}
-              </Col>
-            ))}
-          </Row>
-        </Container>
+                      icon={<QuestionAnswerIcon fontSize="inherit" aria-hidden="true" />}
+                      label="Message seller"
+                      ariaLabel={`Message the seller of ${name}`}
+                    />
+                  ) : null
+                }
+              />
+            );
+          })}
+        </ComicCardGrid>
       </section>
     </article>
   );

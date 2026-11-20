@@ -34,8 +34,15 @@ interface ComicCardProps {
   href?: string;
   /** Alt text for the cover when it isn't the comic's own, e.g. "Newest cover in DC Comics" */
   coverAlt?: string;
-  editUrl: string;
-  onDelete: () => void;
+  /** Adds an Edit link (your own comics) */
+  editUrl?: string;
+  /** Adds a Delete button (your own comics) */
+  onDelete?: () => void;
+  /**
+   * Other actions, each in its own <li>, e.g. "Message seller" on Home.
+   * Shown after Edit and Delete.
+   */
+  actions?: ReactNode;
 }
 
 const hasValue = (value: Value): value is string | number =>
@@ -59,6 +66,7 @@ const ComicCard = ({
   coverAlt,
   editUrl,
   onDelete,
+  actions,
 }: ComicCardProps) => {
   const name = hasValue(issue) ? `${title} #${issue}` : title;
   const altText = coverAlt || `${name} cover`;
@@ -122,24 +130,49 @@ const ComicCard = ({
           </ul>
         )}
 
-        <menu className={styles.actions}>
-          <li>
-            <RRLink className={styles.action} to={editUrl} aria-label={`Edit ${name}`}>
-              <EditIcon fontSize="inherit" aria-hidden="true" />
-              <span className={styles.label}>Edit</span>
-            </RRLink>
-          </li>
-          <li>
-            <button className={styles.action} type="button" onClick={onDelete} aria-label={`Delete ${name}`}>
-              <DeleteIcon fontSize="inherit" aria-hidden="true" />
-              <span className={styles.label}>Delete</span>
-            </button>
-          </li>
-        </menu>
+        {(editUrl || onDelete || actions) && (
+          <menu className={styles.actions}>
+            {editUrl && (
+              <li>
+                <RRLink className={styles.action} to={editUrl} aria-label={`Edit ${name}`}>
+                  <EditIcon fontSize="inherit" aria-hidden="true" />
+                  <span className={styles.label}>Edit</span>
+                </RRLink>
+              </li>
+            )}
+            {onDelete && (
+              <li>
+                <button className={styles.action} type="button" onClick={onDelete} aria-label={`Delete ${name}`}>
+                  <DeleteIcon fontSize="inherit" aria-hidden="true" />
+                  <span className={styles.label}>Delete</span>
+                </button>
+              </li>
+            )}
+            {actions}
+          </menu>
+        )}
       </article>
     </li>
   );
 };
+
+interface CardActionLinkProps {
+  to: string;
+  icon: ReactNode;
+  label: string;
+  /** Fuller name for screen readers, e.g. "Message the seller of Batman #497" */
+  ariaLabel?: string;
+}
+
+/** A link styled like Edit and Delete, for ComicCard's actions prop. */
+export const CardActionLink = ({ to, icon, label, ariaLabel }: CardActionLinkProps) => (
+  <li>
+    <RRLink className={styles.action} to={to} aria-label={ariaLabel}>
+      {icon}
+      <span className={styles.label}>{label}</span>
+    </RRLink>
+  </li>
+);
 
 interface ComicCardGridProps {
   /** Names the list for screen readers, e.g. "Batman issues" */
