@@ -67,31 +67,37 @@ const Modal = ({ dialog }: ModalProps) => {
       onCancel={handleCancel}
       onClick={handleOverlayClick}
     >
-      <div className={styles.panel}>
+      <article className={styles.panel}>
         <h2 id={titleId} className={styles.title}>
           {dialog.title}
         </h2>
         <p id={messageId} className={styles.message}>
           {dialog.message}
         </p>
-        <div className={styles.actions}>
+        <menu className={styles.actions}>
           {isConfirm ? (
             <>
               {/* Cancel gets focus, so pressing Enter by habit never deletes anything */}
-              <button type="button" className={`${styles.button} ${styles.secondary}`} onClick={() => answer(false)} data-autofocus>
-                {dialog.cancelLabel}
-              </button>
-              <button type="button" className={confirmClass} onClick={() => answer(true)}>
-                {dialog.confirmLabel}
-              </button>
+              <li>
+                <button type="button" className={`${styles.button} ${styles.secondary}`} onClick={() => answer(false)} data-autofocus>
+                  {dialog.cancelLabel}
+                </button>
+              </li>
+              <li>
+                <button type="button" className={confirmClass} onClick={() => answer(true)}>
+                  {dialog.confirmLabel}
+                </button>
+              </li>
             </>
           ) : (
-            <button type="button" className={confirmClass} onClick={() => answer(true)} data-autofocus>
-              {dialog.buttonLabel}
-            </button>
+            <li>
+              <button type="button" className={confirmClass} onClick={() => answer(true)} data-autofocus>
+                {dialog.buttonLabel}
+              </button>
+            </li>
           )}
-        </div>
-      </div>
+        </menu>
+      </article>
     </dialog>
   );
 };
@@ -106,9 +112,9 @@ const DialogHost = () => {
       {current && <Modal key={current.id} dialog={current} />}
 
       {/* Always in the page, so screen readers announce toasts as they arrive */}
-      <div className={styles.toasts} role="status" aria-live="polite">
+      <ul className={styles.toasts} aria-live="polite" aria-label="Notifications">
         {toasts.map(toast => (
-          <div key={toast.id} className={`${styles.toast} ${styles[toast.tone]}`}>
+          <li key={toast.id} className={`${styles.toast} ${styles[toast.tone]}`}>
             <p className={styles.toastMessage}>{toast.message}</p>
             <button
               type="button"
@@ -118,9 +124,9 @@ const DialogHost = () => {
             >
               ×
             </button>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </>
   );
 };
