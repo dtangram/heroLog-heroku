@@ -1,13 +1,11 @@
-import { render, screen, waitFor } from '../../test-utils';
-import CollectionInsights from '.';
-
-// Mock modules before imports
-jest.mock('../../API');
-jest.mock('../../utils/anonymousUser');
-
-// Import after mocking
+import { act, fireEvent, render, screen, waitFor } from '../../test-utils';
+import CollectionInsights, { SLOW_AFTER } from '.';
 import API from '../../API';
 import * as anonymousUserModule from '../../utils/anonymousUser';
+
+// Jest moves these above the imports, so the component gets the mocks
+jest.mock('../../API');
+jest.mock('../../utils/anonymousUser');
 
 describe('CollectionInsights', () => {
   beforeEach(() => {
@@ -29,7 +27,21 @@ describe('CollectionInsights', () => {
 
     render(<CollectionInsights />);
 
-    expect(screen.getByText(/analyzing your collection/i)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(/analyzing your collection/i);
+    expect(screen.getByTestId('intel-skeleton')).toBeInTheDocument();
+  });
+
+  it('explains a slow first analysis instead of looking stuck', () => {
+    jest.useFakeTimers();
+    (API.get as jest.Mock).mockImplementation(() => new Promise(() => {}));
+
+    render(<CollectionInsights />);
+    act(() => {
+      jest.advanceTimersByTime(SLOW_AFTER);
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent(/after that, it loads right away/i);
+    jest.useRealTimers();
   });
 
   const batmanSeries = {
@@ -103,14 +115,64 @@ describe('CollectionInsights', () => {
     });
   });
 
+  it('lets the collector try the AI analysis again, keeping the page up meanwhile', async () => {
+    (API.get as jest.Mock)
+      .mockResolvedValueOnce({ success: true, data: { ...mockInsights, analysisSource: 'fallback' } })
+      .mockResolvedValueOnce({ success: true, data: mockInsights });
+
+    render(<CollectionInsights />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Try AI analysis again' }));
+
+    // Still showing the collection while it asks again
+    expect(screen.getByRole('button', { name: 'Analyzing…' })).toBeDisabled();
+    expect(screen.getByText('Total Comics')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/ai analysis isn't available/i)).not.toBeInTheDocument();
+    });
+    expect(API.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows run progress as an accessible progress bar', async () => {
+    const run = { ...batmanSeries, seriesName: 'Spawn', pattern: 'run', completionPercentage: 75, missingIssues: [7], missingRanges: ['#7'] };
+    (API.get as jest.Mock).mockResolvedValue({ ...mockInsights, topSeries: [run] });
+
+    render(<CollectionInsights />);
+
+    const bar = await screen.findByRole('progressbar', { name: 'Spawn run completed' });
+    expect(bar).toHaveAttribute('aria-valuenow', '75');
+    expect(screen.getByText('75% of run')).toBeInTheDocument();
+  });
+
   it('displays error message on failure', async () => {
     (API.get as jest.Mock).mockRejectedValue(new Error('Failed to load'));
 
     render(<CollectionInsights />);
 
     await waitFor(() => {
-      expect(screen.getByText(/failed to load collection insights/i)).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(/failed to load collection insights/i);
     });
+  });
+
+  it('recovers from an error with Try again', async () => {
+    (API.get as jest.Mock)
+      .mockRejectedValueOnce(new Error('timeout'))
+      .mockResolvedValueOnce(mockInsights);
+
+    render(<CollectionInsights />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByText('Total Comics')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('gives the analysis longer than the site-wide 15 second timeout', async () => {
+    (API.get as jest.Mock).mockResolvedValue(mockInsights);
+
+    render(<CollectionInsights />);
+
+    await screen.findByText('Total Comics');
+    expect(API.get).toHaveBeenCalledWith('/api/insights/test-user-id', { timeout: 30000 });
   });
 
   it('shows empty state when no comics', async () => {

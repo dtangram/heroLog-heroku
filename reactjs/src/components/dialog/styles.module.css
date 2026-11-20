@@ -108,6 +108,8 @@
   background: #F1F1F1;
 }
 
+/* Toasts: top right, just under the header, so they don't cover the
+   form's buttons (like Scan) the user just pressed. They never block the page. */
 .toasts {
   display: flex;
   flex-direction: column;

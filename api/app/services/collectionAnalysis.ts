@@ -1,13 +1,3 @@
-/**
- * Grounded AI analysis for Collection Intelligence.
- *
- * Claude receives only facts computed in collectionFacts.ts, must answer
- * through a schema (forced tool call), and every answer is checked against
- * those facts before it reaches the page. A response that names an issue the
- * collector doesn't own, or a count that isn't in the data, is sent back once
- * with the problems listed; if it still fails, a summary built from the data
- * is returned instead.
- */
 import { CollectionFacts, SeriesAnalysis } from './collectionFacts';
 
 export interface Recommendation {
@@ -39,6 +29,11 @@ export interface MessagesClient {
 }
 
 export const ANALYSIS_MODEL = 'claude-haiku-4-5-20251001';
+/**
+ * Bump when the prompt, tool schema or validation changes, so saved analyses
+ * (services/analysisCache.ts) are written again with the new rules.
+ */
+export const ANALYSIS_VERSION = 1;
 const TOOL_NAME = 'record_collection_analysis';
 const MAX_SERIES_IN_PROMPT = 10;
 const MAX_MISSING_IN_PROMPT = 30;
@@ -342,7 +337,8 @@ export const generateCollectionAnalysis = async (
       response = await client.messages.create({
         model,
         max_tokens: 1024,
-        temperature: 0.3,
+        // 0 = the same facts get the same answer (consistency over variety)
+        temperature: 0,
         system: SYSTEM_PROMPT,
         tools: [ANALYSIS_TOOL],
         tool_choice: { type: 'tool', name: TOOL_NAME },
