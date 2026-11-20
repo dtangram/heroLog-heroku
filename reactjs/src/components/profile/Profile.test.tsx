@@ -12,7 +12,6 @@ const douglas = {
   lastname: 'Angram',
   username: 'dtangram',
   email: 'dtangram@example.com',
-  type: 'regular',
   profilePic: '/douglas.jpg',
 };
 
@@ -42,11 +41,10 @@ beforeEach(() => {
 });
 
 describe('Profile', () => {
-  it('shows the name, account type, username and email', () => {
+  it('shows the name, username and email', () => {
     showProfile();
 
     expect(screen.getByRole('heading', { name: 'Douglas Angram' })).toBeInTheDocument();
-    expect(screen.getByText('Regular member')).toBeInTheDocument();
     expect(screen.getByText('dtangram')).toBeInTheDocument();
     expect(screen.getByText('dtangram@example.com')).toBeInTheDocument();
   });
