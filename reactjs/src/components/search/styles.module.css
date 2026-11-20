@@ -462,3 +462,87 @@
     animation: none;
   }
 }
+/* ============================================================
+   Add to Wish List, under a result the collector doesn't own
+   ============================================================ */
+.wishAction {
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+}
+
+/* Overrides the site's global button rules (green, 54% wide, centered) */
+.wishButton {
+  align-items: center;
+  background: #AECEAB;
+  border-radius: 4px;
+  color: #770422;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.5rem;
+  font-weight: bold;
+  gap: 6px;
+  justify-content: center;
+  margin: 0;
+  min-height: 44px;
+  padding: 8px 16px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  width: 100%;
+}
+
+.wishButton:hover {
+  background: #FFF;
+  color: #770422;
+}
+
+.wishButton:focus-visible,
+.wishLink:focus-visible {
+  outline: 3px solid #FFF;
+  outline-offset: 2px;
+}
+
+.wishButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.wishButton svg,
+.wishDone svg {
+  font-size: 2rem;
+}
+
+.wishDone {
+  align-items: center;
+  color: #AECEAB;
+  display: inline-flex;
+  font-size: 1.5rem;
+  font-weight: bold;
+  gap: 6px;
+}
+
+.wishLink {
+  color: #FFF;
+  font-size: 1.4rem;
+  text-decoration: underline;
+}
+
+.wishLink:hover {
+  color: #AECEAB;
+}
+
+@media (min-width: 768px) {
+  .wishButton {
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wishButton {
+    transition: none;
+  }
+}

@@ -1,11 +1,19 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { applyMiddleware, combineReducers, legacy_createStore as createStore } from 'redux';
+import { thunk } from 'redux-thunk';
 import axios from 'axios';
+import callAPI from '../../store/helpers/callAPIMiddleware';
+import wishlists from '../../store/wishlist/reducer';
+import API from '../../API';
 import Search from './Search';
 import { SLOW_SEARCH_MS } from '../../hooks/useSearch';
 
 jest.mock('axios');
+// The wish list store talks to the site API, not the search service
+jest.mock('../../API', () => ({ __esModule: true, default: { get: jest.fn(() => new Promise(() => {})), post: jest.fn() } }));
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 /** A request we resolve by hand, to look at the page while a search is running. */
@@ -29,11 +37,13 @@ const collectionResponse = (titles: string[]) => ({
 
 const renderSearch = () =>
   render(
-    <MemoryRouter initialEntries={['/search/user-1']}>
-      <Routes>
-        <Route path="/search/:userId" element={<Search />} />
-      </Routes>
-    </MemoryRouter>
+    <Provider store={createStore(combineReducers({ wishlists }), applyMiddleware(thunk, callAPI as any))}>
+      <MemoryRouter initialEntries={['/search/user-1']}>
+        <Routes>
+          <Route path="/search/:userId" element={<Search />} />
+        </Routes>
+      </MemoryRouter>
+    </Provider>
   );
 
 const search = (text: string) => {
@@ -124,5 +134,41 @@ describe('Search page while a search runs', () => {
     expect(screen.queryByText('Superman #75')).not.toBeInTheDocument();
     const firstSignal = mockedAxios.get.mock.calls[0][1]?.signal as AbortSignal;
     expect(firstSignal.aborted).toBe(true);
+  });
+});
+
+describe('Search results and the Wish List', () => {
+  beforeAll(() => {
+    window.scrollTo = jest.fn();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (mockedAxios.isCancel as unknown as jest.Mock).mockReturnValue(false);
+    localStorage.setItem('id', '11111111-2222-4333-8444-555555555555');
+    localStorage.setItem('token', 'test-token');
+    // Signed in, so the page loads the wish list: an empty one
+    (API.get as jest.Mock).mockResolvedValue({ success: true, data: [] });
+  });
+
+  afterEach(() => localStorage.clear());
+
+  it('offers "Add to Wish List" on comics you don\'t own, not on ones you do', async () => {
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        status: 'Success',
+        results: [
+          { title: 'Detective Comics #27', description: 'Batman debuts.', publisher: 'DC Comics', year: '1939', already_owned: false, source: 'claude' },
+          { title: 'Batman #497', description: 'Bane breaks the Bat.', publisher: 'DC Comics', year: '1993', already_owned: true, source: 'claude' },
+        ],
+      },
+    });
+    renderSearch();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Find Missing' }));
+    await act(async () => search('Batman'));
+
+    expect(screen.getByRole('button', { name: 'Add Detective Comics #27 to your Wish List' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add batman #497/i })).not.toBeInTheDocument();
   });
 });
