@@ -1,7 +1,9 @@
 .cbWrap{
   background: #FFF;
   margin-top: 150px;
-  height: 950px;
+  /* min-height, not height: on phones the tiles below the card run past
+     950px, and a fixed height let the footer cover them */
+  min-height: 950px;
 }
 
 .cbWrap h1{
@@ -107,4 +109,87 @@
   font-size: 2.4rem;
   padding: 40px 0;
   text-align: center;
+}
+/* ============================================================
+   "Your Hero-Log": collection, sale and wish list totals, each a
+   link to its page. Mobile-first: stacked, then three across.
+   ============================================================ */
+.stats{
+  margin: -40px auto 100px;
+  width: min(620px, 92%);
+}
+
+.cbWrap .stats .statsHeading{
+  color: #2B2B2B;
+  font-size: 2.4rem;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.statsList{
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.statTile{
+  background: #770422;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: #FFF;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  padding: 18px 16px;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.statTile:hover,
+.statTile:focus-visible{
+  background: #5A0319;
+  color: #FFF;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.statTile:focus-visible{
+  outline: 3px solid #AECEAB;
+  outline-offset: 2px;
+}
+
+.statNumber{
+  font-size: 3rem;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.statLabel{
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+}
+
+.statDetail{
+  color: #AECEAB;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.3rem;
+}
+
+@media (min-width: 600px){
+  .statsList{
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .statTile,
+  .statTile:hover{
+    transform: none;
+    transition: none;
+  }
 }

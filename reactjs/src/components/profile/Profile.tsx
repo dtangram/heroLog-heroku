@@ -9,18 +9,39 @@ import styles from './styles.module.css';
 import type { ConnectorProps } from './container';
 import { showAlert, showConfirm } from '../dialog';
 import { AccountCircle } from '@mui/icons-material';
+import { countLabel } from '../../utils/collection';
 
 interface RouteParams extends Record<string, string | undefined> {
-  id: string;
+  id?: string;
+  /** App.tsx's route is /profile/:userId */
+  userId?: string;
 }
+
+/** "—" while a total is still loading, so a 0 never flashes before the real number */
+const shown = (count: number | null) => (count === null ? '—' : count.toLocaleString('en-US'));
 
 const Profile = ({
   fetchUser,
   signups = [],
   deleteUser,
   isLoading = false,
+  stats,
+  fetchPublishers,
+  fetchSales,
+  fetchWishlists,
 }: ConnectorProps) => {
-  const { id } = useParams<RouteParams>();
+  const { id, userId: routeUserId } = useParams<RouteParams>();
+  const signedInId = localStorage.getItem('id') || '';
+  const profileId = routeUserId ?? id;
+  const isOwnProfile = Boolean(profileId) && profileId === signedInId;
+
+  // Totals for "Your Hero-Log": only on your own profile
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    fetchPublishers?.(signedInId);
+    fetchSales?.();
+    fetchWishlists?.();
+  }, [isOwnProfile, signedInId, fetchPublishers, fetchSales, fetchWishlists]);
 
   // Fetch user on mount
   useEffect(() => {
@@ -167,6 +188,41 @@ const Profile = ({
           );
         })}
       </article>
+
+      {isOwnProfile && stats && (
+        <nav className={styles.stats} aria-labelledby="yourHeroLog">
+          <h2 id="yourHeroLog" className={styles.statsHeading}>Your Hero-Log</h2>
+          <ul className={styles.statsList}>
+            <li>
+              <RRLink className={styles.statTile} to={`/dashboard/${signedInId}`}>
+                <strong className={styles.statNumber}>{shown(stats.issues)}</strong>
+                <span className={styles.statLabel}>
+                  {stats.issues === 1 ? 'Comic' : 'Comics'} in your collection
+                </span>
+                {stats.titles !== null && stats.publishers !== null && (
+                  <span className={styles.statDetail}>
+                    {countLabel(stats.titles, 'title')} · {countLabel(stats.publishers, 'publisher')}
+                  </span>
+                )}
+              </RRLink>
+            </li>
+            <li>
+              <RRLink className={styles.statTile} to={`/sale/${signedInId}`}>
+                <strong className={styles.statNumber}>{shown(stats.forSale)}</strong>
+                <span className={styles.statLabel}>For sale</span>
+                <span className={styles.statDetail}>Your listings</span>
+              </RRLink>
+            </li>
+            <li>
+              <RRLink className={styles.statTile} to={`/wishlist/${signedInId}`}>
+                <strong className={styles.statNumber}>{shown(stats.wishList)}</strong>
+                <span className={styles.statLabel}>On your Wish List</span>
+                <span className={styles.statDetail}>Comics you're looking for</span>
+              </RRLink>
+            </li>
+          </ul>
+        </nav>
+      )}
     </article>
   );
 };
