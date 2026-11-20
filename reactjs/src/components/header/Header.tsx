@@ -114,16 +114,6 @@ useEffect(() => {
                 <NavItem className={styles.slideUnder}>
                   <NavLink
                     className={getNavLinkClass}
-                    to={`/forms/createpublisher/new/${userId}`}
-                    onClick={toggleMenuItem}
-                  >
-                    CREATE
-                  </NavLink>
-                </NavItem>
-
-                <NavItem className={styles.slideUnder}>
-                  <NavLink
-                    className={getNavLinkClass}
                     to={`/intel/${userId}`}
                     onClick={toggleMenuItem}
                   >
@@ -205,16 +195,6 @@ useEffect(() => {
                   onClick={toggleMenuItem}
                 >
                   DASHBOARD
-                </NavLink>
-              </NavItem>
-
-              <NavItem className={styles.slideUnder}>
-                <NavLink
-                  className={getNavLinkClass}
-                  to={`/forms/createpublisherProfile/new/${userId}`}
-                  onClick={toggleMenuItem}
-                >
-                  CREATE
                 </NavLink>
               </NavItem>
 
