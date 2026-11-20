@@ -14,12 +14,6 @@ interface RouteParams extends Record<string, string | undefined> {
   id: string;
 }
 
-/** "regular" -> "Regular member", "admin" -> "Admin member" */
-const accountLabel = (type: string | null | undefined): string | null => {
-  const text = (type || '').trim();
-  return text ? `${text.charAt(0).toUpperCase()}${text.slice(1).toLowerCase()} member` : null;
-};
-
 const Profile = ({
   fetchUser,
   signups = [],
@@ -118,15 +112,13 @@ const Profile = ({
           lastname,
           username,
           email,
-          type,
           profilePic
         }) => {
           const fullName = [firstname, lastname].filter(Boolean).join(' ') || username;
-          const account = accountLabel(type);
 
           return (
-            <div key={profileId} className={`${cardStyles.card} ${styles.profileCard}`}>
-              <div className={`${cardStyles.mat} ${styles.avatarMat}`}>
+            <article key={profileId} className={`${cardStyles.card} ${styles.profileCard}`}>
+              <figure className={`${cardStyles.mat} ${styles.avatarMat}`}>
                 {profilePic ? (
                   <img className={styles.avatar} src={profilePic} alt={fullName} />
                 ) : (
@@ -135,45 +127,43 @@ const Profile = ({
                     <AccountCircle className={styles.avatarIcon} titleAccess={`${fullName} has no profile photo yet`} />
                   </span>
                 )}
-              </div>
+              </figure>
 
-              <div className={cardStyles.panel}>
+              <article className={cardStyles.panel}>
                 <h2 className={cardStyles.name}>{fullName}</h2>
 
-                {account && (
-                  <p className={cardStyles.facts}>
-                    <span className={cardStyles.tag}>{account}</span>
-                  </p>
-                )}
+                <ul className={`${cardStyles.credits} ${styles.details}`} aria-label="Account details">
+                  <li className={cardStyles.credit}>
+                    <span className={cardStyles.role}>Username</span>
+                    <span className={cardStyles.person}>{username}</span>
+                  </li>
+                  <li className={cardStyles.credit}>
+                    <span className={cardStyles.role}>Email</span>
+                    <span className={cardStyles.person}>{email}</span>
+                  </li>
+                </ul>
 
-                <dl className={`${cardStyles.credits} ${styles.details}`}>
-                  <div className={cardStyles.credit}>
-                    <dt>Username</dt>
-                    <dd>{username}</dd>
-                  </div>
-                  <div className={cardStyles.credit}>
-                    <dt>Email</dt>
-                    <dd>{email}</dd>
-                  </div>
-                </dl>
-
-                <div className={cardStyles.actions}>
-                  <RRLink className={cardStyles.action} to={`/forms/profileform/edit/${profileId}`}>
-                    <EditIcon fontSize="inherit" aria-hidden="true" />
-                    <span className={cardStyles.label}>Update Profile</span>
-                  </RRLink>
-                  <button
-                    className={`${cardStyles.action} ${styles.naturalWidth}`}
-                    type="button"
-                    onClick={() => handleDelete(profileId, username)}
-                    aria-label={`Delete the account for ${username}`}
-                  >
-                    <DeleteIcon fontSize="inherit" aria-hidden="true" />
-                    <span className={cardStyles.label}>Delete account</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+                <menu className={cardStyles.actions}>
+                  <li>
+                    <RRLink className={cardStyles.action} to={`/forms/profileform/edit/${profileId}`}>
+                      <EditIcon fontSize="inherit" aria-hidden="true" />
+                      <span className={cardStyles.label}>Update Profile</span>
+                    </RRLink>
+                  </li>
+                  <li>
+                    <button
+                      className={`${cardStyles.action} ${styles.naturalWidth}`}
+                      type="button"
+                      onClick={() => handleDelete(profileId, username)}
+                      aria-label={`Delete the account for ${username}`}
+                    >
+                      <DeleteIcon fontSize="inherit" aria-hidden="true" />
+                      <span className={cardStyles.label}>Delete account</span>
+                    </button>
+                  </li>
+                </menu>
+              </article>
+            </article>
           );
         })}
       </article>

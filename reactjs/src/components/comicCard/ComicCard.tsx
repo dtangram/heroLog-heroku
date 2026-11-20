@@ -67,7 +67,7 @@ const ComicCard = ({
 
   return (
     <li className={styles.card}>
-      <div className={styles.mat}>
+      <figure className={styles.mat}>
         {cover && href ? (
           // The name below is the link screen readers and keyboards use;
           // the cover is a second, larger place to click for mouse and touch.
@@ -81,9 +81,9 @@ const ComicCard = ({
         ) : (
           <img className={`${styles.cover} ${styles.placeholder}`} src={logo} alt={`${name}: no cover yet`} />
         )}
-      </div>
+      </figure>
 
-      <div className={styles.panel}>
+      <article className={styles.panel}>
         <h3 className={styles.name}>
           {href ? (
             <RRLink className={styles.nameLink} to={href}>
@@ -112,27 +112,31 @@ const ComicCard = ({
         )}
 
         {filledCredits.length > 0 && (
-          <dl className={styles.credits}>
+          <ul className={styles.credits} aria-label="Creators">
             {filledCredits.map(({ label, value }) => (
-              <div key={label} className={styles.credit}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
+              <li key={label} className={styles.credit}>
+                <span className={styles.role}>{label}</span>
+                <span className={styles.person}>{value}</span>
+              </li>
             ))}
-          </dl>
+          </ul>
         )}
 
-        <div className={styles.actions}>
-          <RRLink className={styles.action} to={editUrl} aria-label={`Edit ${name}`}>
-            <EditIcon fontSize="inherit" aria-hidden="true" />
-            <span className={styles.label}>Edit</span>
-          </RRLink>
-          <button className={styles.action} type="button" onClick={onDelete} aria-label={`Delete ${name}`}>
-            <DeleteIcon fontSize="inherit" aria-hidden="true" />
-            <span className={styles.label}>Delete</span>
-          </button>
-        </div>
-      </div>
+        <menu className={styles.actions}>
+          <li>
+            <RRLink className={styles.action} to={editUrl} aria-label={`Edit ${name}`}>
+              <EditIcon fontSize="inherit" aria-hidden="true" />
+              <span className={styles.label}>Edit</span>
+            </RRLink>
+          </li>
+          <li>
+            <button className={styles.action} type="button" onClick={onDelete} aria-label={`Delete ${name}`}>
+              <DeleteIcon fontSize="inherit" aria-hidden="true" />
+              <span className={styles.label}>Delete</span>
+            </button>
+          </li>
+        </menu>
+      </article>
     </li>
   );
 };

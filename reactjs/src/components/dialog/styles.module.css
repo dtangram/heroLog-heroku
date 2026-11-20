@@ -1,6 +1,3 @@
-/* The <dialog> fills the screen; its ::backdrop is the overlay.
-   margin: auto + inset: 0 center it, since the site's CSS reset
-   removes the browser's own centering (margin: 0 on everything). */
 .dialog {
   background: transparent;
   border: none;
@@ -53,11 +50,15 @@
   white-space: pre-line;
 }
 
+/* The buttons sit in a <menu> (a list of commands), without bullets */
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   justify-content: flex-end;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .button {
@@ -107,12 +108,13 @@
   background: #F1F1F1;
 }
 
-/* Toasts: top right, just under the header, so they don't cover the
-   form's buttons (like Scan) the user just pressed. They never block the page. */
 .toasts {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   pointer-events: none;
   position: fixed;
   right: 24px;

@@ -184,12 +184,15 @@
   text-transform: uppercase;
 }
 
+/* Creators in two columns, each role above its name */
 .credits {
   display: grid;
   gap: 6px 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   justify-items: center;
+  list-style: none;
   margin: 0;
+  padding: 0;
   /* Keeps the two columns together when a card spans a wide row (tablets) */
   max-width: 440px;
   width: 100%;
@@ -199,8 +202,9 @@
   min-width: 0;
 }
 
-.credit dt {
+.role {
   color: #AECEAB;
+  display: block;
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -208,21 +212,27 @@
   white-space: nowrap;
 }
 
-.credit dd {
+.person {
   color: #FFF;
+  display: block;
   font-size: 1.5rem;
-  margin: 0;
   overflow-wrap: anywhere;
 }
 
+/* Edit and Delete: a <menu> (a list of commands), without list bullets */
 .actions {
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   gap: 16px;
   justify-content: center;
-  margin-top: auto;
-  padding-top: 4px;
+  list-style: none;
+  margin: auto 0 0;
+  padding: 4px 0 0;
   width: 100%;
+}
+
+.actions > li {
+  display: flex;
 }
 
 .action {
@@ -353,13 +363,13 @@
     gap: 8px 16px;
   }
 
-  .credit dt {
+  .role {
     font-size: 1.2rem;
     letter-spacing: 0.06em;
     white-space: normal;
   }
 
-  .credit dd {
+  .person {
     font-size: 1.6rem;
   }
 

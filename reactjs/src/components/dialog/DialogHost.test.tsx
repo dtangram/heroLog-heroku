@@ -106,12 +106,12 @@ describe('notify', () => {
       notify('Cover scanned (90% confidence). Please review the filled-in fields.');
     });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Cover scanned (90% confidence)');
+    expect(screen.getByRole('list', { name: 'Notifications' })).toHaveTextContent('Cover scanned (90% confidence)');
 
     act(() => {
       jest.advanceTimersByTime(TOAST_DURATION);
     });
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(screen.getByRole('list', { name: 'Notifications' })).toBeEmptyDOMElement();
   });
 
   it('can be dismissed early', () => {
