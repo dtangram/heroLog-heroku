@@ -1,4 +1,5 @@
 import { connect, ConnectedProps } from 'react-redux';
+import type { ComicBookTitle } from './ComicBookList';
 import { 
   fetchComicBookTitles, 
   deleteComicBookTitle 
@@ -7,7 +8,7 @@ import {
 interface RootState {
   comicbooklists: Record<string, {
     allIds: string[];
-    byId: Record<string, { data: { id: string; cbTitle: string } }>;
+    byId: Record<string, { data: ComicBookTitle }>;
     isLoading: boolean;
   }>;
 }

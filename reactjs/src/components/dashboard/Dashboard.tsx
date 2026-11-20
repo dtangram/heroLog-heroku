@@ -1,18 +1,15 @@
 import { useEffect, useCallback } from 'react';
 import { Link as RRLink } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Link from '../../link';
+import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
+import '../../link/styles.module.css';
 import Empty from '../empty';
+import ComicCard, { ComicCardGrid } from '../comicCard';
+import { countLabel } from '../../utils/collection';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import { showAlert, showConfirm } from '../dialog';
 import styles from './styles.module.css';
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
 
 const Dashboard = ({ 
   fetchPublishers, 
@@ -46,26 +43,6 @@ const Dashboard = ({
     }
   }, [fetchPublishers, user?.id]);
 
-  // useEffect(() => {
-  //   const handleStorageChange = () => {
-  //     // Check if token was removed (logout)
-  //     const token = localStorage.getItem('token');
-  //     const anonymousId = localStorage.getItem('anonymousUserId');
-      
-  //     if (!token && anonymousId) {
-  //       console.log('🔄 Token removed, refetching for anonymous user');
-  //       fetchPublishers?.(anonymousId);
-  //     }
-  //   };
-    
-  //   // Listen for storage changes
-  //   window.addEventListener('storage', handleStorageChange);
-    
-  //   return () => {
-  //     window.removeEventListener('storage', handleStorageChange);
-  //   };
-  // }, [fetchPublishers]);
-
   // Handle publisher deletion with confirmation and error handling
   const handleDelete = useCallback(async (id: string, name: string): Promise<void> => {
     if (!id) return;
@@ -92,16 +69,42 @@ const Dashboard = ({
     }
   }, [deletePublisher, fetchPublishers]);
 
-  // Common header to avoid repetition
+  // Totals across every publisher, for the summary under the heading
+  const totals = publishers.reduce(
+    (sum, publisher) => ({
+      titles: sum.titles + (publisher.titleCount || 0),
+      issues: sum.issues + (publisher.issueCount || 0),
+    }),
+    { titles: 0, issues: 0 }
+  );
+
+  // Common header to avoid repetition. Add Publisher is always there,
+  // including on an empty Dashboard, where it's needed most.
   const renderHeader = () => (
     <>
       <h1>
-          Your List of Publishers
-          <figure 
-            className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
-          />
-        </h1>
+        Your Collection
+        <figure
+          className={styles.graphic}
+          aria-label="Small burgundy rectangle graphic"
+        />
+      </h1>
+
+      {publishers.length > 0 && (
+        <p className={styles.summary}>
+          {countLabel(publishers.length, 'publisher')} · {countLabel(totals.titles, 'title')} ·{' '}
+          {countLabel(totals.issues, 'issue')}
+        </p>
+      )}
+
+      <h2>
+        <section>
+          <RRLink to={`/forms/createpublisher/new/${userId}`}>
+            <figure><LibraryAddIcon /></figure>
+            <p className={styles.link}>Add Publisher</p>
+          </RRLink>
+        </section>
+      </h2>
     </>
   );
 
@@ -132,51 +135,26 @@ const Dashboard = ({
     );
   }
 
-  // Main render with publishers list
+  // Main render: one card per publisher, A to Z
+  const sortedPublishers = [...publishers].sort((a, b) => a.publisherName.localeCompare(b.publisherName));
+
   return (
     <article id="cbDash" className={styles.cbWrap}>
       {renderHeader()}
       <article className={styles.cbList}>
-        <section className={styles.wrapper}>
-          <article>
-            {publishers.map(({ id, publisherName }) => (
-              <section key={id}>
-                <p>
-                  <RRLink 
-                    to={`/dashboard/${userId}/${id}/${publisherName}/comicbooklist`} 
-                    className={styles.link}
-                  >
-                    {publisherName}
-                  </RRLink>
-                </p>
-                
-                <section className={styles.editStyle}>
-                  <figure>
-                    <EditIcon />
-                  </figure>
-                  <p className={styles.link}>
-                    <Link 
-                      url={`/forms/${userId}/createpublisher/edit/${id}`} 
-                      title="Edit" 
-                    />
-                  </p>
-                </section>
-                
-                <button 
-                  className={styles.deleteStyle} 
-                  type="button" 
-                  onClick={() => handleDelete(id, publisherName)}
-                  aria-label={`Delete ${publisherName}`}
-                >
-                  <figure>
-                    <DeleteIcon />
-                  </figure>
-                  <p>Delete</p>
-                </button>
-              </section>
-            ))}
-          </article>
-        </section>
+        <ComicCardGrid label="Your publishers">
+          {sortedPublishers.map(({ id, publisherName, titleCount = 0, issueCount = 0, coverUrl }) => (
+            <ComicCard
+              key={id}
+              title={publisherName}
+              cover={coverUrl}
+              href={`/dashboard/${userId}/${id}/${publisherName}/comicbooklist`}
+              meta={titleCount > 0 ? [countLabel(titleCount, 'title'), countLabel(issueCount, 'issue')] : ['No titles yet']}
+              editUrl={`/forms/${userId}/createpublisher/edit/${id}`}
+              onDelete={() => handleDelete(id, publisherName)}
+            />
+          ))}
+        </ComicCardGrid>
       </article>
     </article>
   );

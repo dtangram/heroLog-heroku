@@ -24,6 +24,11 @@ interface ComicBookTitle {
   cbTitle: string
   collectpubId: string
   collectPubName: string
+  /** Sent by the title list endpoint: issue count, newest cover and issue range */
+  issueCount?: number
+  coverUrl?: string | null
+  firstIssue?: number | null
+  lastIssue?: number | null
 }
 
 interface ComicBookTitleState {
@@ -98,14 +103,18 @@ const validateComicBookTitle = (title: Partial<ComicBookTitle>): void => {
   }
 };
 
-export const fetchComicBookTitles = (collectpubId: string): APIAction => ({
+/**
+ * Loads a publisher's titles. Pass fresh = true to skip the 5-minute cache,
+ * e.g. on the title list page, so its issue counts are never out of date.
+ */
+export const fetchComicBookTitles = (collectpubId: string, fresh = false): APIAction => ({
   types: [
     REQ_COMIC_BOOK_TITLES_PENDING,
     REQ_COMIC_BOOK_TITLES_SUCCESS,
     REQ_COMIC_BOOK_TITLES_ERROR,
   ],
   callAPI: () => API.get(`comicbooktitles/publishers/${collectpubId}`),
-  shouldCallAPI: (state) => shouldFetchPublisherTitles(state, collectpubId),
+  shouldCallAPI: (state) => (fresh ? !getPublisherState(state, collectpubId)?.isLoading : shouldFetchPublisherTitles(state, collectpubId)),
   payload: { collectpubId },
 });
 

@@ -91,6 +91,42 @@
   white-space: nowrap;
 }
 
+/* A name that opens a page (publishers and titles): same green line as Edit on hover */
+.nameLink {
+  color: #FFF;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.nameLink:hover {
+  color: #FFF;
+}
+
+.nameLink::after {
+  background: #AECEAB;
+  content: '';
+  display: block;
+  height: 2px;
+  margin: auto;
+  transition: width 0.5s ease;
+  width: 0;
+}
+
+.nameLink:hover::after,
+.nameLink:focus-visible::after {
+  width: 90%;
+}
+
+.nameLink:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #AECEAB;
+  outline-offset: 4px;
+}
+
+.mat > a:hover .cover {
+  filter: brightness(1.08);
+}
+
 /* A sale listing's price, styled like a price tag so it's the first thing seen */
 .price {
   align-self: center;
@@ -231,7 +267,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .label::after {
+  .label::after,
+  .nameLink::after {
     transition: none;
   }
 }

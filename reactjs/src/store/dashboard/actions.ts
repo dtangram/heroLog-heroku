@@ -24,6 +24,10 @@ export interface Publisher {
   id: string;
   publisherName: string;
   collectpubUsersId?: string;
+  /** Sent by the publisher list endpoint: counts and the newest cover */
+  titleCount?: number;
+  issueCount?: number;
+  coverUrl?: string | null;
 }
 
 interface PublisherState {

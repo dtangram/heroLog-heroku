@@ -27,6 +27,13 @@ interface ComicCardProps {
   price?: string | null;
   /** Shown instead when a listing has no price yet */
   noPriceText?: string;
+  /**
+   * Makes the card open a page: the name and cover link here (used for
+   * publishers and titles). Without it, clicking the cover enlarges it.
+   */
+  href?: string;
+  /** Alt text for the cover when it isn't the comic's own, e.g. "Newest cover in DC Comics" */
+  coverAlt?: string;
   editUrl: string;
   onDelete: () => void;
 }
@@ -35,9 +42,9 @@ const hasValue = (value: Value): value is string | number =>
   value !== null && value !== undefined && String(value).trim() !== '';
 
 /**
- * One comic: the cover in a green frame overlapping a burgundy panel with
- * the details and actions. Used on the Sale page and the issue list, so
- * both look and work the same.
+ * One comic, title or publisher: the cover in a green frame overlapping a
+ * burgundy panel with the details and actions. Used on the Dashboard, the
+ * title and issue lists, Sale and Wish List, so they all look and work the same.
  */
 const ComicCard = ({
   title,
@@ -48,19 +55,28 @@ const ComicCard = ({
   credits = [],
   price,
   noPriceText,
+  href,
+  coverAlt,
   editUrl,
   onDelete,
 }: ComicCardProps) => {
   const name = hasValue(issue) ? `${title} #${issue}` : title;
+  const altText = coverAlt || `${name} cover`;
   const facts = meta.filter(hasValue);
   const filledCredits = credits.filter(credit => hasValue(credit.value));
 
   return (
     <li className={styles.card}>
       <div className={styles.mat}>
-        {cover ? (
-          <CoverLightbox src={cover} alt={`${name} cover`} caption={name}>
-            <img className={styles.cover} src={cover} alt={`${name} cover`} />
+        {cover && href ? (
+          // The name below is the link screen readers and keyboards use;
+          // the cover is a second, larger place to click for mouse and touch.
+          <RRLink to={href} tabIndex={-1} aria-hidden="true">
+            <img className={styles.cover} src={cover} alt="" />
+          </RRLink>
+        ) : cover ? (
+          <CoverLightbox src={cover} alt={altText} caption={name}>
+            <img className={styles.cover} src={cover} alt={altText} />
           </CoverLightbox>
         ) : (
           <img className={`${styles.cover} ${styles.placeholder}`} src={logo} alt={`${name}: no cover yet`} />
@@ -69,7 +85,13 @@ const ComicCard = ({
 
       <div className={styles.panel}>
         <h3 className={styles.name}>
-          {title}
+          {href ? (
+            <RRLink className={styles.nameLink} to={href}>
+              {title}
+            </RRLink>
+          ) : (
+            title
+          )}
           {hasValue(issue) && <span className={styles.issue}> #{issue}</span>}
         </h3>
 
