@@ -28,6 +28,24 @@
   top: 30px;
 }
 
+/* One line under the title saying what the page is for (the nav calls it INTEL) */
+.cbWrap .intro{
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.8rem;
+  line-height: 1.5;
+  margin: -20px auto 0;
+  max-width: 56ch;
+  padding: 0 16px;
+  text-align: center;
+}
+
+@media (min-width: 769px) {
+  .cbWrap .intro{
+    font-size: 2rem;
+  }
+}
+
 .cbWrap h1 .graphic{
   background: #770422;
   margin: 15px auto 0;

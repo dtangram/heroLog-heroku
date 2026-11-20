@@ -72,12 +72,18 @@ const formatIssueRanges = (sorted: number[]) => {
   return ranges.map(([a, b]) => (a === b ? `#${a}` : `#${a}–#${b}`)).join(', ');
 };
 
-/** The page title, the same in every state. */
+/** The page title and what the page is for, the same in every state. */
 const PageTitle = () => (
-  <h1>
-    Collection Intelligence
-    <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
-  </h1>
+  <>
+    <h1>
+      Collection Intelligence
+      <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
+    </h1>
+    <p className={styles.intro}>
+      What your collection says about you: your totals, standout issues, gaps in your runs,
+      and what to look for next.
+    </p>
+  </>
 );
 
 /** Placeholder stat cards and analysis lines, shaped like the page that's coming. */

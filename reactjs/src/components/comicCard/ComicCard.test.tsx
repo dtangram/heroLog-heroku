@@ -69,6 +69,23 @@ describe('ComicCard', () => {
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
+  it('tags variant covers, and leaves the default regular cover untagged', () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <ComicCard title="Batman" issue={491} type="variant" editUrl="/edit/491" onDelete={jest.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Variant cover')).toBeInTheDocument();
+
+    rerender(
+      <MemoryRouter>
+        <ComicCard title="Batman" issue={491} type="regular" editUrl="/edit/491" onDelete={jest.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.queryByText(/regular/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Variant cover')).not.toBeInTheDocument();
+  });
+
   it('shows a listing\'s price as a price tag, labelled for screen readers', () => {
     setupCard({ price: '$12.50' });
     expect(screen.getByText('$12.50')).toBeInTheDocument();
