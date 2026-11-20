@@ -34,7 +34,7 @@ describe('ComicCard', () => {
   it('names the comic with its issue number', () => {
     setupCard();
     expect(screen.getByRole('heading', { name: 'Batman #491' })).toBeInTheDocument();
-    expect(within(screen.getByRole('list', { name: 'Batman issues' })).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(screen.getByRole('list', { name: 'Batman issues' })).getAllByRole('heading', { level: 3 })).toHaveLength(1);
   });
 
   it('shows only the details that are filled in, never "N/A"', () => {
