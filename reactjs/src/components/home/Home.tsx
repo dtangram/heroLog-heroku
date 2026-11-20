@@ -15,7 +15,7 @@ import type { ConnectorProps } from './container';
  * the dashboard, collection intel, or the comics for sale below.
  */
 const WelcomeHero = ({ firstname, userId }: { firstname: string; userId: string }) => (
-  <div className={styles.welcome}>
+  <article className={styles.welcome}>
     <h1>
       Welcome, {firstname}
       <span className={styles.graphic} aria-hidden="true" />
@@ -23,18 +23,18 @@ const WelcomeHero = ({ firstname, userId }: { firstname: string; userId: string 
     <p className={styles.welcomeIntro}>
       Scan a cover, track what you own, and find what you're missing.
     </p>
-    <div className={styles.welcomeActions}>
+    <nav className={styles.welcomeActions} aria-label="Get started">
       <RRLink className={styles.ctaPrimary} to={`/dashboard/${userId}`}>
         Open your dashboard
       </RRLink>
       <RRLink className={styles.ctaSecondary} to={`/intel/${userId}`}>
         See your collection intel
       </RRLink>
-    </div>
+    </nav>
     <a className={styles.ctaLink} href="#forSale">
       Browse comics for sale
     </a>
-  </div>
+  </article>
 );
 
 const Home = ({

@@ -254,7 +254,382 @@
   }
   
   .container h1 {
-    font-size: 2rem;
+    font-size: 2rem;.container {
+  margin: 150px auto;
+  min-height: 950px;
+  padding: 1rem;
+}
+
+@media (min-width: 769px) {
+  .container {
+    padding: 0;
+  }
+}
+
+.cbWrap{
+  background: #FFF;
+  margin-top: 150px;
+  /* height: 950px; */
+  min-height: 950px;
+  display: inline-block;
+  width: 100%;
+}
+
+.cbWrap h1{
+  color: #2B2B2B;
+  font-size: 5rem;
+  margin-bottom: 50px;
+  text-align: center;
+  width: 100%;
+  top: 30px;
+}
+
+.cbWrap h1 .graphic{
+  background: #770422;
+  margin: 15px auto 0;
+  height: 10px;
+  width: 70px;
+}
+
+.cbWrap .cbList .wrapper, .empty p, .statLabel {
+  font-family: "Lato", Arial, sans-serif;
+}
+
+.cbWrap .cbList .wrapper{
+  border-radius: 15px;
+	font-size: 1.1rem;
+  height: auto;
+	margin: 0 auto 50px;
+  min-height: inherit;
+	padding: 0 3%;
+  position: relative;
+	width: 80%;
+}
+
+/* Error & Empty States */
+.error,
+.empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  font-size: 4rem;
+}
+
+/* The site's global p rule is white text, which made the error invisible */
+.error p {
+  color: #C53030;
+  font-family: "Lato", Arial, sans-serif;
+  margin-bottom: 2rem;
+}
+
+.empty p {
+  color: #2B2B2B;
+  font-size: 4rem;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 0 0 3rem;
+  padding: 0;
+}
+
+@media (min-width: 769px) {
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+.statCard {
+  background: #AECEAB;
+  color: #770422;
+  padding: 2rem;
+  border-radius: 4px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.statNumber {
+  color: inherit;
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 0 0 0.5rem;
+}
+
+.statLabel {
+  color: inherit;
+  font-size: 1.5rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* AI Insights */
+.aiInsights {
+  background: #FFF;
+  border-radius: 4px;
+  margin-bottom: 3rem;
+}
+
+.aiInsights h2, .recommendations h2, .seriesBreakdown h2 {
+  color: #770422;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.insightsText {
+    padding: 4.5rem;
+    width: 100%;
+}
+
+.insightsText p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+  color: #2B2B2B;
+}
+
+/* Recommendations */
+.recommendations {
+  background: #fff5f5;
+  border-left: 4px solid #770422;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 3rem;
+}
+
+.recommendations ul {
+  list-style: none;
+  padding: 0;
+}
+
+.recommendations li {
+  border-bottom: 1px solid #fed7d7;
+  color: #2B2B2B;
+  font-size: 1.3rem;
+  line-height: 1.6;
+  padding: 0.75rem 0;
+}
+
+.recommendations li:last-child {
+  border-bottom: none;
+}
+
+/* Series Breakdown */
+.seriesCard {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.seriesCard:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.seriesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.seriesHeader h3 {
+  font-size: 1.5rem;
+  color: #2B2B2B;
+  margin: 0;
+}
+
+.completionBadge {
+  /* Darker green: white text was 2.4:1 on #48bb78, now 6.7:1 (WCAG AA needs 4.5:1) */
+  background: #276749;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+/* Progress Bar */
+.progressBar {
+  display: block;
+  width: 100%;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+  transition: width 0.5s ease;
+}
+
+/* Series Stats */
+.seriesStats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: #2B2B2B;
+}
+
+.seriesStats span {
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.4rem;
+}
+
+/* Missing Issues */
+.missingIssues {
+  margin-bottom: 0;
+  background: #fff5f5;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  color: #c53030;
+  margin-top: 0.75rem;
+}
+
+.missingIssues strong {
+  color: #742a2a;
+}
+
+@media (min-width: 769px) {
+  .seriesStats {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+}
+
+/* Loading: a status line and placeholder cards shaped like the page */
+.loadStatus {
+  align-items: center;
+  color: #2B2B2B;
+  display: flex;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  gap: 12px;
+  justify-content: center;
+  line-height: 1.4;
+  margin: 0 0 2rem;
+  text-align: left;
+}
+
+.loadStatus > :first-child {
+  flex-shrink: 0;
+}
+
+.statCard .skeletonLine {
+  margin: 0 auto;
+}
+
+.aiInsights .skeletonLine {
+  margin-bottom: 1.2rem;
+}
+
+.skeletonLine {
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+  background: linear-gradient(90deg, rgba(119, 4, 34, 0.08) 25%, rgba(119, 4, 34, 0.16) 50%, rgba(119, 4, 34, 0.08) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  display: block;
+  height: 1.6rem;
+  width: 100%;
+}
+
+.skeletonNumber {
+  height: 3rem;
+  margin-bottom: 1rem !important;
+  width: 40%;
+}
+
+.skeletonLabel {
+  width: 60%;
+}
+
+.skeletonHeading {
+  height: 3rem;
+  margin: 0 auto 2.4rem !important;
+  width: 30%;
+}
+
+.skeletonShort {
+  width: 70%;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* AI wasn't available: say so, and let the collector ask again */
+.insightsText .fallbackNote {
+  border-top: 1px solid #E2E8F0;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+}
+
+.insightsText .fallbackNote p {
+  font-size: 1.6rem;
+  font-style: italic;
+}
+
+/* Overrides the site's global button rules (green, 54% wide) */
+.retryButton {
+  background: #770422;
+  border-radius: 4px;
+  color: #FFF;
+  cursor: pointer;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin: 0;
+  min-height: 44px;
+  padding: 10px 20px;
+  transition: background-color 0.2s ease;
+  width: auto;
+}
+
+.retryButton:hover {
+  background: #5A0319;
+  color: #FFF;
+}
+
+.retryButton:focus-visible {
+  outline: 3px solid #AECEAB;
+  outline-offset: 2px;
+}
+
+.retryButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+/* No shimmer or lift for people who've asked their system to reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeletonLine {
+    animation: none;
+  }
+
+  .seriesCard,
+  .seriesCard:hover,
+  .progressFill,
+  .retryButton {
+    transform: none;
+    transition: none;
+  }
+}
   }
   
   .statsGrid {

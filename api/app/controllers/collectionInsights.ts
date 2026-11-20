@@ -16,6 +16,7 @@ import {
   CollectionAnalysis,
   generateCollectionAnalysis,
 } from '../services/collectionAnalysis';
+import { factsFingerprint, getSavedAnalysis, saveAnalysis } from '../services/analysisCache';
 
 interface CollectionInsights {
   totalComics: number;
@@ -177,6 +178,19 @@ export const getCollectionInsights = async (
     const facts = buildCollectionFacts(comics);
     console.log(`Analyzed ${facts.uniqueSeries} unique series`);
     
+    // Same collection as last time: show the analysis the collector already saw
+    const analysisStore = (db as any).CollectionAnalyses;
+    const factsHash = factsFingerprint(facts);
+    const saved = analysisStore ? await getSavedAnalysis(analysisStore, userId, factsHash) : null;
+
+    if (saved) {
+      console.log('Using saved AI analysis (collection unchanged)');
+      return res.status(200).json({
+        success: true,
+        data: toInsights(facts, saved, 'ai')
+      });
+    }
+    
     // Grounded AI analysis: validated against the facts, with a data-only fallback
     console.log('Generating AI insights...');
     const result: AnalysisResult = process.env.ANTHROPIC_API_KEY
@@ -185,6 +199,11 @@ export const getCollectionInsights = async (
     console.log(
       `Insights generated (source: ${result.source}, attempts: ${result.attempts}, rejected: ${result.rejected.length})`
     );
+
+    // Only a validated AI answer is saved; after a fallback, the next visit tries again
+    if (result.source === 'ai' && analysisStore) {
+      await saveAnalysis(analysisStore, userId, factsHash, result.analysis);
+    }
     
     const insights = toInsights(facts, result.analysis, result.source);
     
