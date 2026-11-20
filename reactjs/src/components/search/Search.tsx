@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { BeatLoader } from 'react-spinners';
 import { useSearch, SearchMode } from '../../hooks/useSearch';
 import SearchIcon from '@mui/icons-material/Search';
 import clsx from 'clsx';
+import { fetchWishlists } from '../../store/wishlist/actions';
+import AddToWishList from './AddToWishList';
 import styles from './styles.module.css';
 
 /** Results each search returns: 5 from your collection, 10 from Claude (show a screenful). */
@@ -56,9 +59,18 @@ const Search: React.FC = () => {
     handleSuggestionClick
   } = useSearch(userId);
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Load the wish list, so results already on it say so instead of offering to add them again
+  useEffect(() => {
+    if (localStorage.getItem('token') && localStorage.getItem('id')) {
+      dispatch(fetchWishlists() as any);
+    }
+  }, [dispatch]);
 
   const suggestions: string[] = [
     'dark 90s Batman',
@@ -226,6 +238,9 @@ const Search: React.FC = () => {
                     <p className={styles.publisher}>{result.publisher}</p>
                   )}
                   <p className={styles.description}>{result.description}</p>
+                  {!result.already_owned && (
+                    <AddToWishList result={result} userId={localStorage.getItem('id') || ''} />
+                  )}
                 </article>
               ))}
             </section>
