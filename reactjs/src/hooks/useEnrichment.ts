@@ -1,10 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { sessionHeaders } from '../API';
-
-// ============================================================================
-// INTERFACES
-// ============================================================================
 
 export interface EnrichmentJob {
   id: number;
@@ -12,180 +8,79 @@ export interface EnrichmentJob {
   processed_comics: number;
   percentage: number;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  started_at: string;
-  completed_at: string | null;
+  started_at?: string;
+  completed_at?: string | null;
 }
 
 const API_BASE = process.env.REACT_APP_API_URL || '';
 
-// ============================================================================
-// HOOK
-// ============================================================================
+/** How often to check a running catch-up */
+export const POLL_INTERVAL = 3000;
 
+/**
+ * Makes sure every comic in your collection can be found by My Collection
+ * search. New comics are prepared when they're added, but that can fail (for
+ * example while the OpenAI account is out of credits). On each visit to
+ * Search, this asks the API to prepare anything still missing, in the
+ * background, and reports progress while it runs. Nothing shows when
+ * everything is ready.
+ */
 export const useEnrichment = (userId: string | undefined) => {
   const [enrichmentJob, setEnrichmentJob] = useState<EnrichmentJob | null>(null);
-  const [isEnriching, setIsEnriching] = useState<boolean>(false);
-  const [enrichmentError, setEnrichmentError] = useState<string>('');
-  const [isAutoEnriching, setIsAutoEnriching] = useState<boolean>(false);
 
-  const pollEnrichmentProgress = useCallback((jobId: number): void => {
-    const interval = setInterval(async () => {
+  useEffect(() => {
+    if (!userId) return undefined;
+
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const poll = async (jobId: number) => {
       try {
-        const response = await axios.get(
-          `${API_BASE}/api/search/enrich-progress/${jobId}`,
-          { headers: await sessionHeaders() }
-        );
+        const response = await axios.get(`${API_BASE}/api/search/enrich-progress/${jobId}`, {
+          headers: await sessionHeaders(),
+        });
+        if (!active) return;
 
-        if (response.data.status === 'Success') {
-          const job = response.data.job;
-          setEnrichmentJob(job);
-
-          if (
-            job.status === 'completed' ||
-            job.status === 'failed' ||
-            job.status === 'cancelled'
-          ) {
-            clearInterval(interval);
-            setIsEnriching(false);
-            console.log(`✅ Enrichment job ${jobId} ${job.status}`);
-          }
+        const job: EnrichmentJob | undefined = response.data?.job;
+        if (job) setEnrichmentJob(job);
+        if (!job || job.status === 'running') {
+          timer = setTimeout(() => poll(jobId), POLL_INTERVAL);
         }
       } catch (err) {
+        // Progress is a nice-to-have; search still works without it
         console.error('❌ Progress poll error:', err);
       }
-    }, 3000);
-  }, []);
-
-  const autoEnrichIfNeeded = useCallback(async (): Promise<void> => {
-    if (!userId) return;
-
-    setIsAutoEnriching(true);
-
-    try {
-        const response = await axios.post(
-        `${API_BASE}/api/search/enrich-all/${userId}`,
-        undefined,
-        { headers: await sessionHeaders() }
-        );
-
-        if (response.data.status === 'Empty' || response.data.status === 'Complete') {
-        setIsAutoEnriching(false);
-        return;
-        }
-
-        if (response.data.status === 'Success') {
-        const newJob: EnrichmentJob = {
-            id: response.data.job_id,
-            total_comics: response.data.total_comics,
-            processed_comics: 0,
-            percentage: 0,
-            status: 'running',
-            started_at: new Date().toISOString(),
-            completed_at: null
-        };
-
-        setEnrichmentJob(newJob);
-        pollEnrichmentProgress(response.data.job_id);
-        }
-
-    } catch (err) {
-        console.error('❌ Auto-enrich check error:', err);
-    } finally {
-        setIsAutoEnriching(false);
-    }
-    }, [userId, pollEnrichmentProgress]);
-
-    const handleStartEnrichment = useCallback(async (): Promise<void> => {
-        setIsEnriching(true);
-        setEnrichmentError('');
-
-        try {
-            console.log('🚀 Starting enrichment for user:', userId);
-
-            const response = await axios.post(
-            `${API_BASE}/api/search/enrich-all/${userId}`,
-            undefined,
-            { headers: await sessionHeaders() }
-            );
-
-            if (
-            response.data.status === 'Empty' ||
-            response.data.status === 'Complete'
-            ) {
-            setEnrichmentError(
-                response.data.status === 'Empty'
-                ? 'No comics found in your collection. Add some comics first!'
-                : 'Your collection is already fully enriched.'
-            );
-            setIsEnriching(false);
-            return;
-            }
-
-            if (response.data.status === 'Success') {
-            const newJob: EnrichmentJob = {
-                id: response.data.job_id,
-                total_comics: response.data.total_comics,
-                processed_comics: 0,
-                percentage: 0,
-                status: 'running',
-                started_at: new Date().toISOString(),
-                completed_at: null
-            };
-
-            setEnrichmentJob(newJob);
-            console.log('✅ Enrichment job started:', newJob);
-            pollEnrichmentProgress(response.data.job_id);
-            }
-
-        } catch (err) {
-            console.error('❌ Start enrichment error:', err);
-            setEnrichmentError('Failed to start enrichment. Please try again.');
-        } finally {
-            setIsEnriching(false);
-        }
-  }, [userId, pollEnrichmentProgress]);
-
-  const handleCancelEnrichment = useCallback(async (): Promise<void> => {
-    if (!enrichmentJob) return;
-
-    try {
-      console.log('🛑 Cancelling enrichment job:', enrichmentJob.id);
-
-      await axios.post(
-        `${API_BASE}/api/search/enrich-cancel/${enrichmentJob.id}`,
-        undefined,
-        { headers: await sessionHeaders() }
-      );
-
-      setIsEnriching(false);
-      setEnrichmentJob(prev => prev ? { ...prev, status: 'cancelled' } : null);
-      console.log('✅ Enrichment job cancelled');
-
-    } catch (err) {
-      console.error('❌ Cancel enrichment error:', err);
-      setEnrichmentError('Failed to cancel enrichment.');
-    }
-  }, [enrichmentJob]);
-
-  const resetEnrichment = useCallback((): void => {
-    setEnrichmentJob(null);
-    setIsEnriching(false);
-    setEnrichmentError('');
-  }, []);
-
-  const clearEnrichmentError = useCallback((): void => {
-    setEnrichmentError('');
-  }, []);
-
-  return {
-    enrichmentJob,
-    isEnriching,
-    isAutoEnriching,
-    enrichmentError,
-    handleStartEnrichment,
-    handleCancelEnrichment,
-    resetEnrichment,
-    clearEnrichmentError,
-    autoEnrichIfNeeded
     };
+
+    const start = async () => {
+      try {
+        const response = await axios.post(`${API_BASE}/api/search/enrich-all/${userId}`, undefined, {
+          headers: await sessionHeaders(),
+        });
+        if (!active) return;
+
+        const { status, job_id: jobId, total_comics: total } = response.data ?? {};
+        // 'Success' starts a new catch-up; 'Running' joins one already going
+        if ((status === 'Success' || status === 'Running') && jobId) {
+          setEnrichmentJob({ id: jobId, total_comics: total, processed_comics: 0, percentage: 0, status: 'running' });
+          poll(jobId);
+        }
+      } catch (err) {
+        console.error('❌ Search catch-up error:', err);
+      }
+    };
+
+    start();
+
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [userId]);
+
+  const isCatchingUp = enrichmentJob?.status === 'running';
+
+  return { enrichmentJob, isCatchingUp };
 };
+
+export default useEnrichment;

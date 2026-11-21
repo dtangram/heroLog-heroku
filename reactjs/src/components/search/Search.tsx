@@ -7,6 +7,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import clsx from 'clsx';
 import { fetchWishlists } from '../../store/wishlist/actions';
 import AddToWishList from './AddToWishList';
+import { useEnrichment } from '../../hooks/useEnrichment';
 import styles from './styles.module.css';
 
 /** Results each search returns: 5 from your collection, 10 from Claude (show a screenful). */
@@ -61,6 +62,9 @@ const Search: React.FC = () => {
   } = useSearch(userId);
 
   const dispatch = useDispatch();
+
+  // Prepares any comics still missing from My Collection search, in the background
+  const { enrichmentJob, isCatchingUp } = useEnrichment(userId);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -123,6 +127,15 @@ const Search: React.FC = () => {
             {mode === 'all' && 'Search any comic book using Claude AI knowledge.'}
             {mode === 'missing' && "Find comics matching your search that you don't own yet."}
           </p>
+
+          {/* Only while comics are being prepared; My Collection can't find them until then */}
+          {mode === 'collection' && isCatchingUp && enrichmentJob && (
+            <p className={styles.catchUp} role="status">
+              Getting {enrichmentJob.total_comics === 1 ? '1 comic' : `${enrichmentJob.total_comics} comics`} ready
+              for search ({enrichmentJob.processed_comics} of {enrichmentJob.total_comics} done). Comics that
+              aren&apos;t ready yet won&apos;t appear in My Collection results.
+            </p>
+          )}
 
           {/* Search Bar */}
           <search className={styles.searchBar}>

@@ -109,7 +109,12 @@ export const useSearch = (userId: string | undefined) => {
       // A newer search replaced this one; leave the state to it
       if (axios.isCancel(err) || controller.signal.aborted) return;
       console.error('❌ Search error:', err);
-      setError('Failed to connect to search service. Please try again.');
+      // 503: the AI service behind collection search is out of credits or busy
+      setError(
+        axios.isAxiosError(err) && err.response?.status === 503
+          ? 'Searching your collection is unavailable right now. All Comics and Find Missing still work.'
+          : 'Failed to connect to search service. Please try again.'
+      );
     } finally {
       if (abortRef.current === controller) {
         clearSlowTimer();
