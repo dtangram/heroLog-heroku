@@ -5,7 +5,7 @@ import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import API from '../../../API';
 import ComicCard, { ComicCardGrid, CardActionLink } from '../../comicCard';
 import { formatPrice } from '../../../utils/sale';
-import logo from '../../img/logo.png';
+import logo from '../../../img/logo.png';
 import styles from './styles.module.css';
 
 /** A listing as the public preview sends it: the comic, never the seller */
