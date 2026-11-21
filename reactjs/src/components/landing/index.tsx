@@ -3,6 +3,7 @@ import logo from '../../img/logo.png';
 import numberOne from '../../img/numberOne.png';
 import numberTwo from '../../img/numberTwo.png';
 import numberThree from '../../img/numberThree.png';
+import SalePreview from './salePreview/SalePreview';
 import styles from './styles.module.css'
 
 // ============================================================================
@@ -60,7 +61,7 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 const FEATURES: Feature[] = [
   { id: 'catalogue', description: 'Easily Catalogue Your Comic Books' },
   { id: 'duplicates', description: 'No purchasing duplicate comics' },
-  { id: 'trade', description: 'Buy, sale and trade comic books' }
+  { id: 'trade', description: 'Buy, sell and trade comic books' }
 ];
 
 // ============================================================================
@@ -165,33 +166,8 @@ const Landing = () => {
         </article>
       </section>
 
-      <section className="comicSaleWrapper">
-        <div className="logo_graphic">
-          <img src={logo} alt="Hero-Log logo" />
-        </div>
-
-        <h2>Comics for Sale</h2>
-        <figure 
-          className="graphic" 
-          aria-label="Small burgundy rectangle graphic" 
-        />
-
-        <article className="container">
-          <section className="row">
-            {[1, 2, 3, 4].map(index => (
-              <article 
-                key={`comic-${index}`}
-                className="cardWrap col-sm-12 col-md-12 col-lg-3"
-              >
-                <section 
-                  className="card"
-                  aria-label={`Featured comic ${index}`}
-                />
-              </article>
-            ))}
-          </section>
-        </article>
-      </section>
+      {/* The newest real listings (a public preview), or nothing if none load */}
+      <SalePreview />
     </>
   );
 };

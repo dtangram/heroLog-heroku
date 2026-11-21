@@ -1,0 +1,245 @@
+/* ============================================================
+   Landing page: Comics for Sale preview. Mobile-first.
+   Its own class instead of the global .comicSaleWrapper, whose
+   "article p" rules would restyle the text inside the cards.
+   ============================================================ */
+.saleSection{
+  background: #FFF;
+  display: inline-block;
+  margin-bottom: 150px;
+  padding-top: 1%;
+  width: 100%;
+}
+
+.saleSection .heading{
+  color: #2B2B2B;
+  /* The logo hangs into this section; 5% alone overlapped it on phones */
+  margin-top: max(56px, 5%);
+}
+
+.srOnly{
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* Nothing listed yet */
+.saleSection .empty{
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.8rem;
+  line-height: 1.5;
+  margin: 40px auto;
+  max-width: 56ch;
+  padding: 0 16px;
+  text-align: center;
+}
+
+/* ---------- Sign up / sign in, under the cards ---------- */
+.cta{
+  background: #F4F9F3;
+  border: 2px solid #AECEAB;
+  border-left: 8px solid #770422;
+  border-radius: 6px;
+  margin: 10px auto 0;
+  padding: 20px 18px;
+  text-align: left;
+  width: min(760px, 92%);
+}
+
+.saleSection .ctaTitle{
+  color: #770422;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0 0 8px;
+  text-align: left;
+}
+
+.saleSection .ctaText{
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.ctaActions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ctaActions a{
+  align-items: center;
+  border-radius: 4px;
+  display: inline-flex;
+  flex: 1 1 140px;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: bold;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 22px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.ctaActions .ctaPrimary{
+  background: #770422;
+  color: #FFF;
+}
+
+.ctaActions .ctaPrimary:hover{
+  background: #5A0319;
+  color: #FFF;
+}
+
+.ctaActions .ctaSecondary{
+  background: transparent;
+  border: 2px solid #770422;
+  color: #770422;
+}
+
+.ctaActions .ctaSecondary:hover{
+  background: #770422;
+  color: #FFF;
+}
+
+.ctaActions a:focus-visible{
+  outline: 3px solid #AECEAB;
+  outline-offset: 2px;
+}
+
+/* ---------- Loading placeholders, shaped like the cards ---------- */
+.skeletonGrid{
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 24px auto 40px;
+  max-width: 1100px;
+  padding: 0 16px;
+}
+
+.skeletonCard{
+  display: flex;
+  flex-direction: column;
+}
+
+.skeletonCover{
+  aspect-ratio: 2 / 3;
+  /* Solid, so the panel doesn't show through where they overlap */
+  background: #CFE2CC;
+  border-radius: 6px;
+  display: block;
+  flex-shrink: 0;
+  margin: 0 auto -18px;
+  position: relative;
+  width: 160px;
+  z-index: 1;
+}
+
+.skeletonPanel{
+  background: #770422;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0.85;
+  padding: 36px 20px 24px;
+}
+
+.skeletonLine{
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12) 25%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0.12) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  display: block;
+  height: 1.4rem;
+  margin: 0 auto;
+  width: 80%;
+}
+
+.skeletonTitle{
+  height: 2.2rem;
+  width: 60%;
+}
+
+.skeletonShort{
+  width: 45%;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (min-width: 600px){
+  .cta{
+    padding: 24px 28px;
+  }
+
+  .ctaActions a{
+    flex: 0 0 auto;
+  }
+}
+
+/* Same breakpoints as the real cards: cover beside the panel from 500px */
+@media (min-width: 500px){
+  .skeletonCard{
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .skeletonCover{
+    margin: 0 -18px 0 0;
+  }
+
+  .skeletonPanel{
+    flex: 1;
+    padding: 28px 20px 28px 40px;
+  }
+
+  .skeletonLine{
+    margin: 0;
+  }
+}
+
+@media (min-width: 541px){
+  .skeletonCover{
+    width: 210px;
+  }
+}
+
+@media (min-width: 768px){
+  .skeletonGrid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .skeletonCover{
+    width: 160px;
+  }
+}
+
+@media (min-width: 1100px){
+  .skeletonCover{
+    width: 210px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .skeletonLine{
+    animation: none;
+  }
+
+  .ctaActions a{
+    transition: none;
+  }
+}
