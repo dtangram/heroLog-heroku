@@ -10,6 +10,8 @@ import type { ConnectorProps } from './container';
 import { showAlert, showConfirm } from '../dialog';
 import { AccountCircle } from '@mui/icons-material';
 import { countLabel } from '../../utils/collection';
+import { clearSession } from '../../utils/session';
+import type { APICallResult } from '../../store/helpers/callAPIMiddleware';
 
 interface RouteParams extends Record<string, string | undefined> {
   id?: string;
@@ -57,27 +59,28 @@ const Profile = ({
     if (!userId) return;
 
     const confirmed = await showConfirm(
-      `The profile for "${username}" will be permanently deleted. This can't be undone.`,
-      { title: 'Delete your profile?', confirmLabel: 'Delete Profile', tone: 'danger' }
+      `The account "${username}" and everything in it will be permanently deleted: your collection, sale listings, wish list and messages. This can't be undone.`,
+      { title: 'Delete your account?', confirmLabel: 'Delete Account', tone: 'danger' }
     );
 
     if (!confirmed) return;
 
-    try {
-      deleteUser?.(userId);
-      // Refetch after deletion
-      if (id) {
-        fetchUser?.(id);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'An unexpected error occurred';
-      
-      console.error('Failed to delete profile:', errorMessage);
-      showAlert('Something went wrong while deleting your profile. Please try again.', { title: "Your profile wasn't deleted" });
+    const outcome = (await (deleteUser?.(userId) as unknown as Promise<APICallResult | undefined>)) ?? { ok: false, error: '' };
+
+    if (!outcome.ok) {
+      console.error('Failed to delete account:', outcome.error);
+      showAlert('Something went wrong while deleting your account. Nothing was deleted. Please try again.', {
+        title: "Your account wasn't deleted",
+      });
+      return;
     }
-  }, [deleteUser, fetchUser, id]);
+
+    // The account no longer exists: sign this browser out and leave the private pages
+    clearSession();
+    await showAlert('Your account and everything in it have been deleted.', { title: 'Account deleted' });
+    // A full page load resets everything the app had loaded for the account
+    window.location.assign('/landing');
+  }, [deleteUser]);
 
   // Early return for loading state
   if (isLoading) {

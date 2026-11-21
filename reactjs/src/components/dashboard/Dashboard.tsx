@@ -28,6 +28,7 @@ const Dashboard = ({
 }: ConnectorProps) => {
 
   const userId = localStorage.getItem('id') || getAnonymousUserId();
+  const isSignedIn = Boolean(localStorage.getItem('token') && localStorage.getItem('id'));
   
   // Fetch publishers on mount
   useEffect(() => {
@@ -95,6 +96,24 @@ const Dashboard = ({
           {countLabel(publishers.length, 'publisher')} · {countLabel(totals.titles, 'title')} ·{' '}
           {countLabel(totals.issues, 'issue')}
         </p>
+      )}
+
+      {/* Guests only: their collection lives in this browser until they have an account */}
+      {!isSignedIn && (
+        <aside className={styles.guestNotice} aria-labelledby="guestNoticeTitle">
+          <h2 id="guestNoticeTitle" className={styles.guestTitle}>
+            Keep your collection safe
+          </h2>
+          <p className={styles.guestText}>
+            You&apos;re using Hero-Log as a guest, so your collection is saved only in this browser.
+            Clearing your browser data or switching devices will lose it. Sign up or sign in, and
+            everything you&apos;ve added moves to your account.
+          </p>
+          <nav className={styles.guestActions} aria-label="Save your collection">
+            <RRLink className={styles.guestPrimary} to="/signup">Sign Up</RRLink>
+            <RRLink className={styles.guestSecondary} to="/signin">Sign In</RRLink>
+          </nav>
+        </aside>
       )}
 
       <h2>

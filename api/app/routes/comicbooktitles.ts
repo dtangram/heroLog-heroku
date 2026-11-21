@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import * as comicbooktitleCtrl from '../controllers/comicbooktitles';
 import * as validationCtrl from '../controllers/validation';
+import { requireIdentity } from '../middleware/auth';
+import { ownsBodyField, ownsRecord, publisherOwner, titleOwner } from '../middleware/ownership';
 
 // ============================================================================
 // ROUTER CONFIGURATION
@@ -8,10 +10,14 @@ import * as validationCtrl from '../controllers/validation';
 
 const router = Router();
 
+// Titles belong to the owner of their publisher (a signed-in user or a guest)
+router.use(requireIdentity);
+
 // GET /comicbooktitles/publishers/:pubId
 // Get all comic book titles for a specific publisher
 router.get(
   '/publishers/:pubId',
+  ownsRecord(publisherOwner, 'pubId'),
   comicbooktitleCtrl.getCollectPublisherComicBookTitles
 );
 
@@ -19,6 +25,7 @@ router.get(
 // Create a new comic book title
 router.post(
   '/',
+  ownsBodyField('collectpubId', publisherOwner),
   validationCtrl.validate('createComicBookTitle'),
   comicbooktitleCtrl.createComicBookTitle
 );
@@ -27,6 +34,7 @@ router.post(
 // Get a single comic book title by ID
 router.get(
   '/:id',
+  ownsRecord(titleOwner),
   comicbooktitleCtrl.getOneById
 );
 
@@ -34,6 +42,8 @@ router.get(
 // Update a comic book title
 router.put(
   '/:id',
+  ownsRecord(titleOwner),
+  ownsBodyField('collectpubId', publisherOwner, false),
   validationCtrl.validate('editComicBookTitle'),
   comicbooktitleCtrl.updateComicBookTitle
 );
@@ -42,6 +52,7 @@ router.put(
 // Delete a comic book title
 router.delete(
   '/:id',
+  ownsRecord(titleOwner),
   validationCtrl.validate('deleteComicBookTitle'),
   comicbooktitleCtrl.removeComicBookTitle
 );

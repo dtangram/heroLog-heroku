@@ -1,4 +1,4 @@
-import { countLabel, issueRange } from './collection';
+import { countLabel, issueRange } from '../collection';
 
 describe('countLabel', () => {
   it.each([

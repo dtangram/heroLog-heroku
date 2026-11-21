@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
+import db from '../models';
 
 // Properly typed model interface
 interface MessagingModel {
@@ -72,11 +73,9 @@ interface SequelizeError {
 }
 
 // Import models with proper typing
-const models = require('../models') as {
-  Messagings: MessagingModel;
-};
-
-const { Messagings } = models;
+// models/index.ts uses `export default`, so require('../models') returned
+// { default: db } and Messagings was undefined (every message request failed)
+const Messagings = (db as any).Messagings as MessagingModel;
 
 // Type guard for Sequelize errors
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {

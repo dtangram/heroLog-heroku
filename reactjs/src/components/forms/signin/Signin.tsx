@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, ChangeEvent, FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import API from '../../../API';
+import { claimGuestCollection } from '../../../utils/session';
 import FormErrors from '../../../formErrors';
 import type { ConnectorProps } from './container';
 import styles from './styles.module.css';
@@ -138,6 +139,9 @@ const handleCredentialResponse = useCallback(
       // Store authentication data
       localStorage.setItem('token', token);
       localStorage.setItem('id', id);
+
+      // Anything built as a guest in this browser now belongs to the account
+      await claimGuestCollection();
       
       if (email) {
         localStorage.setItem('email', email);

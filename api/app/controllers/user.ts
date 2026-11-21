@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import { deleteSearchData } from '../routes/search';
 
 // Properly typed model interface
 interface UserModel {
@@ -625,6 +626,33 @@ export const updateUser = async (
 };
 
 // Delete a user
+/** The tables are deleted children first; returns 1 if the user was deleted. */
+const ACCOUNT_DATA_DELETES = [
+  `DELETE FROM "Messagings" WHERE "messageUsersId" = :id`,
+  `DELETE FROM "SaleLists" WHERE "saleUsersId" = :id`,
+  `DELETE FROM "WishLists" WHERE "wishUsersId" = :id`,
+  `DELETE FROM "ComicBooks" WHERE "comicbooktitlerelId" IN (
+     SELECT cbt.id FROM "ComicBookTitles" cbt
+       JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
+      WHERE cp."collectpubUsersId" = :id)`,
+  `DELETE FROM "ComicBookTitles" WHERE "collectpubId" IN (
+     SELECT id FROM "CollectionPublishers" WHERE "collectpubUsersId" = :id)`,
+  `DELETE FROM "CollectionPublishers" WHERE "collectpubUsersId" = :id`,
+  `DELETE FROM "CollectionAnalyses" WHERE "analysisUsersId" = :id`,
+];
+
+const deleteAccountAndData = async (id: string): Promise<number> =>
+  db.sequelize.transaction(async (transaction: any) => {
+    for (const sql of ACCOUNT_DATA_DELETES) {
+      await db.sequelize.query(sql, { replacements: { id }, transaction });
+    }
+    const [, result] = await db.sequelize.query(`DELETE FROM "Users" WHERE id = :id`, {
+      replacements: { id },
+      transaction,
+    });
+    return Number((result as any)?.rowCount ?? result ?? 0);
+  });
+
 export const removeUser = async (
   req: Request<{ id: string }>,
   res: Response<ApiResponse<never>>
@@ -662,9 +690,10 @@ export const removeUser = async (
       });
     }
     
-    const rowsDeleted = await Users.destroy({ 
-      where: { id }
-    });
+    // Everything the account owns goes with it, in one transaction. Sale
+    // listings, wish list comics and messages reference Users without
+    // cascading, so deleting the user alone failed for anyone who had them.
+    const rowsDeleted = await deleteAccountAndData(id);
     
     if (rowsDeleted === 0) {
       return res.status(500).json({ 
@@ -672,6 +701,9 @@ export const removeUser = async (
         error: 'Failed to delete user' 
       });
     }
+
+    // Search data is in a separate database; best effort
+    deleteSearchData(id).catch(error => console.error('Could not delete search data:', error));
     
     return res.status(200).json({ 
       success: true,

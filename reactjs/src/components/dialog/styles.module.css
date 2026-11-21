@@ -76,6 +76,10 @@
   min-width: 96px;
   padding: 8px 20px;
   text-transform: uppercase;
+  /* The Dashboard's global button rule sets width: 100px, which split
+     longer labels ("Delete Account") over two lines */
+  white-space: nowrap;
+  width: auto;
 }
 
 .button:focus-visible {

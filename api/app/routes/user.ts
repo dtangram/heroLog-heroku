@@ -1,4 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { requireAccount } from '../middleware/auth';
+import { ownsParam } from '../middleware/ownership';
 import { Model, ModelStatic } from 'sequelize';
 import { 
   getUser, 
@@ -222,6 +224,8 @@ const router = Router();
 // Get a specific user by user ID
 router.get(
   '/signups/:userId',
+  requireAccount,
+  ownsParam('userId'),
   getUser
 );
 
@@ -242,6 +246,8 @@ router.post(
 // Get a single user by ID
 router.get(
   '/:id',
+  requireAccount,
+  ownsParam('id'),
   getOneById
 );
 
@@ -249,13 +255,18 @@ router.get(
 // Update a user
 router.put(
   '/:id',
+  requireAccount,
+  ownsParam('id'),
   updateUser
 );
 
 // DELETE /users/:id
 // Delete a user
+// Only you can see, change or delete your own account
 router.delete(
   '/:id',
+  requireAccount,
+  ownsParam('id'),
   removeUser
 );
 

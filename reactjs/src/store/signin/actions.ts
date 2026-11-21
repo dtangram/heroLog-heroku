@@ -1,5 +1,5 @@
 import API from '../../API';
-import { clearAnonymousId } from '../../utils/anonymousUser';
+import { claimGuestCollection } from '../../utils/session';
 import {
   REQ_LOGIN_PENDING,
   REQ_LOGIN_SUCCESS,
@@ -111,11 +111,8 @@ export const loginUser = (signin: SignInCredentials): APIAction => {
         
         if (response?.data) {
           storeAuthData(response.data);
-          clearAnonymousId();  
-          console.log('🗑️ Cleared anonymous ID after login');
-          
-          // ✅ Clear publishers cache so Dashboard refetches
-          localStorage.removeItem('publishersCache');
+          // Anything built as a guest in this browser now belongs to the account
+          await claimGuestCollection();
         }
         
         return response;

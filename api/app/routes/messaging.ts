@@ -2,6 +2,9 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Model, ModelStatic } from 'sequelize';
 import * as messagingCtrl from '../controllers/messaging';
 import * as validationCtrl from '../controllers/validation';
+import { requireAccount } from '../middleware/auth';
+import { messageRecipient, ownsParam, ownsRecord } from '../middleware/ownership';
+import db from '../models';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -64,10 +67,8 @@ const ENV = {
 // MODELS
 // ============================================================================
 
-const models = require('../models') as { 
-  Messagings: MessagingModel;
-};
-const { Messagings } = models;
+// models/index.ts uses `export default`; require('../models') returned { default: db }
+const Messagings = (db as any).Messagings as MessagingModel;
 
 // ============================================================================
 // VALIDATION FUNCTIONS
@@ -203,10 +204,14 @@ const findMessagingHandler = async (
 
 const router = Router();
 
+// Messages are private: you can read your own inbox and the messages sent to you
+router.use(requireAccount);
+
 // GET /messagings/signups/:userId
 // Get all messages received by a user
 router.get(
   '/signups/:userId',
+  ownsParam('userId'),
   messagingCtrl.getMessagings
 );
 
@@ -214,6 +219,7 @@ router.get(
 // Get all messages sent by a user
 router.get(
   '/signupsMessSent/:userId',
+  ownsParam('userId'),
   messagingCtrl.getSentMessagings
 );
 
@@ -229,6 +235,7 @@ router.post(
 // Get a single message by ID
 router.get(
   '/:id',
+  ownsRecord(messageRecipient),
   messagingCtrl.getOneById
 );
 
@@ -236,6 +243,7 @@ router.get(
 // Update a message
 router.put(
   '/:id',
+  ownsRecord(messageRecipient),
   validationCtrl.validate('editMessaging'),
   messagingCtrl.updateMessaging
 );
@@ -244,6 +252,7 @@ router.put(
 // Delete a message
 router.delete(
   '/:id',
+  ownsRecord(messageRecipient),
   validationCtrl.validate('deleteMessagings'),
   messagingCtrl.removeMessaging
 );

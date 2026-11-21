@@ -1,9 +1,29 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import { requireIdentity, AuthRequest } from '../middleware/auth';
+import { ownsParam } from '../middleware/ownership';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { Pool } from 'pg';
 
 const router = express.Router();
+
+// Every search needs a session (signed in or guest). Searching a collection,
+// or preparing it for search, is limited to its owner.
+router.use(requireIdentity);
+
+/** An enrichment job (by :jobId) must belong to the requester */
+const ownsJob = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const result = await getVectorDb().query('SELECT user_id FROM enrichment_jobs WHERE id = $1;', [req.params.jobId]);
+    if (String(result.rows[0]?.user_id ?? '').toLowerCase() !== String(req.user?.id ?? '').toLowerCase()) {
+      res.status(404).json({ status: 'Failed', error: 'Job not found' });
+      return;
+    }
+    next();
+  } catch {
+    res.status(404).json({ status: 'Failed', error: 'Job not found' });
+  }
+};
 
 // ============================================================================
 // DATABASE CONNECTIONS
@@ -130,8 +150,7 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
         FROM "ComicBooks" cb
         JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
         JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
-        JOIN "Users" u ON cp."collectpubUsersId" = u.id
-        WHERE u.id = $1
+        WHERE cp."collectpubUsersId" = $1
         ${enrichedIds.length > 0
           ? `AND cb.id::text NOT IN (${enrichedIds.map((_: any, i: number) => `$${i + 2}`).join(',')})`
           : ''
@@ -233,7 +252,7 @@ Return only the description, no additional text.`
 // ============================================================================
 
 // Enrich and store comics with Claude descriptions (legacy — limit 10)
-router.get('/enrich-and-store/:userId', async (req: Request, res: Response) => {
+router.get('/enrich-and-store/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
   const { userId } = req.params;
 
   try {
@@ -250,8 +269,7 @@ router.get('/enrich-and-store/:userId', async (req: Request, res: Response) => {
       FROM "ComicBooks" cb
       JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
       JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
-      JOIN "Users" u ON cp."collectpubUsersId" = u.id
-      WHERE u.id = $1
+      WHERE cp."collectpubUsersId" = $1
       LIMIT 10;
     `, [userId]);
 
@@ -305,7 +323,7 @@ Return only the description, no additional text.`
 });
 
 // Generate embeddings for stored comics
-router.get('/generate-embeddings/:userId', async (req: Request, res: Response) => {
+router.get('/generate-embeddings/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
   const { userId } = req.params;
 
   try {
@@ -340,7 +358,7 @@ router.get('/generate-embeddings/:userId', async (req: Request, res: Response) =
 });
 
 // Semantic search within user's collection
-router.get('/search/:userId', async (req: Request, res: Response) => {
+router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
   const { userId } = req.params;
   const { q } = req.query as { q: string };
 
@@ -401,7 +419,7 @@ router.get('/search-all', async (req: Request, res: Response) => {
 });
 
 // Find comics user doesn't own
-router.get('/search-missing/:userId', async (req: Request, res: Response) => {
+router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
   const { userId } = req.params;
   const { q } = req.query as { q: string };
 
@@ -439,7 +457,7 @@ router.get('/search-missing/:userId', async (req: Request, res: Response) => {
 });
 
 // Start enrichment job
-router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<void> => {
+router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
 
   try {
@@ -448,8 +466,7 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<
       FROM "ComicBooks" cb
       JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
       JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
-      JOIN "Users" u ON cp."collectpubUsersId" = u.id
-      WHERE u.id = $1;
+      WHERE cp."collectpubUsersId" = $1;
     `, [userId]);
 
     const totalComics = parseInt(countResult.rows[0].total);
@@ -505,7 +522,7 @@ router.post('/enrich-all/:userId', async (req: Request, res: Response): Promise<
 });
 
 // Check enrichment job progress
-router.get('/enrich-progress/:jobId', async (req: Request, res: Response): Promise<void> => {
+router.get('/enrich-progress/:jobId', ownsJob, async (req: Request, res: Response): Promise<void> => {
   const { jobId } = req.params;
 
   try {
@@ -552,7 +569,7 @@ router.get('/enrich-progress/:jobId', async (req: Request, res: Response): Promi
 });
 
 // Cancel enrichment job
-router.post('/enrich-cancel/:jobId', async (req: Request, res: Response) => {
+router.post('/enrich-cancel/:jobId', ownsJob, async (req: Request, res: Response) => {
   const { jobId } = req.params;
 
   try {
@@ -569,5 +586,18 @@ router.post('/enrich-cancel/:jobId', async (req: Request, res: Response) => {
     res.status(500).json({ status: 'Failed', error: String(error) });
   }
 });
+
+/**
+ * Moves search data from one owner to another, when a guest's collection
+ * becomes their account's (services/guestSession.ts).
+ */
+export const moveSearchData = async (fromId: string, toId: string): Promise<void> => {
+  await getVectorDb().query('UPDATE comic_embeddings SET user_id = $1 WHERE user_id = $2;', [toId, fromId]);
+};
+
+/** Removes an owner's search data when their account is deleted. */
+export const deleteSearchData = async (ownerId: string): Promise<void> => {
+  await getVectorDb().query('DELETE FROM comic_embeddings WHERE user_id = $1;', [ownerId]);
+};
 
 export default router;

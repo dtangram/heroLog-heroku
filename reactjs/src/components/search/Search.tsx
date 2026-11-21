@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { getAnonymousUserId } from '../../utils/anonymousUser';
 import { BeatLoader } from 'react-spinners';
 import { useSearch, SearchMode } from '../../hooks/useSearch';
 import SearchIcon from '@mui/icons-material/Search';
@@ -38,7 +38,8 @@ const ResultSkeletons: React.FC<{ count: number }> = ({ count }) => (
 );
 
 const Search: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  // Your own collection, whatever ID is in the address (a pasted link can't search someone else's)
+  const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   const {
     query,

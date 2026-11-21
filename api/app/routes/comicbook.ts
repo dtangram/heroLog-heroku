@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import * as comicbookCtrl from '../controllers/comicbook';
 import * as validationCtrl from '../controllers/validation';
+import { requireIdentity } from '../middleware/auth';
+import { comicOwner, ownsBodyField, ownsRecord, titleOwner } from '../middleware/ownership';
 
 // ============================================================================
 // ROUTER CONFIGURATION
@@ -8,31 +10,23 @@ import * as validationCtrl from '../controllers/validation';
 
 const router = Router();
 
+// Comics belong to the owner of their title's publisher (a signed-in user or a guest).
+// (GET /regular and /variant listed every user's comics; nothing used them, so they're gone.)
+router.use(requireIdentity);
+
 // GET /comicbook/titles/:coboTitleId
 // Get all comic books for a specific title
 router.get(
   '/titles/:coboTitleId',
+  ownsRecord(titleOwner, 'coboTitleId'),
   comicbookCtrl.getComicBooks
-);
-
-// GET /comicbook/regular
-// Get regular (non-variant) comic books
-router.get(
-  '/regular',
-  comicbookCtrl.getComicBookRegular
-);
-
-// GET /comicbook/variant
-// Get variant comic books
-router.get(
-  '/variant',
-  comicbookCtrl.getComicBookVariant
 );
 
 // POST /comicbook
 // Create a new comic book
 router.post(
   '/',
+  ownsBodyField('titleID', titleOwner),
   validationCtrl.validate('createComicBook'),
   comicbookCtrl.createComicBook as any  // Type cast to fix Express typing issue
 );
@@ -41,6 +35,7 @@ router.post(
 // Get a single comic book by ID
 router.get(
   '/:id',
+  ownsRecord(comicOwner),
   comicbookCtrl.getOneById
 );
 
@@ -48,6 +43,8 @@ router.get(
 // Update a comic book
 router.put(
   '/:id',
+  ownsRecord(comicOwner),
+  ownsBodyField('comicbooktitlerelId', titleOwner, false),
   validationCtrl.validate('editComicBook'),
   comicbookCtrl.updateComicBook as any  // Type cast to fix Express typing issue
 );
@@ -56,6 +53,7 @@ router.put(
 // Delete a comic book
 router.delete(
   '/:id',
+  ownsRecord(comicOwner),
   validationCtrl.validate('deleteComicBook'),
   comicbookCtrl.removeComicBook
 );
