@@ -10,10 +10,6 @@ import { requireAccount, AuthRequest } from '../middleware/auth';
 import { startGuestSession, claimGuestCollection } from '../services/guestSession';
 import { moveSearchData } from './search';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface UserAttributes {
   id: string;
   username: string;
@@ -71,10 +67,6 @@ interface CredentialsValidationResult {
   error?: string;
 }
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
 const log = debug('api:logging');
 
 const ENV = {
@@ -83,10 +75,6 @@ const ENV = {
   nodeEnv: process.env.NODE_ENV || 'development',
   minSecretLength: 32,
 };
-
-// ============================================================================
-// MODELS
-// ============================================================================
 
 // Access model when needed (or destructure safely)
 const getUsersModel = (): UserModel => {
@@ -342,7 +330,7 @@ router.post('/guest', async (req: Request, res: Response) => {
 router.post('/claim-guest', requireAccount, async (req: AuthRequest, res: Response) => {
   try {
     const result = await claimGuestCollection(req.user!.id, req.body?.guestToken, moveSearchData);
-    res.status(200).json({ success: true, data: { publishersMoved: result?.publishersMoved ?? 0 } });
+    res.status(200).json({ success: true, data: { publishersMoved: result?.publishersMoved ?? 0, publishersMerged: result?.publishersMerged ?? 0 } });
   } catch (error) {
     logError('Claim guest collection', error as Error);
     sendError(res, 500, 'Could not move your guest collection to your account');

@@ -77,9 +77,14 @@ describe('claimGuestCollection', () => {
 
     const result = await claimGuestCollection(USER, token, moveEmbeddings);
 
-    expect(result).toEqual({ guestId: OLD_GUEST, publishersMoved: 2 });
-    const sqls = query.mock.calls.map(([sql]) => sql);
-    expect(sqls.some(sql => sql.includes('UPDATE "CollectionPublishers"'))).toBe(true);
+    expect(result).toEqual({ guestId: OLD_GUEST, publishersMoved: 2, publishersMerged: 2 });
+    const sqls: string[] = query.mock.calls.map(([sql]) => sql);
+    // Same-named titles and publishers are merged before the rest moves over
+    const mergeComics = sqls.findIndex(sql => sql.startsWith('UPDATE "ComicBooks"'));
+    const moveRest = sqls.findIndex(sql => sql.includes('UPDATE "CollectionPublishers" SET "collectpubUsersId"'));
+    expect(mergeComics).toBeGreaterThanOrEqual(0);
+    expect(moveRest).toBeGreaterThan(mergeComics);
+    expect(sqls.some(sql => sql.includes('lower(btrim('))).toBe(true);
     expect(sqls.some(sql => sql.includes('DELETE FROM "GuestSessions"'))).toBe(true);
     expect(moveEmbeddings).toHaveBeenCalledWith(OLD_GUEST, USER);
   });
