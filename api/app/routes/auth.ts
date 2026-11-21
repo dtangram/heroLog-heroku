@@ -6,6 +6,9 @@ import jwt from 'jsonwebtoken';
 import db from '../models';
 import * as authCtrl from '../controllers/auth';
 import * as validationCtrl from '../controllers/validation';
+import { requireAccount, AuthRequest } from '../middleware/auth';
+import { startGuestSession, claimGuestCollection } from '../services/guestSession';
+import { moveSearchData } from './search';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -321,6 +324,30 @@ router.post(
 );
 
 router.post('/googleLogin', authCtrl.googleLogin);
+
+// POST /auth/guest — a session for someone without an account.
+// Body: { anonymousId } from an older guest's browser, to keep their collection.
+router.post('/guest', async (req: Request, res: Response) => {
+  try {
+    const session = await startGuestSession(req.body?.anonymousId);
+    res.status(200).json({ success: true, data: session });
+  } catch (error) {
+    logError('Guest session', error as Error);
+    sendError(res, 500, 'Could not start a guest session');
+  }
+});
+
+// POST /auth/claim-guest — after signing in, move the guest collection
+// built in this browser to the account. Body: { guestToken }
+router.post('/claim-guest', requireAccount, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await claimGuestCollection(req.user!.id, req.body?.guestToken, moveSearchData);
+    res.status(200).json({ success: true, data: { publishersMoved: result?.publishersMoved ?? 0 } });
+  } catch (error) {
+    logError('Claim guest collection', error as Error);
+    sendError(res, 500, 'Could not move your guest collection to your account');
+  }
+});
 
 // ============================================================================
 // EXPORTS

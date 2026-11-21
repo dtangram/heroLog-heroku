@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { sessionHeaders } from '../API';
 
 // ============================================================================
 // INTERFACES
@@ -84,7 +85,8 @@ export const useSearch = (userId: string | undefined) => {
 
     try {
       const params = { q: trimmed };
-      const config = { params, signal: controller.signal };
+      // Searches need a session (signed in or guest); a collection is searchable only by its owner
+      const config = { params, signal: controller.signal, headers: await sessionHeaders() };
 
       const url =
         mode === 'collection' ? `${API_BASE}/api/search/search/${userId}`

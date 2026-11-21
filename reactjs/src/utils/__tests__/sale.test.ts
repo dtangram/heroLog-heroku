@@ -1,4 +1,4 @@
-import { formatPrice, validatePrice } from './sale';
+import { formatPrice, validatePrice } from '../sale';
 
 describe('formatPrice', () => {
   it.each([

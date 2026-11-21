@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
+import { sessionHeaders } from '../API';
 
 // ============================================================================
 // INTERFACES
@@ -31,7 +32,8 @@ export const useEnrichment = (userId: string | undefined) => {
     const interval = setInterval(async () => {
       try {
         const response = await axios.get(
-          `${API_BASE}/api/search/enrich-progress/${jobId}`
+          `${API_BASE}/api/search/enrich-progress/${jobId}`,
+          { headers: await sessionHeaders() }
         );
 
         if (response.data.status === 'Success') {
@@ -61,7 +63,9 @@ export const useEnrichment = (userId: string | undefined) => {
 
     try {
         const response = await axios.post(
-        `${API_BASE}/api/search/enrich-all/${userId}`
+        `${API_BASE}/api/search/enrich-all/${userId}`,
+        undefined,
+        { headers: await sessionHeaders() }
         );
 
         if (response.data.status === 'Empty' || response.data.status === 'Complete') {
@@ -99,7 +103,9 @@ export const useEnrichment = (userId: string | undefined) => {
             console.log('🚀 Starting enrichment for user:', userId);
 
             const response = await axios.post(
-            `${API_BASE}/api/search/enrich-all/${userId}`
+            `${API_BASE}/api/search/enrich-all/${userId}`,
+            undefined,
+            { headers: await sessionHeaders() }
             );
 
             if (
@@ -146,7 +152,9 @@ export const useEnrichment = (userId: string | undefined) => {
       console.log('🛑 Cancelling enrichment job:', enrichmentJob.id);
 
       await axios.post(
-        `${API_BASE}/api/search/enrich-cancel/${enrichmentJob.id}`
+        `${API_BASE}/api/search/enrich-cancel/${enrichmentJob.id}`,
+        undefined,
+        { headers: await sessionHeaders() }
       );
 
       setIsEnriching(false);

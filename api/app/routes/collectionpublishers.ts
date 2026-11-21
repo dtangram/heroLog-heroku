@@ -1,5 +1,6 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { optionalAuth, AuthRequest  } from '../middleware/auth';
+import { Router, Response, NextFunction } from 'express';
+import { requireIdentity, AuthRequest  } from '../middleware/auth';
+import { ownsBodyField, ownsRecord, publisherOwner } from '../middleware/ownership';
 import * as collectionpublisherCtrl from '../controllers/collectionpublishers';
 import * as validationCtrl from '../controllers/validation';
 
@@ -13,7 +14,8 @@ console.log('🔵 Current time:', new Date().toISOString());
 const router = Router();
 
 // Apply auth middleware to all routes
-router.use(optionalAuth);
+// A collection belongs to a signed-in user or a guest; only they can see or change it
+router.use(requireIdentity);
 
 // GET /collectionpublishers
 // Get collection publishers for authenticated user
@@ -37,21 +39,16 @@ router.post(
       res.status(500).json({ error: 'Middleware failed' });
     }
   },
+  ownsBodyField('collectpubUsersId'),
   validationCtrl.validate('createCollectionPublisher'),
   collectionpublisherCtrl.createCollectionPublisher
 );
-
-// TEST ENDPOINT - Remove after debugging
-router.get('/test-logging', (_req: Request, res: Response) => {
-  console.log('🧪 TEST ENDPOINT HIT');
-  console.log('Logging is working!');
-  return res.json({ message: 'Logging test successful' });
-});
 
 // GET /collectionpublishers/:id
 // Get a single publisher by ID (must belong to user)
 router.get(
   '/:id',
+  ownsRecord(publisherOwner),
   collectionpublisherCtrl.getOneById
 );
 
@@ -59,6 +56,8 @@ router.get(
 // Update a publisher (must belong to user)
 router.put(
   '/:id',
+  ownsRecord(publisherOwner),
+  ownsBodyField('collectpubUsersId', undefined, false),
   validationCtrl.validate('editCollectionPublisher'),
   collectionpublisherCtrl.updateCollectionPublisher
 );
@@ -67,6 +66,7 @@ router.put(
 // Delete a publisher (must belong to user)
 router.delete(
   '/:id',
+  ownsRecord(publisherOwner),
   validationCtrl.validate('deleteCollectionPublisher'),
   collectionpublisherCtrl.removeCollectionPublisher
 );

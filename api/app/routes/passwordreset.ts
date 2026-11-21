@@ -4,6 +4,7 @@ import debug from 'debug';
 import { Model, ModelStatic } from 'sequelize';
 import * as passwordResetCtrl from '../controllers/passwordreset';
 import * as validationCtrl from '../controllers/validation';
+import db from '../models';
 
 const jwt = require('jsonwebtoken');
 
@@ -81,8 +82,8 @@ const ENV = {
 // MODELS
 // ============================================================================
 
-const models = require('../models') as { Users: UserModel };
-const { Users } = models;
+// models/index.ts uses `export default`; require('../models') returned { default: db }
+const Users = (db as any).Users as UserModel;
 
 // ============================================================================
 // VALIDATION FUNCTIONS

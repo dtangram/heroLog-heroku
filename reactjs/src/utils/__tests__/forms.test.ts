@@ -1,4 +1,4 @@
-import { getSubmitLabel, toCoverType } from './forms';
+import { getSubmitLabel, toCoverType } from '../forms';
 
 describe('toCoverType', () => {
   it.each([

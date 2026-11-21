@@ -13,7 +13,12 @@ import { SLOW_SEARCH_MS } from '../../hooks/useSearch';
 
 jest.mock('axios');
 // The wish list store talks to the site API, not the search service
-jest.mock('../../API', () => ({ __esModule: true, default: { get: jest.fn(() => new Promise(() => {})), post: jest.fn() } }));
+jest.mock('../../API', () => ({
+  __esModule: true,
+  default: { get: jest.fn(() => new Promise(() => {})), post: jest.fn() },
+  // Search sends the session token with each request
+  sessionHeaders: jest.fn(async () => ({ Authorization: 'Bearer test-token' })),
+}));
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 /** A request we resolve by hand, to look at the page while a search is running. */

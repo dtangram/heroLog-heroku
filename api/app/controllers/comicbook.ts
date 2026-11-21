@@ -529,11 +529,11 @@ export const createComicBook = async (
       db.query(`
         SELECT 
           cbt."cbTitle",
-          u.id as "userId"
+          cp."collectpubUsersId" as "userId"
         FROM "ComicBookTitles" cbt
         JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
-        JOIN "Users" u ON cp."collectpubUsersId" = u.id
-        WHERE cbt.id = $1;
+        -- No join to "Users": guests' comics are searchable too
+        WHERE cbt.id = $1 AND cp."collectpubUsersId" IS NOT NULL;
       `, [comicbooktitlerelId]).then(result => {
         if (result.rows.length > 0) {
           const { cbTitle, userId } = result.rows[0];

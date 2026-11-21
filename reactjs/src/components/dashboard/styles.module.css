@@ -299,3 +299,97 @@ button a{
     font-size: 3.5rem;
   }
 }
+/* ============================================================
+   Guest notice: sign up or sign in to keep the collection.
+   Only shown when nobody is signed in. Mobile-first.
+   ============================================================ */
+.cbWrap .guestNotice{
+  background: #F4F9F3;
+  border: 2px solid #AECEAB;
+  border-left: 8px solid #770422;
+  border-radius: 6px;
+  margin: -30px auto 50px;
+  padding: 20px 18px;
+  text-align: left;
+  width: min(760px, 92%);
+}
+
+.cbWrap .guestNotice .guestTitle{
+  color: #770422;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0 0 8px;
+  text-align: left;
+}
+
+.cbWrap .guestNotice .guestText{
+  color: #2B2B2B;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.cbWrap .guestActions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cbWrap .guestActions a{
+  align-items: center;
+  border-radius: 4px;
+  display: inline-flex;
+  flex: 1 1 140px;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: bold;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 22px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cbWrap .guestActions .guestPrimary{
+  background: #770422;
+  color: #FFF;
+}
+
+.cbWrap .guestActions .guestPrimary:hover{
+  background: #5A0319;
+  color: #FFF;
+}
+
+.cbWrap .guestActions .guestSecondary{
+  background: transparent;
+  border: 2px solid #770422;
+  color: #770422;
+}
+
+.cbWrap .guestActions .guestSecondary:hover{
+  background: #770422;
+  color: #FFF;
+}
+
+.cbWrap .guestActions a:focus-visible{
+  outline: 3px solid #AECEAB;
+  outline-offset: 2px;
+}
+
+@media (min-width: 600px){
+  .cbWrap .guestNotice{
+    padding: 24px 28px;
+  }
+
+  .cbWrap .guestActions a{
+    flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .cbWrap .guestActions a{
+    transition: none;
+  }
+}
