@@ -6,7 +6,11 @@ type SaleListType = 'regular' | 'variant';
 
 // Properly typed model interface
 interface SaleListModel {
-  findAll: () => Promise<SaleListInstance[]>;
+  findAll: (options?: {
+    attributes?: string[];
+    order?: Array<[string, string]>;
+    limit?: number;
+  }) => Promise<SaleListInstance[]>;
 }
 
 interface UserModel {
@@ -150,5 +154,57 @@ export const getAllSaleLists = async (
     });
   } catch (error) {
     return handleError(res, error as Error, 500, 'getAllSaleLists');
+  }
+};
+
+// ============================================================================
+// LANDING PAGE PREVIEW (no sign-in)
+// ============================================================================
+
+/** What a signed-out visitor sees: the comic and its price, nothing about the seller */
+export const PREVIEW_FIELDS = [
+  'id',
+  'comicBookTitle',
+  'comicIssue',
+  'comicBookVolume',
+  'comicBookYear',
+  'comicBookPublisher',
+  'comicBookCover',
+  'type',
+  'price',
+  'comicCondition',
+];
+
+export const PREVIEW_DEFAULT = 8;
+export const PREVIEW_MAX = 12;
+
+/** ?limit= as a whole number from 1 to PREVIEW_MAX (default PREVIEW_DEFAULT) */
+export const previewLimit = (value: unknown): number => {
+  const n = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, PREVIEW_MAX) : PREVIEW_DEFAULT;
+};
+
+// GET /salelistALL/preview — the newest listings for the Landing page.
+// Public, so it leaves out seller usernames and account IDs.
+export const getSalePreview = async (
+  req: Request,
+  res: Response<ApiResponse<Partial<SaleListAttributes>[]>>
+): Promise<Response> => {
+  try {
+    const SaleLists = getSaleListModel();
+    const instances = await SaleLists.findAll({
+      attributes: PREVIEW_FIELDS,
+      order: [['createdAt', 'DESC']],
+      limit: previewLimit(req.query.limit),
+    });
+    const listings = instances.map(instance => instance.toJSON());
+
+    return res.status(200).json({
+      success: true,
+      data: listings,
+      count: listings.length
+    });
+  } catch (error) {
+    return handleError(res, error as Error, 500, 'getSalePreview');
   }
 };
