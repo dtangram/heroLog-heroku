@@ -6,10 +6,6 @@ import numberThree from '../../img/numberThree.png';
 import SalePreview from './salePreview/SalePreview';
 import styles from './styles.module.css'
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 interface SubscriptionPlan {
   id: string;
   badge: string;
@@ -24,10 +20,6 @@ interface Feature {
   id: string;
   description: string;
 }
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
 
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
@@ -63,10 +55,6 @@ const FEATURES: Feature[] = [
   { id: 'duplicates', description: 'No purchasing duplicate comics' },
   { id: 'trade', description: 'Buy, sell and trade comic books' }
 ];
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
 
 const Landing = () => {
   // Scroll to top on mount
