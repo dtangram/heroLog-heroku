@@ -91,6 +91,18 @@
   margin-bottom: 20px;
 }
 
+/* Shown while comics are being prepared for My Collection search */
+.catchUp {
+  background: #FFF;
+  border-left: 6px solid #770422;
+  border-radius: 4px;
+  color: #2B2B2B;
+  font-size: 1.4rem;
+  line-height: 1.5;
+  margin: -8px 0 20px;
+  padding: 10px 14px;
+}
+
 .searchBar {
   display: flex;
   flex-direction: column;

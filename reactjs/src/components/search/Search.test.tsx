@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { applyMiddleware, combineReducers, legacy_createStore as createStore } from 'redux';
@@ -175,5 +175,44 @@ describe('Search results and the Wish List', () => {
 
     expect(screen.getByRole('button', { name: 'Add Detective Comics #27 to your Wish List' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add batman #497/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('Collection search when the AI service is unavailable', () => {
+  beforeAll(() => {
+    window.scrollTo = jest.fn();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (mockedAxios.isCancel as unknown as jest.Mock).mockReturnValue(false);
+    (mockedAxios.isAxiosError as unknown as jest.Mock).mockReturnValue(true);
+    // resetAllMocks also clears the global uuid mock, so give Search an ID directly
+    localStorage.setItem('id', '11111111-2222-4333-8444-555555555555');
+  });
+
+  afterEach(() => localStorage.clear());
+
+  it('explains that only collection search is down, instead of a connection error', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockedAxios.get.mockRejectedValue({ response: { status: 503 } });
+    renderSearch();
+
+    await act(async () => search('Batman'));
+
+    expect(screen.getByText(/searching your collection is unavailable right now/i)).toBeInTheDocument();
+    expect(screen.queryByText(/failed to connect/i)).not.toBeInTheDocument();
+  });
+
+  it('shows how many comics are still being prepared for My Collection search', async () => {
+    mockedAxios.post.mockResolvedValue({ data: { status: 'Success', job_id: 4, total_comics: 12 } });
+    mockedAxios.get.mockResolvedValue({
+      data: { status: 'Success', job: { id: 4, total_comics: 12, processed_comics: 5, percentage: 42, status: 'running' } },
+    });
+    renderSearch();
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Getting 12 comics ready for search (5 of 12 done)')
+    );
   });
 });

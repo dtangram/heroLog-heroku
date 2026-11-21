@@ -113,30 +113,74 @@ Return exactly 10 results. Example of exact format to return:
 // BACKGROUND ENRICHMENT PROCESSOR
 // ============================================================================
 
-const processEnrichmentJob = async (userId: string, jobId: number): Promise<void> => {
-  const BATCH_SIZE = 10;
-  let offset = 0;
+/**
+ * OpenAI refuses with 429 when the account is out of credits
+ * ("insufficient_quota") or busy. Retrying the rest of a batch then only
+ * fails again, so a job stops and the next visit to Search starts over.
+ */
+export const isOpenAIUnavailable = (error: unknown): boolean => {
+  const e = error as { status?: number; code?: string; error?: { type?: string } } | undefined;
+  return e?.status === 429 || e?.code === 'insufficient_quota' || e?.error?.type === 'insufficient_quota';
+};
+
+/**
+ * Which of the owner's comics have no search data yet. Also removes search
+ * data for comics that no longer exist, so deleted comics stop turning up in
+ * My Collection results.
+ */
+export const findComicsMissingSearchData = async (
+  userId: string
+): Promise<{ total: number; missingIds: string[] }> => {
+  const owned = await getHerokuDb().query(`
+    SELECT cb.id::text AS id
+    FROM "ComicBooks" cb
+    JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
+    JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
+    WHERE cp."collectpubUsersId" = $1;
+  `, [userId]);
+  const ownedIds = owned.rows.map((row: { id: string }) => row.id);
+
+  const prepared = await getVectorDb().query(
+    'SELECT comic_id FROM comic_embeddings WHERE user_id = $1;',
+    [userId]
+  );
+  const preparedIds = new Set<string>(prepared.rows.map((row: { comic_id: string }) => String(row.comic_id)));
+
+  const ownedSet = new Set(ownedIds);
+  const staleIds = Array.from(preparedIds).filter(id => !ownedSet.has(id));
+  if (staleIds.length > 0) {
+    await getVectorDb().query(
+      'DELETE FROM comic_embeddings WHERE user_id = $1 AND comic_id = ANY($2::text[]);',
+      [userId, staleIds]
+    );
+  }
+
+  return { total: ownedIds.length, missingIds: ownedIds.filter(id => !preparedIds.has(id)) };
+};
+
+const BATCH_SIZE = 10;
+
+/**
+ * Prepares the given comics for My Collection search: Claude writes a
+ * description, OpenAI turns it into an embedding. Works through the list by
+ * ID (the old offset-based loop skipped every other batch), and stops early if
+ * OpenAI is unavailable instead of failing every remaining comic.
+ */
+const processEnrichmentJob = async (userId: string, jobId: number, comicIds: string[]): Promise<void> => {
+  const setStatus = (status: 'completed' | 'failed') =>
+    getVectorDb().query(
+      `UPDATE enrichment_jobs SET status = $2, completed_at = CURRENT_TIMESTAMP WHERE id = $1;`,
+      [jobId, status]
+    );
 
   try {
-    while (true) {
-      // Check if job was cancelled
-      const jobCheck = await getVectorDb().query(`
-        SELECT status FROM enrichment_jobs WHERE id = $1;
-      `, [jobId]);
-
+    for (let start = 0; start < comicIds.length; start += BATCH_SIZE) {
+      const jobCheck = await getVectorDb().query('SELECT status FROM enrichment_jobs WHERE id = $1;', [jobId]);
       if (jobCheck.rows[0]?.status === 'cancelled') {
         console.log(`🛑 Job ${jobId} cancelled`);
-        break;
+        return;
       }
 
-      // Get already enriched comic IDs from Stackhero
-      const enrichedResult = await getVectorDb().query(`
-        SELECT comic_id FROM comic_embeddings WHERE user_id = $1;
-      `, [userId]);
-
-      const enrichedIds = enrichedResult.rows.map((row: any) => row.comic_id);
-
-      // Fetch next batch from Heroku excluding already enriched comics
       const comicsResult = await getHerokuDb().query(`
         SELECT 
           cb.id,
@@ -150,26 +194,9 @@ const processEnrichmentJob = async (userId: string, jobId: number): Promise<void
         FROM "ComicBooks" cb
         JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
         JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
-        WHERE cp."collectpubUsersId" = $1
-        ${enrichedIds.length > 0
-          ? `AND cb.id::text NOT IN (${enrichedIds.map((_: any, i: number) => `$${i + 2}`).join(',')})`
-          : ''
-        }
-        LIMIT $${enrichedIds.length + 2} OFFSET $${enrichedIds.length + 3};
-      `, [userId, ...enrichedIds, BATCH_SIZE, offset]);
+        WHERE cp."collectpubUsersId" = $1 AND cb.id::text = ANY($2::text[]);
+      `, [userId, comicIds.slice(start, start + BATCH_SIZE)]);
 
-      // No more comics to process
-      if (comicsResult.rows.length === 0) {
-        await getVectorDb().query(`
-          UPDATE enrichment_jobs
-          SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-          WHERE id = $1;
-        `, [jobId]);
-        console.log(`✅ Job ${jobId} completed`);
-        break;
-      }
-
-      // Process each comic in batch
       for (const comic of comicsResult.rows) {
         const { id, title, author, penciler, year, comicIssue, volume, cbTitle } = comic;
 
@@ -220,29 +247,27 @@ Return only the description, no additional text.`
             embeddingStr
           ]);
 
-          // Update progress in Stackhero
-          await getVectorDb().query(`
-            UPDATE enrichment_jobs
-            SET processed_comics = processed_comics + 1
-            WHERE id = $1;
-          `, [jobId]);
+          await getVectorDb().query(
+            'UPDATE enrichment_jobs SET processed_comics = processed_comics + 1 WHERE id = $1;',
+            [jobId]
+          );
 
           console.log(`✅ Enriched: ${cbTitle} #${comicIssue}`);
-
         } catch (comicError) {
+          if (isOpenAIUnavailable(comicError)) {
+            console.error(`🛑 Job ${jobId} stopped: OpenAI is unavailable (out of credits or rate limited)`);
+            await setStatus('failed');
+            return;
+          }
           console.error(`❌ Failed to enrich comic ${id}:`, comicError);
         }
       }
-
-      offset += BATCH_SIZE;
     }
 
+    await setStatus('completed');
+    console.log(`✅ Job ${jobId} completed`);
   } catch (error) {
-    await getVectorDb().query(`
-      UPDATE enrichment_jobs
-      SET status = 'failed', completed_at = CURRENT_TIMESTAMP
-      WHERE id = $1;
-    `, [jobId]);
+    await setStatus('failed');
     console.error(`❌ Job ${jobId} failed:`, error);
   }
 };
@@ -389,6 +414,11 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
 
   } catch (error) {
     console.error('❌ Search error:', error);
+    if (isOpenAIUnavailable(error)) {
+      // Out of OpenAI credits or rate limited: not the visitor's fault, and temporary
+      res.status(503).json({ status: 'Unavailable', error: 'Collection search is temporarily unavailable' });
+      return;
+    }
     res.status(500).json({ status: 'Failed', error: String(error) });
   }
 });
@@ -457,41 +487,42 @@ router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, 
 });
 
 // Start enrichment job
+/** A job started this recently and still "running" is assumed to be alive */
+const RUNNING_JOB_WINDOW_MINUTES = 30;
+
+// Prepare any of the owner's comics that are missing search data.
+// The Search page calls this on every visit, so it's cheap when nothing is
+// missing and never starts a second job while one is running.
 router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
 
   try {
-    const countResult = await getHerokuDb().query(`
-      SELECT COUNT(*) as total
-      FROM "ComicBooks" cb
-      JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
-      JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
-      WHERE cp."collectpubUsersId" = $1;
-    `, [userId]);
+    const { total, missingIds } = await findComicsMissingSearchData(userId);
 
-    const totalComics = parseInt(countResult.rows[0].total);
-
-    // After getting totalComics count add this check
-    const alreadyEnrichedResult = await getVectorDb().query(`
-      SELECT COUNT(*) as total
-      FROM comic_embeddings
-      WHERE user_id = $1;
-    `, [userId]);
-
-    const alreadyEnriched = parseInt(alreadyEnrichedResult.rows[0].total);
-
-    if (alreadyEnriched >= totalComics) {
-      res.json({
-        status: 'Complete',
-        message: 'Collection already fully enriched'
-      });
+    if (total === 0) {
+      res.json({ status: 'Empty', message: 'No comics found in your collection. Add some comics first!' });
       return;
     }
 
-    if (totalComics === 0) {
+    if (missingIds.length === 0) {
+      res.json({ status: 'Complete', message: 'Collection already fully enriched' });
+      return;
+    }
+
+    const running = await getVectorDb().query(`
+      SELECT id, total_comics FROM enrichment_jobs
+      WHERE user_id = $1 AND status = 'running'
+        AND started_at > NOW() - ($2 || ' minutes')::interval
+      ORDER BY started_at DESC
+      LIMIT 1;
+    `, [userId, String(RUNNING_JOB_WINDOW_MINUTES)]);
+
+    if (running.rows.length > 0) {
       res.json({
-        status: 'Empty',
-        message: 'No comics found in your collection. Add some comics first!'
+        status: 'Running',
+        message: 'Enrichment job already running',
+        job_id: running.rows[0].id,
+        total_comics: running.rows[0].total_comics
       });
       return;
     }
@@ -500,11 +531,11 @@ router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res
       INSERT INTO enrichment_jobs (user_id, total_comics, status)
       VALUES ($1, $2, 'running')
       RETURNING id;
-    `, [userId, totalComics]);
+    `, [userId, missingIds.length]);
 
     const jobId = jobResult.rows[0].id;
 
-    processEnrichmentJob(userId, jobId).catch(err => {
+    processEnrichmentJob(userId, jobId, missingIds).catch(err => {
       console.error('❌ Enrichment job failed:', err);
     });
 
@@ -512,7 +543,7 @@ router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res
       status: 'Success',
       message: 'Enrichment job started',
       job_id: jobId,
-      total_comics: totalComics
+      total_comics: missingIds.length
     });
 
   } catch (error) {
