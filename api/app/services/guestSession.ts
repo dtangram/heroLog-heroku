@@ -81,8 +81,50 @@ export const readGuestToken = (token: unknown): string | null => {
 
 export interface ClaimResult {
   guestId: string;
+  /** Guest publishers the account didn't have, moved over whole */
   publishersMoved: number;
+  /** Guest publishers merged into the account's publisher of the same name */
+  publishersMerged: number;
 }
+
+/** Names match ignoring case and surrounding spaces: "Marvel" = " marvel " */
+const SAME_NAME = (a: string, b: string) => `lower(btrim(${a})) = lower(btrim(${b}))`;
+
+/** Each guest publisher paired with the account's publisher of the same name (the oldest, if several) */
+const PUBLISHER_PAIRS = `
+  SELECT DISTINCT ON (g.id) g.id AS guest_pub, a.id AS account_pub
+    FROM "CollectionPublishers" g
+    JOIN "CollectionPublishers" a
+      ON a."collectpubUsersId" = :userId AND ${SAME_NAME('a."publisherName"', 'g."publisherName"')}
+   WHERE g."collectpubUsersId" = :guestId
+   ORDER BY g.id, a."createdAt"`;
+
+/** Inside those publishers, each guest title paired with the account's title of the same name */
+const TITLE_PAIRS = `
+  SELECT DISTINCT ON (gt.id) gt.id AS guest_title, at.id AS account_title
+    FROM (${PUBLISHER_PAIRS}) pp
+    JOIN "ComicBookTitles" gt ON gt."collectpubId" = pp.guest_pub
+    JOIN "ComicBookTitles" at
+      ON at."collectpubId" = pp.account_pub AND ${SAME_NAME('at."cbTitle"', 'gt."cbTitle"')}
+   ORDER BY gt.id, at."createdAt"`;
+
+/**
+ * Moves the guest's collection into the account, merging rather than
+ * duplicating: a guest "Marvel" joins the account's "Marvel", and a guest
+ * "Batman" under it joins the account's "Batman", comics and all.
+ */
+const MERGE_STEPS = [
+  // 1. Comics in a matching title move to the account's title
+  `UPDATE "ComicBooks" cb SET "comicbooktitlerelId" = tp.account_title, "updatedAt" = NOW()
+     FROM (${TITLE_PAIRS}) tp
+    WHERE cb."comicbooktitlerelId" = tp.guest_title`,
+  // 2. ...leaving those guest titles empty
+  `DELETE FROM "ComicBookTitles" WHERE id IN (SELECT guest_title FROM (${TITLE_PAIRS}) tp)`,
+  // 3. Other titles in a matching publisher move to the account's publisher
+  `UPDATE "ComicBookTitles" t SET "collectpubId" = pp.account_pub, "updatedAt" = NOW()
+     FROM (${PUBLISHER_PAIRS}) pp
+    WHERE t."collectpubId" = pp.guest_pub`,
+];
 
 /** Search embeddings live in a separate database; moved by routes/search.ts. */
 export type MoveEmbeddings = (fromId: string, toId: string) => Promise<void>;
@@ -99,11 +141,24 @@ export const claimGuestCollection = async (
   const guestId = readGuestToken(guestToken);
   if (!guestId || guestId === userId) return null;
 
-  const publishersMoved = await db.sequelize.transaction(async (transaction: Transaction) => {
+  const counts = await db.sequelize.transaction(async (transaction: Transaction) => {
+    const options = { replacements: { userId, guestId }, transaction };
+
+    for (const sql of MERGE_STEPS) {
+      await db.sequelize.query(sql, options);
+    }
+
+    // 4. The matching guest publishers are now empty
+    const [, merged] = await db.sequelize.query(
+      `DELETE FROM "CollectionPublishers" WHERE id IN (SELECT guest_pub FROM (${PUBLISHER_PAIRS}) pp)`,
+      options
+    );
+
+    // 5. Publishers the account didn't have move over whole
     const [, moved] = await db.sequelize.query(
       `UPDATE "CollectionPublishers" SET "collectpubUsersId" = :userId, "updatedAt" = NOW()
         WHERE "collectpubUsersId" = :guestId`,
-      { replacements: { userId, guestId }, transaction }
+      options
     );
 
     // Both collections changed, so their saved Intel analyses are out of date
@@ -117,7 +172,8 @@ export const claimGuestCollection = async (
       transaction,
     });
 
-    return Number((moved as any)?.rowCount ?? moved ?? 0);
+    const rowCount = (result: unknown) => Number((result as any)?.rowCount ?? result ?? 0);
+    return { publishersMoved: rowCount(moved), publishersMerged: rowCount(merged) };
   });
 
   if (moveEmbeddings) {
@@ -129,5 +185,5 @@ export const claimGuestCollection = async (
     }
   }
 
-  return { guestId, publishersMoved };
+  return { guestId, ...counts };
 };
