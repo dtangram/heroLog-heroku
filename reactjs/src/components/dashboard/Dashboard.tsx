@@ -106,7 +106,7 @@ const Dashboard = ({
           </h2>
           <p className={styles.guestText}>
             You&apos;re using Hero-Log as a guest, so your collection is saved only in this browser.
-            Clearing your browser data or switching devices will lose it. Sign up or sign in, and
+            Therefore, you will lose your collection if you clear your browser data or switch devices. Sign up or sign in, and
             everything you&apos;ve added moves to your account.
           </p>
           <nav className={styles.guestActions} aria-label="Save your collection">
