@@ -9,6 +9,7 @@ import { countLabel } from '../../utils/collection';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import { showAlert, showConfirm } from '../dialog';
+import type { APICallResult } from '../../store/helpers/callAPIMiddleware';
 import styles from './styles.module.css';
 
 const Dashboard = ({ 
@@ -56,19 +57,15 @@ const Dashboard = ({
     
     if (!confirmed) return;
 
-    try {
-      deletePublisher?.(id);
-      // Refetch after delete for updated list
-      fetchPublishers?.();
-    } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'An unexpected error occurred';
-      
-      console.error('Failed to delete publisher:', errorMessage);
+    // Wait for the delete to finish. The list updates itself when it does;
+    // fetching the list at the same time could bring the publisher back.
+    const outcome = (await (deletePublisher?.(id) as unknown as Promise<APICallResult | undefined>)) ?? { ok: false, error: '' };
+
+    if (!outcome.ok) {
+      console.error('Failed to delete publisher:', outcome.error);
       showAlert('Something went wrong while deleting this publisher. Please try again.', { title: "The publisher wasn't deleted" });
     }
-  }, [deletePublisher, fetchPublishers]);
+  }, [deletePublisher]);
 
   // Totals across every publisher, for the summary under the heading
   const totals = publishers.reduce(
