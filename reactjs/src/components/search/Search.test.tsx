@@ -116,7 +116,7 @@ describe('Search page while a search runs', () => {
         jest.advanceTimersByTime(SLOW_SEARCH_MS);
       });
 
-      expect(screen.getByRole('status')).toHaveTextContent('can take up to 20 seconds');
+      expect(screen.getByRole('status')).toHaveTextContent('can take up to 30 seconds');
     } finally {
       jest.useRealTimers();
     }

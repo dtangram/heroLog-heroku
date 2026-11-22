@@ -26,9 +26,9 @@ describe('isOpenAIUnavailable', () => {
   });
 });
 describe('search settings', () => {
-  it('asks Haiku for 20 comics and shows up to 20 close matches from the collection', () => {
+  it('asks Haiku for 40 comics and shows up to 20 close matches from the collection', () => {
     expect(SEARCH_MODEL).toBe('claude-haiku-5-5');
-    expect(SEARCH_RESULT_COUNT).toBe(20);
+    expect(SEARCH_RESULT_COUNT).toBe(40);
     expect(COLLECTION_RESULT_LIMIT).toBe(20);
     expect(COLLECTION_MIN_SIMILARITY).toBeGreaterThan(0);
     expect(COLLECTION_MIN_SIMILARITY).toBeLessThan(1);

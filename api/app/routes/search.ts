@@ -89,11 +89,14 @@ const generateEmbedding = async (text: string): Promise<number[]> => {
 /** All Comics and Find Missing: Haiku is far cheaper than Opus and quick enough for a list of comics */
 export const SEARCH_MODEL = 'claude-haiku-5-5';
 
-/** How many comics All Comics and Find Missing ask for */
-export const SEARCH_RESULT_COUNT = 20;
+/**
+ * All Comics: most comics to show. A storyline (Knightfall, say) can run to
+ * dozens of issues across several series.
+ */
+export const SEARCH_RESULT_COUNT = 40;
 
-/** Room for 20 results (about 55 tokens each) without the list being cut off */
-const SEARCH_MAX_TOKENS = 4000;
+/** Room for 40 short results, plus any thinking the model does first */
+const SEARCH_MAX_TOKENS = 8000;
 
 /**
  * Find Missing: most comics to suggest. Higher than All Comics because a
@@ -199,13 +202,17 @@ You are a comic book expert. A user is searching for: "${q}"
 Return ONLY a JSON array with no other text, no markdown, no backticks, no explanation.
 Just the raw JSON array starting with [ and ending with ]
 
+If the search names a storyline, event or run, list every issue in it, including tie-ins in other series,
+in publication order. Otherwise list the best matches first. Aim for ${SEARCH_RESULT_COUNT} comics;
+return fewer only if fewer comics genuinely match.
+
 Each item must have exactly these fields:
-- title: series name and issue number
-- description: 1-2 sentences about tone and themes only
+- title: series name and issue number, written like "Batman #497"
+- description: one short sentence about tone and themes only
 - publisher: publisher name
 - year: publication year as a string
 
-Return up to ${SEARCH_RESULT_COUNT} results that match the search, best match first. Example of exact format to return:
+Example of exact format to return:
 [{"title": "Batman #497", "description": "A dark psychological thriller.", "publisher": "DC Comics", "year": "1993"}]`;
 
 /**
@@ -232,7 +239,7 @@ Each item must have exactly these fields:
 - publisher: publisher name
 - year: publication year as a string
 
-Return up to ${MISSING_RESULT_COUNT} comics. Example of exact format to return:
+Aim for ${MISSING_RESULT_COUNT} comics; return fewer only if fewer that they're missing genuinely match. Example of exact format to return:
 [{"title": "Detective Comics #659", "description": "A gritty street-level tie-in.", "publisher": "DC Comics", "year": "1993"}]`;
 
 // ============================================================================
