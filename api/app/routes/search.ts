@@ -95,6 +95,18 @@ export const SEARCH_RESULT_COUNT = 20;
 /** Room for 20 results (about 55 tokens each) without the list being cut off */
 const SEARCH_MAX_TOKENS = 4000;
 
+/**
+ * Find Missing: most comics to suggest. Higher than All Comics because a
+ * storyline (Knightfall, say) can run to dozens of issues across several series.
+ */
+export const MISSING_RESULT_COUNT = 40;
+
+/** Room for 40 short results, plus any thinking the model does first */
+const MISSING_MAX_TOKENS = 8000;
+
+/** The most owned comics listed in the Find Missing request (about 12,000 tokens; well under a cent on Haiku) */
+const MISSING_OWNED_LIMIT = 3000;
+
 /** My Collection: most matches to show */
 export const COLLECTION_RESULT_LIMIT = 20;
 
@@ -132,12 +144,42 @@ export const parseComicList = (text: string): any[] => {
   return list.filter(item => item && typeof item.title === 'string');
 };
 
-/** Ask Claude for comics matching a search, and log why if none come back */
-const askClaudeForComics = async (q: string): Promise<any[]> => {
+/**
+ * A comic's title in one form, so "Batman #0491" and "batman  #491" are the
+ * same comic. Exact comparison only: "Batman #49" is not "Batman #491".
+ */
+export const normalizeTitle = (title: string): string =>
+  String(title)
+    .toLowerCase()
+    .replace(/^the\s+/, '')
+    .replace(/#\s*0*(\d)/g, '#$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/**
+ * The owned comics, grouped by series to keep the request short:
+ * "Batman: #491, #492, #497".
+ */
+export const summarizeOwned = (titles: string[]): string => {
+  const series = new Map<string, string[]>();
+  for (const title of titles) {
+    const at = title.lastIndexOf(' #');
+    const name = at === -1 ? title : title.slice(0, at);
+    const issue = at === -1 ? '' : title.slice(at + 1);
+    if (!series.has(name)) series.set(name, []);
+    if (issue) series.get(name)!.push(issue);
+  }
+  return [...series.entries()]
+    .map(([name, issues]) => (issues.length ? `${name}: ${issues.join(', ')}` : name))
+    .join('\n');
+};
+
+/** Ask Claude for comics, and log why if none come back */
+const askClaudeForComics = async (q: string, prompt = comicPrompt(q), maxTokens = SEARCH_MAX_TOKENS): Promise<any[]> => {
   const message = await getAnthropic().messages.create({
     model: SEARCH_MODEL,
-    max_tokens: SEARCH_MAX_TOKENS,
-    messages: [{ role: 'user', content: comicPrompt(q) }]
+    max_tokens: maxTokens,
+    messages: [{ role: 'user', content: prompt }]
   });
 
   const text = replyText(message.content);
@@ -165,6 +207,33 @@ Each item must have exactly these fields:
 
 Return up to ${SEARCH_RESULT_COUNT} results that match the search, best match first. Example of exact format to return:
 [{"title": "Batman #497", "description": "A dark psychological thriller.", "publisher": "DC Comics", "year": "1993"}]`;
+
+/**
+ * Find Missing: Claude is told what the collector owns, so every suggestion
+ * is one they're missing. Asking for the whole storyline in publication order
+ * gives much the same list each time, instead of a different handful.
+ */
+const missingPrompt = (q: string, owned: string): string => `
+You are a comic book expert. A collector is searching for: "${q}"
+
+These are the comics they already own:
+${owned || '(none yet)'}
+
+List the comics that match the search which they do NOT own. If the search names a storyline, event or run,
+list every issue in it that they are missing, including tie-ins in other series, in publication order.
+Otherwise list the best matches first. Never include a comic from the owned list above.
+
+Return ONLY a JSON array with no other text, no markdown, no backticks, no explanation.
+Just the raw JSON array starting with [ and ending with ]
+
+Each item must have exactly these fields:
+- title: series name and issue number, written like "Batman #497"
+- description: one short sentence about tone and themes only
+- publisher: publisher name
+- year: publication year as a string
+
+Return up to ${MISSING_RESULT_COUNT} comics. Example of exact format to return:
+[{"title": "Detective Comics #659", "description": "A gritty street-level tie-in.", "publisher": "DC Comics", "year": "1993"}]`;
 
 // ============================================================================
 // BACKGROUND ENRICHMENT PROCESSOR
@@ -506,22 +575,28 @@ router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, 
   const { q } = req.query as { q: string };
 
   try {
-    const allResults = await askClaudeForComics(q);
-
     const ownedResult = await getVectorDb().query(`
-      SELECT LOWER(title) FROM comic_embeddings
-      WHERE user_id = $1;
-    `, [userId]);
+      SELECT DISTINCT title FROM comic_embeddings
+      WHERE user_id = $1
+      ORDER BY title
+      LIMIT $2;
+    `, [userId, MISSING_OWNED_LIMIT]);
 
-    const ownedTitles = ownedResult.rows.map((row: any) => row.lower);
+    const ownedTitles: string[] = ownedResult.rows.map((row: any) => String(row.title));
+    const owned = new Set(ownedTitles.map(normalizeTitle));
 
-    const results = allResults.map(result => {
-      const titleLower = result.title.toLowerCase();
-      const alreadyOwned = ownedTitles.some(
-        (owned: string) => owned.includes(titleLower) || titleLower.includes(owned)
-      );
-      return { ...result, already_owned: alreadyOwned, source: 'claude' };
-    });
+    const suggestions = await askClaudeForComics(q, missingPrompt(q, summarizeOwned(ownedTitles)), MISSING_MAX_TOKENS);
+
+    // Only comics they don't own, each once (Claude can slip an owned one in)
+    const seen = new Set<string>();
+    const results = suggestions
+      .filter(result => {
+        const key = normalizeTitle(result.title);
+        if (owned.has(key) || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map(result => ({ ...result, already_owned: false, source: 'claude' }));
 
     res.json({ status: 'Success', query: q, results });
 

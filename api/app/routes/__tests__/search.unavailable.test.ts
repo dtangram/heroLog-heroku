@@ -5,6 +5,8 @@ import {
   SEARCH_MODEL,
   SEARCH_RESULT_COUNT,
   isOpenAIUnavailable,
+  normalizeTitle,
+  summarizeOwned,
   parseComicList,
   replyText,
 } from '../search';
@@ -49,5 +51,23 @@ describe('reading the comics out of Claude\'s reply', () => {
   it('fails loudly instead of showing "no comics" when there is no list', () => {
     expect(() => parseComicList('')).toThrow();
     expect(() => parseComicList('Sorry, I cannot help with that.')).toThrow();
+  });
+});
+
+describe('matching owned comics', () => {
+  it('treats small differences in how a title is written as the same comic', () => {
+    expect(normalizeTitle('Batman #0491')).toBe(normalizeTitle('batman  #491'));
+    expect(normalizeTitle('The Amazing Spider-Man #300')).toBe(normalizeTitle('Amazing Spider-Man #300'));
+  });
+
+  it('never treats one issue as another', () => {
+    expect(normalizeTitle('Batman #49')).not.toBe(normalizeTitle('Batman #491'));
+    expect(normalizeTitle('Batman #5')).not.toBe(normalizeTitle('Batman #500'));
+  });
+
+  it('lists the owned comics by series', () => {
+    expect(summarizeOwned(['Batman #491', 'Batman #492', 'Detective Comics #659'])).toBe(
+      'Batman: #491, #492\nDetective Comics: #659'
+    );
   });
 });
