@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 import { autoEnrichComic } from '../utils/autoEnrich';
+import { clearComicSearchData } from '../routes/search';
 
 // Comic book type literal
 type ComicBookType = 'regular' | 'variant';
@@ -710,6 +711,9 @@ export const updateComicBook = async (
     }
     
     console.log('Comic book updated successfully');
+
+    // The search data describes the comic as it was; Search prepares it again
+    clearComicSearchData(id).catch(error => console.error('Could not clear search data:', error));
     
     return res.status(200).json({
       success: true,

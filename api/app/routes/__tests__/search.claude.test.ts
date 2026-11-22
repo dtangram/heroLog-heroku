@@ -47,7 +47,7 @@ it('All Comics shows the comics when the reply starts with a thinking block', as
 
 it('Find Missing tells Claude what is owned and shows only the comics that are missing', async () => {
   create.mockResolvedValue(thinkingFirst);
-  query.mockResolvedValue({ rows: [{ title: 'Batman #497' }, { title: 'Batman #49' }] });
+  query.mockResolvedValue({ rows: [{ cbTitle: 'Batman', comicIssue: '497' }, { cbTitle: 'Batman', comicIssue: '49' }] });
 
   const res = await request(app).get('/api/search/search-missing/user-1').query({ q: 'Knightfall saga' });
 
