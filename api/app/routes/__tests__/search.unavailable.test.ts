@@ -1,5 +1,11 @@
 /// <reference types="jest" />
-import { isOpenAIUnavailable } from '../search';
+import {
+  COLLECTION_MIN_SIMILARITY,
+  COLLECTION_RESULT_LIMIT,
+  SEARCH_MODEL,
+  SEARCH_RESULT_COUNT,
+  isOpenAIUnavailable,
+} from '../search';
 
 describe('isOpenAIUnavailable', () => {
   it('recognizes an account out of credits and a rate limit', () => {
@@ -13,5 +19,14 @@ describe('isOpenAIUnavailable', () => {
     expect(isOpenAIUnavailable(new Error('connection refused'))).toBe(false);
     expect(isOpenAIUnavailable({ status: 500 })).toBe(false);
     expect(isOpenAIUnavailable(undefined)).toBe(false);
+  });
+});
+describe('search settings', () => {
+  it('asks Haiku for 20 comics and shows up to 20 close matches from the collection', () => {
+    expect(SEARCH_MODEL).toBe('claude-haiku-5-5');
+    expect(SEARCH_RESULT_COUNT).toBe(20);
+    expect(COLLECTION_RESULT_LIMIT).toBe(20);
+    expect(COLLECTION_MIN_SIMILARITY).toBeGreaterThan(0);
+    expect(COLLECTION_MIN_SIMILARITY).toBeLessThan(1);
   });
 });

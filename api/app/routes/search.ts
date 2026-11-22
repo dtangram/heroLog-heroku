@@ -82,6 +82,29 @@ const generateEmbedding = async (text: string): Promise<number[]> => {
   return response.data[0].embedding;
 };
 
+// ============================================================================
+// SEARCH SETTINGS
+// ============================================================================
+
+/** All Comics and Find Missing: Haiku is far cheaper than Opus and quick enough for a list of comics */
+export const SEARCH_MODEL = 'claude-haiku-5-5';
+
+/** How many comics All Comics and Find Missing ask for */
+export const SEARCH_RESULT_COUNT = 20;
+
+/** Room for 20 results (about 55 tokens each) without the list being cut off */
+const SEARCH_MAX_TOKENS = 4000;
+
+/** My Collection: most matches to show */
+export const COLLECTION_RESULT_LIMIT = 20;
+
+/**
+ * My Collection: weakest match to show (0–1, shown on the page as "% match").
+ * Below this the comic has little to do with what was typed. Raise it for
+ * fewer, closer matches; lower it to see more.
+ */
+export const COLLECTION_MIN_SIMILARITY = 0.25;
+
 const parseClaudeJSON = (text: string): any[] => {
   let cleaned = text.trim();
   if (cleaned.startsWith('```')) {
@@ -106,7 +129,7 @@ Each item must have exactly these fields:
 - publisher: publisher name
 - year: publication year as a string
 
-Return exactly 10 results. Example of exact format to return:
+Return up to ${SEARCH_RESULT_COUNT} results that match the search, best match first. Example of exact format to return:
 [{"title": "Batman #497", "description": "A dark psychological thriller.", "publisher": "DC Comics", "year": "1993"}]`;
 
 // ============================================================================
@@ -399,9 +422,11 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
         1 - (embedding <=> $1::vector) as similarity
       FROM comic_embeddings
       WHERE user_id = $2
+        AND embedding IS NOT NULL
+        AND 1 - (embedding <=> $1::vector) >= $3
       ORDER BY embedding <=> $1::vector
-      LIMIT 5;
-    `, [embeddingStr, userId]);
+      LIMIT $4;
+    `, [embeddingStr, userId, COLLECTION_MIN_SIMILARITY, COLLECTION_RESULT_LIMIT]);
 
     const results = result.rows.map(row => ({
       comic_id: row.comic_id,
@@ -429,8 +454,8 @@ router.get('/search-all', async (req: Request, res: Response) => {
 
   try {
     const message = await getAnthropic().messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2000,
+      model: SEARCH_MODEL,
+      max_tokens: SEARCH_MAX_TOKENS,
       messages: [{ role: 'user', content: comicPrompt(q) }]
     });
 
@@ -455,8 +480,8 @@ router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, 
 
   try {
     const message = await getAnthropic().messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 2000,
+      model: SEARCH_MODEL,
+      max_tokens: SEARCH_MAX_TOKENS,
       messages: [{ role: 'user', content: comicPrompt(q) }]
     });
 
