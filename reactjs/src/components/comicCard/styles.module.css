@@ -5,7 +5,7 @@
   list-style: none;
   margin: 0 auto 80px;
   padding: 24px 0;
-  width: min(1120px, 92%);
+  width: 100%;
 }
 
 .card {
@@ -62,7 +62,7 @@
 .panel {
   align-items: center;
   background: #770422;
-  border-radius: 15px;
+  border-radius: 0;
   box-sizing: border-box;
   color: #FFF;
   display: flex;
@@ -289,7 +289,12 @@
   outline-offset: 4px;
 }
 
+/* Under 500px the panels run edge to edge with square corners */
 @media (min-width: 500px) {
+  .grid {
+    width: min(1120px, 92%);
+  }
+
   .card {
     --mat-width: 160px;
     gap: 0;
@@ -304,6 +309,7 @@
     align-items: stretch;
     grid-column: 1 / -1;
     grid-row: 1;
+    border-radius: 15px;
     margin: var(--overhang) 0 var(--overhang) 16px;
     min-height: 150px;
     padding: 14px 14px 6px calc(var(--mat-width) + 2px);
