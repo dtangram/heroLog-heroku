@@ -105,16 +105,50 @@ export const COLLECTION_RESULT_LIMIT = 20;
  */
 export const COLLECTION_MIN_SIMILARITY = 0.25;
 
-const parseClaudeJSON = (text: string): any[] => {
-  let cleaned = text.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.split('```')[1];
-    if (cleaned.startsWith('json')) {
-      cleaned = cleaned.slice(4);
-    }
-    cleaned = cleaned.trim();
+/**
+ * All the text in Claude's reply. Newer models can start a reply with a
+ * thinking block, so the text isn't always the first block.
+ */
+export const replyText = (content: Array<{ type: string; text?: string }>): string =>
+  content
+    .filter(block => block.type === 'text' && typeof block.text === 'string')
+    .map(block => block.text)
+    .join('');
+
+/**
+ * The comics in Claude's reply. Takes the list from between the first [ and
+ * the last ], so a sentence or a code fence around it doesn't matter.
+ */
+export const parseComicList = (text: string): any[] => {
+  const start = text.indexOf('[');
+  const end = text.lastIndexOf(']');
+  if (start === -1 || end < start) {
+    throw new Error(`No comic list in Claude's reply: ${text.slice(0, 200)}`);
   }
-  return JSON.parse(cleaned);
+  const list = JSON.parse(text.slice(start, end + 1));
+  if (!Array.isArray(list)) {
+    throw new Error('Claude\'s reply was not a list of comics');
+  }
+  return list.filter(item => item && typeof item.title === 'string');
+};
+
+/** Ask Claude for comics matching a search, and log why if none come back */
+const askClaudeForComics = async (q: string): Promise<any[]> => {
+  const message = await getAnthropic().messages.create({
+    model: SEARCH_MODEL,
+    max_tokens: SEARCH_MAX_TOKENS,
+    messages: [{ role: 'user', content: comicPrompt(q) }]
+  });
+
+  const text = replyText(message.content);
+  const comics = parseComicList(text);
+
+  if (comics.length === 0) {
+    console.warn(
+      `⚠️ Claude returned no comics for "${q}" (stop: ${message.stop_reason}, blocks: ${message.content.map(b => b.type).join(', ')})`
+    );
+  }
+  return comics;
 };
 
 const comicPrompt = (q: string): string => `
@@ -453,14 +487,7 @@ router.get('/search-all', async (req: Request, res: Response) => {
   const { q } = req.query as { q: string };
 
   try {
-    const message = await getAnthropic().messages.create({
-      model: SEARCH_MODEL,
-      max_tokens: SEARCH_MAX_TOKENS,
-      messages: [{ role: 'user', content: comicPrompt(q) }]
-    });
-
-    const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
-    const results = parseClaudeJSON(text).map(result => ({
+    const results = (await askClaudeForComics(q)).map(result => ({
       ...result,
       source: 'claude'
     }));
@@ -479,14 +506,7 @@ router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, 
   const { q } = req.query as { q: string };
 
   try {
-    const message = await getAnthropic().messages.create({
-      model: SEARCH_MODEL,
-      max_tokens: SEARCH_MAX_TOKENS,
-      messages: [{ role: 'user', content: comicPrompt(q) }]
-    });
-
-    const text = message.content[0].type === 'text' ? message.content[0].text : '[]';
-    const allResults = parseClaudeJSON(text);
+    const allResults = await askClaudeForComics(q);
 
     const ownedResult = await getVectorDb().query(`
       SELECT LOWER(title) FROM comic_embeddings
