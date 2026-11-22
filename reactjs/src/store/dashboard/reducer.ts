@@ -108,15 +108,14 @@ const publishersSuccess = (state: object, action: object): object => {
   const publishers = Array.isArray(typedAction.data) ? typedAction.data : [];
   const now = Date.now();
 
+  // The server's list is the whole collection, so it replaces what's here.
+  // Merging kept publishers that had been deleted.
   const newById = publishers.reduce((acc, publisher) => ({
     ...acc,
     [publisher.id]: createPublisherState(publisher),
-  }), typedState.byId);
+  }), {} as Record<string, PublisherState>);
 
-  const newAllIds = Array.from(new Set([
-    ...typedState.allIds,
-    ...publishers.map(publisher => publisher.id),
-  ]));
+  const newAllIds = publishers.map(publisher => publisher.id);
 
   return {
     ...typedState,
