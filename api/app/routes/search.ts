@@ -121,6 +121,22 @@ export const COLLECTION_RESULT_LIMIT = 20;
 export const COLLECTION_MIN_SIMILARITY = 0.25;
 
 /**
+ * My Collection: how far below the best match a comic can score and still be
+ * shown. For "Knightfall saga" the Knightfall issues scored 36–47% and
+ * unrelated Batman issues 25–32%, so a fixed floor alone let the unrelated
+ * ones in. Keeping only what's close to the best match works whether a
+ * search's scores run high or low. Lower it for fewer, closer matches.
+ */
+export const COLLECTION_MAX_GAP = 0.12;
+
+/** The matches close enough to the best one (rows arrive best first) */
+export const closeMatches = <T extends { similarity_score: number }>(rows: T[]): T[] => {
+  if (rows.length === 0) return rows;
+  const best = rows[0].similarity_score;
+  return rows.filter(row => row.similarity_score >= best - COLLECTION_MAX_GAP);
+};
+
+/**
  * All the text in Claude's reply. Newer models can start a reply with a
  * thinking block, so the text isn't always the first block.
  */
@@ -265,22 +281,38 @@ export const findComicsMissingSearchData = async (
   userId: string
 ): Promise<{ total: number; missingIds: string[] }> => {
   const owned = await getHerokuDb().query(`
-    SELECT cb.id::text AS id
+    SELECT cb.id::text AS id, cbt."cbTitle", cb."comicIssue"
     FROM "ComicBooks" cb
     JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
     JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
     WHERE cp."collectpubUsersId" = $1;
   `, [userId]);
   const ownedIds = owned.rows.map((row: { id: string }) => row.id);
+  // Written exactly as the search data writes it
+  const currentTitle = new Map<string, string>(
+    owned.rows.map((row: { id: string; cbTitle: string; comicIssue: unknown }) =>
+      [row.id, normalizeTitle(`${row.cbTitle} #${row.comicIssue}`)])
+  );
 
   const prepared = await getVectorDb().query(
-    'SELECT comic_id FROM comic_embeddings WHERE user_id = $1;',
+    'SELECT comic_id, title, embedding IS NULL AS unfinished FROM comic_embeddings WHERE user_id = $1;',
     [userId]
   );
-  const preparedIds = new Set<string>(prepared.rows.map((row: { comic_id: string }) => String(row.comic_id)));
 
-  const ownedSet = new Set(ownedIds);
-  const staleIds = Array.from(preparedIds).filter(id => !ownedSet.has(id));
+  // Search data is out of date when the comic was edited after it was prepared
+  // (a corrected issue number, say), or unfinished when it has no embedding.
+  // Either way the comic can't be found, so it's prepared again.
+  const preparedIds = new Set<string>();
+  const staleIds: string[] = [];
+  for (const row of prepared.rows as Array<{ comic_id: string; title: string; unfinished: boolean }>) {
+    const id = String(row.comic_id);
+    const title = currentTitle.get(id);
+    if (title === undefined || row.unfinished || normalizeTitle(row.title) !== title) {
+      staleIds.push(id);
+    } else {
+      preparedIds.add(id);
+    }
+  }
   if (staleIds.length > 0) {
     await getVectorDb().query(
       'DELETE FROM comic_embeddings WHERE user_id = $1 AND comic_id = ANY($2::text[]);',
@@ -358,9 +390,9 @@ Return only the description, no additional text.`
             }]
           });
 
-          const description = message.content[0].type === 'text'
-            ? message.content[0].text
-            : '';
+          // An empty description can't be embedded, so fall back to the comic's details
+          const description = replyText(message.content).trim() ||
+            [`${cbTitle} #${comicIssue}`, title, year, author, penciler].filter(Boolean).join(', ');
 
           // Generate embedding
           const embedding = await generateEmbedding(description);
@@ -538,12 +570,12 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
       LIMIT $4;
     `, [embeddingStr, userId, COLLECTION_MIN_SIMILARITY, COLLECTION_RESULT_LIMIT]);
 
-    const results = result.rows.map(row => ({
+    const results = closeMatches(result.rows.map(row => ({
       comic_id: row.comic_id,
       title: row.title,
       description: row.description,
       similarity_score: parseFloat(parseFloat(row.similarity).toFixed(4))
-    }));
+    })));
 
     res.json({ status: 'Success', query: q, results });
 
@@ -582,14 +614,20 @@ router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, 
   const { q } = req.query as { q: string };
 
   try {
-    const ownedResult = await getVectorDb().query(`
-      SELECT DISTINCT title FROM comic_embeddings
-      WHERE user_id = $1
-      ORDER BY title
+    // From the collection itself, so a comic counts as owned even before it's
+    // ready for My Collection search
+    const ownedResult = await getHerokuDb().query(`
+      SELECT DISTINCT cbt."cbTitle", cb."comicIssue"
+      FROM "ComicBooks" cb
+      JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
+      JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
+      WHERE cp."collectpubUsersId" = $1
+      ORDER BY cbt."cbTitle", cb."comicIssue"
       LIMIT $2;
     `, [userId, MISSING_OWNED_LIMIT]);
 
-    const ownedTitles: string[] = ownedResult.rows.map((row: any) => String(row.title));
+    const ownedTitles: string[] = ownedResult.rows.map((row: any) =>
+      row.comicIssue == null || row.comicIssue === '' ? String(row.cbTitle) : `${row.cbTitle} #${row.comicIssue}`);
     const owned = new Set(ownedTitles.map(normalizeTitle));
 
     const suggestions = await askClaudeForComics(q, missingPrompt(q, summarizeOwned(ownedTitles)), MISSING_MAX_TOKENS);
@@ -751,6 +789,14 @@ router.post('/enrich-cancel/:jobId', ownsJob, async (req: Request, res: Response
  */
 export const moveSearchData = async (fromId: string, toId: string): Promise<void> => {
   await getVectorDb().query('UPDATE comic_embeddings SET user_id = $1 WHERE user_id = $2;', [toId, fromId]);
+};
+
+/**
+ * Forgets one comic's search data after it's edited, so the next visit to
+ * Search prepares it again with the new details.
+ */
+export const clearComicSearchData = async (comicId: string): Promise<void> => {
+  await getVectorDb().query('DELETE FROM comic_embeddings WHERE comic_id = $1;', [String(comicId)]);
 };
 
 /** Removes an owner's search data when their account is deleted. */
