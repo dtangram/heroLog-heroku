@@ -45,17 +45,31 @@ it('All Comics shows the comics when the reply starts with a thinking block', as
   expect(create.mock.calls[0][0].model).toBe('claude-haiku-5-5');
 });
 
-it('Find Missing shows the comics and marks the ones already owned', async () => {
+it('Find Missing tells Claude what is owned and shows only the comics that are missing', async () => {
   create.mockResolvedValue(thinkingFirst);
-  query.mockResolvedValue({ rows: [{ lower: 'batman #497' }] });
+  query.mockResolvedValue({ rows: [{ title: 'Batman #497' }, { title: 'Batman #49' }] });
 
   const res = await request(app).get('/api/search/search-missing/user-1').query({ q: 'Knightfall saga' });
 
   expect(res.status).toBe(200);
-  expect(res.body.results.map((r: any) => [r.title, r.already_owned])).toEqual([
-    ['Batman #492', false],
-    ['Batman #497', true],
-  ]);
+  // #497 is owned so it's left out; owning #49 doesn't hide #492
+  expect(res.body.results.map((r: any) => [r.title, r.already_owned])).toEqual([['Batman #492', false]]);
+
+  const prompt = create.mock.calls[0][0].messages[0].content;
+  expect(prompt).toContain('Batman: #497, #49');
+  expect(prompt).toContain('in publication order');
+});
+
+it('Find Missing drops a comic Claude lists twice', async () => {
+  create.mockResolvedValue({
+    content: [{ type: 'text', text: JSON.stringify([{ title: 'Batman #493' }, { title: 'batman #0493' }]) }],
+    stop_reason: 'end_turn',
+  });
+  query.mockResolvedValue({ rows: [] });
+
+  const res = await request(app).get('/api/search/search-missing/user-1').query({ q: 'Knightfall saga' });
+
+  expect(res.body.results).toHaveLength(1);
 });
 
 it('a reply with no list is an error, not "no comics found"', async () => {
