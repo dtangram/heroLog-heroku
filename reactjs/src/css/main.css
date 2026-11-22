@@ -169,15 +169,12 @@ figure {
 #main {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: 100%;
   max-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 0;
   position: relative;
   width: 100%; }
-  @media (max-width: 500px) {
-    #main {
-      padding-bottom: 80px; } }
   @media (max-width: 1199px) {
     #main {
       width: 100%; } }
@@ -298,9 +295,78 @@ header {
     width: 100%;
     z-index: -1; }
 
+header nav[class*='styles_nav__'] > .container-fluid{
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 12px;
+}
+
 header nav[class*='styles_nav__'] > .container-fluid > figure.headerProfilePic{
-  height: 50px;
-  width: 50px;
+  flex-shrink: 0;
+  height: 40px;
+  margin: -7px 0 0;
+  width: 40px;
+}
+
+@media (min-width: 992px){
+  header nav[class*='styles_nav__'] > .container-fluid{
+    align-items: center;
+  }
+
+  header nav[class*='styles_nav__'] > .container-fluid > figure.headerProfilePic{
+    height: 50px;
+    margin: 0;
+    width: 50px;
+  }
+}
+
+/* Mobile menu: full-width panel under the header, links centered */
+header nav[class*='styles_nav__']{
+  position: static;
+}
+
+header nav[class*='styles_nav__'] .navbar-collapse{
+  background: #2B2B2B;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 100%;
+}
+
+header nav[class*='styles_nav__'] .navbar-collapse ul{
+  align-items: center;
+  margin: 0;
+  padding: 8px 0 16px;
+}
+
+header nav[class*='styles_nav__'] .navbar-collapse ul li{
+  margin: 0;
+  text-align: center;
+  width: auto;
+}
+
+header nav[class*='styles_nav__'] .navbar-collapse ul li a{
+  padding: 12px 24px;
+}
+
+@media (min-width: 992px){
+  header nav[class*='styles_nav__']{
+    position: relative;
+  }
+
+  header nav[class*='styles_nav__'] .navbar-collapse{
+    background: transparent;
+    position: static;
+  }
+
+  header nav[class*='styles_nav__'] .navbar-collapse ul{
+    align-items: normal;
+    padding: 0;
+  }
+
+  header nav[class*='styles_nav__'] .navbar-collapse ul li a{
+    padding: 0;
+  }
 }
 
 header nav[class*='styles_nav__'] > .container-fluid > figure.headerProfilePic img{
@@ -1442,21 +1508,15 @@ while in CSS Module */
 footer {
   padding: 30px 2%;
   background: #2B2B2B;
-  bottom: 0;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  left: 0;
-  position: absolute;
-  right: 0; }
+  margin-top: auto; }
   @media (max-width: 800px) {
     footer {
       align-items: center;
       display: flex;
       flex-direction: column; } }
-  @media (max-width: 991px) {
-    footer {
-      position: relative; } }
   footer > article {
     align-items: center;
     display: flex;
