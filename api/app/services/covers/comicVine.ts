@@ -80,7 +80,22 @@ const find = async (query: CoverQuery): Promise<string | null> => {
       timeout: TIMEOUT_MS,
     });
 
-    return pickCover(response.data?.results ?? [], query);
+    const results: ComicVineIssue[] = response.data?.results ?? [];
+    const cover = pickCover(results, query);
+
+    if (!cover) {
+      // Why there was no clear match, e.g. nothing with that number that year,
+      // or several series with the same name
+      const series = normalizeSeries(query.series);
+      const names = [...new Set(results.map(result => result.volume?.name ?? '?'))].slice(0, 5);
+      const sameName = results.filter(result => normalizeSeries(result.volume?.name ?? '') === series).length;
+      console.log(
+        `Comic Vine: ${results.length} issue(s) numbered ${issue}${query.year ? ` from ${query.year}` : ''}, ` +
+        `${sameName} in a series named "${query.series}"` +
+        (names.length ? ` (series seen: ${names.join('; ')})` : '')
+      );
+    }
+    return cover;
   } catch (error) {
     // The API key is in the request URL, so log only the status, never the request
     const status = (error as any)?.response?.status ?? (error as Error).message;
