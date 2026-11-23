@@ -4,7 +4,7 @@ import { useEnrichment, POLL_INTERVAL } from '../useEnrichment';
 import { API_URL, sessionHeaders } from '../../API';
 
 jest.mock('axios');
-jest.mock('../API', () => ({
+jest.mock('../../API', () => ({
   API_URL: 'https://herolog.example/api',
   sessionHeaders: jest.fn(async () => ({ Authorization: 'Bearer t' })),
 }));
