@@ -44,6 +44,7 @@ describe('Comic Vine lookup', () => {
   beforeEach(() => {
     mockGet.mockReset();
     jest.spyOn(console, 'warn').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
   });
   afterEach(() => {
     process.env.COMIC_VINE_API_KEY = original;
@@ -80,5 +81,15 @@ describe('Comic Vine lookup', () => {
     const logged = (console.warn as jest.Mock).mock.calls.flat().join(' ');
     expect(logged).toContain('429');
     expect(logged).not.toContain('secret-key');
+  });
+
+  it('explains in the logs why nothing matched', async () => {
+    process.env.COMIC_VINE_API_KEY = 'test-key';
+    mockGet.mockResolvedValue({ data: { results: [issue('Detective Comics', '1993-06-01'), issue('Detective Comics', '1993-07-01')] } });
+
+    expect(await findCover({ series: 'Detective Comics', issue: 661, year: 1993 })).toBeNull();
+
+    const logged = (console.log as jest.Mock).mock.calls.flat().join(' ');
+    expect(logged).toContain('2 issue(s) numbered 661 from 1993, 2 in a series named "Detective Comics"');
   });
 });

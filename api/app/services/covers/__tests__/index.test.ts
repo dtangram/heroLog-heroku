@@ -14,7 +14,11 @@ const source = (name: string, cover: string | null | Error, available = true): C
 const batman = { series: 'Batman', issue: 497, year: 1993 };
 
 describe('findCover across sources', () => {
-  beforeEach(() => jest.spyOn(console, 'warn').mockImplementation(() => {}));
+  beforeEach(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+  const logged = () => [...(console.log as jest.Mock).mock.calls, ...(console.warn as jest.Mock).mock.calls].flat().join('\n');
   afterEach(() => jest.restoreAllMocks());
 
   it('uses the first source that finds a cover', async () => {
@@ -43,5 +47,20 @@ describe('findCover across sources', () => {
 
   it('finds nothing when no source has the cover', async () => {
     expect(await findCover(batman, [source('Empty', null)])).toBeNull();
+  });
+
+  it('says in the logs when no source is set up, and which setting to add', async () => {
+    expect(await findCover(batman, [source('Comic Vine', 'https://x.example/y.jpg', false)])).toBeNull();
+
+    expect(logged()).toContain('No cover lookup for Batman #497 (1993)');
+    expect(logged()).toContain('COMIC_VINE_API_KEY');
+  });
+
+  it('says in the logs where a cover was found, or that none was', async () => {
+    await findCover(batman, [source('Comic Vine', 'https://x.example/batman-497.jpg')]);
+    await findCover({ series: 'Detective Comics', issue: 661, year: 1993 }, [source('Comic Vine', null)]);
+
+    expect(logged()).toContain('Cover found for Batman #497 (1993) on Comic Vine');
+    expect(logged()).toContain('No cover found for Detective Comics #661 (1993) on Comic Vine');
   });
 });
