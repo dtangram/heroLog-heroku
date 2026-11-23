@@ -13,10 +13,6 @@ import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import styles from './styles.module.scss';
 
-// ============================================================================
-// COMPONENT
-// ============================================================================
-
 const Header = ({
   user,
   signins,
@@ -117,7 +113,7 @@ useEffect(() => {
                     to={`/intel/${userId}`}
                     onClick={toggleMenuItem}
                   >
-                    INTEL
+                    INSIGHTS
                   </NavLink>
                 </NavItem>
 
@@ -204,7 +200,7 @@ useEffect(() => {
                   to={`/intel/${userId}`}
                   onClick={toggleMenuItem}
                 >
-                  INTEL
+                  INSIGHTS
                 </NavLink>
               </NavItem>
 

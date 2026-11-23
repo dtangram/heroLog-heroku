@@ -1,6 +1,7 @@
 /* ComicBookListIssues, written mobile first.
    Only the parts this page styles itself are here: the loading message,
-   the back links and the link hover line. The page heading, the Add link
+   the heading bar, the count line and the link hover line. The breadcrumbs come from
+   components/breadcrumbs. The page heading, the Add link
    and the list layout come from the #cbComBookListIssues rules in
    css/main.css, and the cards come from components/comicCard.
    None of these rules change with screen size, so there are no media
@@ -27,30 +28,28 @@
   width: 100%;
 }
 
-/* Back links: < Dashboard < Publisher */
-.backLinkWrapper {
-  display: flex;
-  gap: 12px;
-  margin: 0 0 10px 7%;
-  padding: 0;
-  position: unset;
-  width: auto;
+/* The burgundy bar under the heading, as on the Dashboard and title pages */
+.graphic {
+  background: #770422;
+  height: 10px;
+  margin: 15px auto 0;
+  width: 70px;
 }
 
-.backLink {
-  color: #333;
+/* The totals under the heading, e.g. "12 issues · #423–#500" */
+.summary {
+  color: #2B2B2B;
   font-size: 2rem;
-  font-weight: bold;
-  width: auto;
+  margin: -40px 0 30px;
+  padding: 0 4%;
+  text-align: center;
 }
 
-/* Hover: burgundy text with a line that grows underneath */
-.backLink:hover,
+/* Hover on the Add Comic Book link: burgundy text with a line that grows underneath */
 .link:hover {
   color: #770422;
 }
 
-.backLink::after,
 .link::after {
   background-color: #770422;
   content: '';
@@ -61,15 +60,7 @@
   width: 0;
 }
 
-.backLink:hover::after,
 .link:hover::after {
   background: #770422;
-}
-
-.backLink:hover::after {
-  width: 50%;
-}
-
-.link:hover::after {
   width: 90%;
 }

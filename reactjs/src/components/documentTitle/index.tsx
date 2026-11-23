@@ -28,7 +28,7 @@ const PAGE_TITLES: Array<[string, string | ((params: Params) => string)]> = [
   ['/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new', ({ cbTitle }) => `Add a ${cbTitle} Comic`],
   ['/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id', ({ cbTitle }) => `Edit ${cbTitle} Comic`],
 
-  ['/intel/:userId', 'Collection Intelligence'],
+  ['/intel/:userId', 'Collection Insights'],
   ['/search/:userId', 'Search the Multiverse'],
 
   ['/sale/:userId', 'Your Comics for Sale'],

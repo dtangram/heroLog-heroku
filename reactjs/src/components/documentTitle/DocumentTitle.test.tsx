@@ -8,7 +8,7 @@ describe('titleFor', () => {
   it.each([
     ['/', 'Home · Hero-Log'],
     [`/dashboard/${USER}`, 'Your Collection · Hero-Log'],
-    [`/intel/${USER}`, 'Collection Intelligence · Hero-Log'],
+    [`/intel/${USER}`, 'Collection Insights · Hero-Log'],
     [`/search/${USER}`, 'Search the Multiverse · Hero-Log'],
     [`/sale/${USER}`, 'Your Comics for Sale · Hero-Log'],
     [`/wishlist/${USER}`, 'Your Wish List · Hero-Log'],
