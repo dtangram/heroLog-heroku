@@ -1,0 +1,96 @@
+/* Breadcrumbs, mobile first: Dashboard › DC › Batman */
+
+.breadcrumbs {
+  margin: 0 0 10px;
+  padding: 0 4%;
+}
+
+.list {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crumb {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+/* The separator between levels; CSS content, so it isn't read aloud */
+.crumb + .crumb::before {
+  color: #770422;
+  content: '›';
+  font-size: 2rem;
+  line-height: 1;
+  padding: 0 10px;
+}
+
+/* At least 44px tall, so each level is easy to tap */
+.link,
+.current {
+  align-items: center;
+  display: inline-flex;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: #2B2B2B;
+  font-weight: 700;
+  position: relative;
+  text-decoration: none;
+}
+
+/* Hover: burgundy text with a line that grows underneath */
+.link:hover {
+  color: #770422;
+}
+
+.link::after {
+  background-color: #770422;
+  bottom: 8px;
+  content: '';
+  height: 2px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  transition: width 0.5s ease;
+  width: 0;
+}
+
+.link:hover::after,
+.link:focus-visible::after {
+  width: 90%;
+}
+
+.link:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #770422;
+  outline-offset: 2px;
+}
+
+.current {
+  color: #555;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link::after {
+    transition: none;
+  }
+}
+
+@media (min-width: 801px) {
+  .breadcrumbs {
+    padding: 0 7%;
+  }
+
+  .list {
+    font-size: 1.8rem;
+  }
+}

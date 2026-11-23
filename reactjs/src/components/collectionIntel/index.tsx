@@ -76,7 +76,7 @@ const formatIssueRanges = (sorted: number[]) => {
 const PageTitle = () => (
   <>
     <h1>
-      Collection Intelligence
+      Collection Insights
       <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
     </h1>
     <p className={styles.intro}>

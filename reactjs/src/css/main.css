@@ -1367,12 +1367,6 @@ while in CSS Module */
   #cbComBookListIssues {
     margin-top: 110px; } }
 
-#cbComBookListIssues > button {
-  margin-left: 7%; }
-  @media (max-width: 800px) {
-    #cbComBookListIssues > button {
-      margin-left: 3%; } }
-
 #cbComBookListIssues .cbList section > article .comicSec {
   width: 600px; }
   @media (max-width: 800px) {

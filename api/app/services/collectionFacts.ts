@@ -1,5 +1,5 @@
 /**
- * Collection facts: every number shown on the Collection Intelligence page
+ * Collection facts: every number shown on the Collection Insights page
  * is computed here, from the database, so the AI never has to count or guess.
  */
 

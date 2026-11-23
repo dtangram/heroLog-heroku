@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import type { ConnectorProps } from './container';
@@ -81,5 +81,41 @@ describe('Deleting a publisher', () => {
     fireEvent.click(screen.getByRole('button', { name: /delete/i }));
 
     await waitFor(() => expect(showAlert).toHaveBeenCalled());
+  });
+});
+describe('Publishers without titles', () => {
+  const dc = { id: 'p1', publisherName: 'DC', titleCount: 4, issueCount: 15 };
+  const darkHorse = { id: 'p3', publisherName: 'Dark Horse', titleCount: 0, issueCount: 0 };
+
+  const showWith = (publishers: object[]) =>
+    render(
+      <MemoryRouter>
+        <Dashboard
+          {...({ fetchPublishers: jest.fn(), deletePublisher: jest.fn(), publishers, isLoading: false } as unknown as ConnectorProps)}
+        />
+      </MemoryRouter>
+    );
+
+  it('get a short row below the cards when other publishers have titles', () => {
+    showWith([dc, darkHorse]);
+
+    const cards = screen.getByRole('list', { name: 'Your publishers' });
+    expect(within(cards).getByRole('link', { name: 'DC' })).toBeInTheDocument();
+    expect(within(cards).queryByRole('link', { name: 'Dark Horse' })).not.toBeInTheDocument();
+
+    const empty = screen.getByRole('region', { name: 'No titles yet' });
+    expect(within(empty).getByRole('link', { name: 'Dark Horse' })).toBeInTheDocument();
+    expect(within(empty).getByRole('link', { name: 'Add title to Dark Horse' })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/\/p3\/Dark Horse\/comicbooklisttitle\/new$/)
+    );
+  });
+
+  it('stay as cards when no publisher has titles yet', () => {
+    showWith([darkHorse]);
+
+    const cards = screen.getByRole('list', { name: 'Your publishers' });
+    expect(within(cards).getByRole('link', { name: 'Dark Horse' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'No titles yet' })).not.toBeInTheDocument();
   });
 });

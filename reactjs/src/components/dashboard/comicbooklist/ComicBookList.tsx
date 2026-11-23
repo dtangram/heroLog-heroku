@@ -1,9 +1,10 @@
 import { useEffect, useCallback } from 'react';
-import { Link as RRLink, useNavigate, useParams } from 'react-router-dom';
+import { Link as RRLink, useParams } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import '../../../link/styles.module.css';
 import Empty from '../../empty';
+import Breadcrumbs from '../../breadcrumbs';
 import ComicCard, { ComicCardGrid } from '../../comicCard';
 import { countLabel, issueRange } from '../../../utils/collection';
 import { showAlert, showConfirm } from '../../dialog';
@@ -42,7 +43,6 @@ const ComicBookList = ({
   deleteComicBookTitle,
 }: ConnectorProps) => {
   const { pubId = '', publisherName = '' } = useParams<RouteParams>();
-  const navigate = useNavigate();
   const userId = localStorage.getItem('id') || getAnonymousUserId();
 
   // Fetch comic book titles on mount
@@ -54,11 +54,6 @@ const ComicBookList = ({
       fetchComicBookTitles(pubId, true);
     }
   }, [pubId, fetchComicBookTitles]);
-
-  // Handle navigation back
-  const handleGoToDashboard = useCallback(() => {
-    navigate(`/dashboard/${userId}`);
-  }, [navigate]);
 
   // Handle comic book title deletion
   const handleDelete = useCallback(async (id: string, title: string): Promise<void> => {
@@ -105,13 +100,12 @@ const ComicBookList = ({
   // Common header to avoid repetition
   const renderHeader = () => (
     <>
-      <button 
-        className={styles.backLink} 
-        type="button" 
-        onClick={handleGoToDashboard}
-      >
-        &lt; Dashboard
-      </button>
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: `/dashboard/${userId}` },
+          { label: publisherName },
+        ]}
+      />
 
       <h1>
         Your List of {publisherName} Titles

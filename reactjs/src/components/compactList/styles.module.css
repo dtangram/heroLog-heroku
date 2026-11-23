@@ -1,0 +1,166 @@
+/* CompactList, mobile first: one burgundy row per item, the name above its actions.
+   The !important values override the global section rules in css/main.css and
+   the Dashboard's ".cbWrap section:nth-child(2)" green background. */
+
+.compact {
+  background: transparent !important;
+  color: #2B2B2B !important;
+  font-family: "Lato", Arial, sans-serif;
+  margin: 0 auto 80px;
+  padding: 0 !important;
+  width: 100%;
+}
+
+.heading {
+  color: #2B2B2B;
+  font-size: 2.4rem;
+  margin: 0 0 6px;
+  padding: 0 4%;
+  text-align: center;
+}
+
+.description {
+  color: #555;
+  font-size: 1.6rem;
+  margin: 0 0 16px;
+  padding: 0 4%;
+  text-align: center;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Square, edge to edge on phones, like the cards above */
+.row {
+  align-items: center;
+  background: #770422;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px 4px;
+}
+
+.name {
+  color: #FFF;
+  font-size: 2rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-decoration: none;
+}
+
+.name:hover {
+  color: #AECEAB;
+}
+
+.name:focus-visible,
+.action:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #AECEAB;
+  outline-offset: 4px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  justify-content: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.actions > li {
+  display: flex;
+}
+
+/* At least 44px tall, so each action is easy to tap */
+.action {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #AECEAB;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  text-decoration: none;
+  width: auto;
+}
+
+.action:hover {
+  color: #AECEAB;
+}
+
+/* Hover: a green line grows from the center under the word */
+.label {
+  display: inline-block;
+}
+
+.label::after {
+  background: #AECEAB;
+  content: '';
+  display: block;
+  height: 2px;
+  margin: auto;
+  transition: width 0.5s ease;
+  width: 0;
+}
+
+.action:hover .label::after,
+.action:focus-visible .label::after {
+  width: 90%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label::after {
+    transition: none;
+  }
+}
+
+/* From 500px: rounded rows inside the same width as the cards */
+@media (min-width: 500px) {
+  .compact {
+    width: min(1120px, 92%);
+  }
+
+  .heading,
+  .description {
+    padding: 0;
+    text-align: left;
+  }
+
+  .row {
+    border-radius: 12px;
+  }
+}
+
+/* From 600px: the name on the left, actions on the right */
+@media (min-width: 600px) {
+  .row {
+    flex-direction: row;
+    gap: 16px;
+    justify-content: space-between;
+    padding: 4px 20px;
+  }
+
+  .name {
+    text-align: left;
+  }
+}
+
+/* Wide screens: two rows side by side, matching the card columns */
+@media (min-width: 1000px) {
+  .list {
+    gap: 12px 40px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

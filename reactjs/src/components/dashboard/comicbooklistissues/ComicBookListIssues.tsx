@@ -1,8 +1,10 @@
 import { useEffect, useCallback } from 'react';
-import { Link as RRLink, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Link as RRLink, useParams, useLocation } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import Empty from '../../empty';
+import Breadcrumbs from '../../breadcrumbs';
+import { countLabel, issueRange } from '../../../utils/collection';
 import { showConfirm } from '../../dialog';
 import ComicCard, { ComicCardGrid } from '../../comicCard';
 import logo from '../../../img/logo.png';
@@ -45,7 +47,6 @@ const ComicBookListIssues = ({
   deleteComicBook,
 }: ConnectorProps) => {
   const { coboTitleId = '', cbTitle = '', pubId = '', publisherName = '' } = useParams<RouteParams>();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const userId = localStorage.getItem('id') || getAnonymousUserId();
@@ -58,15 +59,6 @@ const ComicBookListIssues = ({
       fetchComicBooks(coboTitleId);
     }
   }, [coboTitleId, fetchComicBooks, location.state]);
-
-  // Handle navigation back
-  const handleGoToDashboard = useCallback(() => {
-    navigate(`/dashboard/${userId}`);
-  }, [navigate]);
-
-  const handleGoToPublisher = useCallback(() => {
-    navigate(`${`/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist`}`);
-  }, [navigate]);
 
   // Handle comic book deletion
   const handleDelete = useCallback(async (id: string, title: string, issue?: string | number): Promise<void> => {
@@ -103,25 +95,21 @@ const ComicBookListIssues = ({
     .filter(Boolean) as ComicBook[])
     .sort((a, b) => (Number(a.comicIssue) || 0) - (Number(b.comicIssue) || 0));
 
+  // Lowest and highest issue numbers, for the count line
+  const issueNumbers = comicBooks.map(book => Number(book.comicIssue)).filter(n => Number.isFinite(n) && n > 0);
+  const firstIssue = issueNumbers.length > 0 ? Math.min(...issueNumbers) : null;
+  const lastIssue = issueNumbers.length > 0 ? Math.max(...issueNumbers) : null;
+
   // Common header section to avoid repetition
   const renderHeader = () => (
     <>
-      <section className={styles.backLinkWrapper}>
-        <button 
-        className={styles.backLink}
-        type="button" 
-        onClick={handleGoToDashboard}
-        >
-          &lt; Dashboard
-        </button>
-        <button 
-          className={styles.backLink}
-          type="button" 
-          onClick={handleGoToPublisher}
-        >
-          &lt; {publisherName}
-        </button>
-      </section>
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: `/dashboard/${userId}` },
+          { label: publisherName, to: `/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist` },
+          { label: cbTitle },
+        ]}
+      />
 
       <h1>
         Your List of {cbTitle} Comics
@@ -130,6 +118,13 @@ const ComicBookListIssues = ({
           aria-label="Small burgundy rectangle graphic" 
         />
       </h1>
+
+      {/* The same count line as the Dashboard and title pages, e.g. "12 issues · #423–#500" */}
+      {comicBooks.length > 0 && (
+        <p className={styles.summary}>
+          {[countLabel(comicBooks.length, 'issue'), issueRange(firstIssue, lastIssue)].filter(Boolean).join(' · ')}
+        </p>
+      )}
 
       <h2>
         <section>
