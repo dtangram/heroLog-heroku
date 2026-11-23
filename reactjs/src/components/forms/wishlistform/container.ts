@@ -2,7 +2,7 @@ import { connect } from 'react-redux';
 import { RootState } from '../../../store';
 import { 
   fetchWishlist, 
-  createWishlist, 
+  addToWishlist, 
   updateWishlist, 
   WishlistComic 
 } from '../../../store/wishlist/actions';
@@ -29,7 +29,7 @@ export const mapStateToProps = (state: RootState) => {
 
 const mapDispatchToProps = {
   fetchWishList: fetchWishlist,
-  createWishList: createWishlist,
+  createWishList: addToWishlist,
   updateWishList: updateWishlist,
 };
 

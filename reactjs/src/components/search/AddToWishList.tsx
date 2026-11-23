@@ -4,7 +4,7 @@ import { Link as RRLink } from 'react-router-dom';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import BookmarkAddedIcon from '@mui/icons-material/BookmarkAdded';
 import type { RootState } from '../../store';
-import { createWishlist } from '../../store/wishlist/actions';
+import { addToWishlist } from '../../store/wishlist/actions';
 import type { APICallResult } from '../../store/helpers/callAPIMiddleware';
 import { notify, showAlert } from '../dialog';
 import type { ClaudeResult } from '../../hooks/useSearch';
@@ -89,7 +89,7 @@ const AddToWishList = ({ result, userId }: Props) => {
   const handleAdd = async () => {
     setIsAdding(true);
     const outcome = (await dispatch(
-      createWishlist({
+      addToWishlist({
         comicBookTitle: parsed.title,
         comicIssue: parsed.issue,
         comicBookVolume: '',

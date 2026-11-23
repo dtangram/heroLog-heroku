@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import API from '../../API';
+import type { APICallResult } from '../helpers/callAPIMiddleware';
 import {
   REQ_WISHLIST_COMICS_PENDING,
   REQ_WISHLIST_COMICS_SUCCESS,
@@ -142,10 +143,12 @@ export const fetchWishlist = (id: string): APIAction => {
   };
 };
 
-export const createWishlist = (wishlist: Omit<WishlistComic, 'id' | 'userId'>): APIAction => {
+export const createWishlist = (
+  wishlist: Omit<WishlistComic, 'id' | 'userId'>,
+  id: string = uuidv4()
+): APIAction => {
   validateWishlistComic(wishlist);
   
-  const id = uuidv4();
   const userId = getUserId();
   
   // ✅ Map userId to wishUsersId for the API
@@ -176,6 +179,52 @@ export const createWishlist = (wishlist: Omit<WishlistComic, 'id' | 'userId'>): 
     },
   };
 };
+
+/** Loads one wish list item from the API, even if a copy is cached */
+export const refreshWishlist = (id: string): APIAction => ({
+  types: [
+    REQ_WISHLIST_COMIC_PENDING,
+    REQ_WISHLIST_COMIC_SUCCESS,
+    REQ_WISHLIST_COMIC_ERROR,
+  ],
+  callAPI: () => API.get(`/wishlist/${id}`),
+  payload: { id },
+});
+
+/**
+ * When to check back for a cover after adding a comic without one. The API
+ * looks the cover up after replying (usually 2–5 seconds, at most about 8).
+ */
+export const COVER_CHECKS_MS = [4000, 10000];
+
+/**
+ * Checks back with the API for a cover found after the add, so it appears on
+ * its own, without reloading. Stops as soon as the item has a cover. Lives in
+ * the store, not a page, so it carries on if the collector moves from Search
+ * to the Wish List.
+ */
+export const awaitCover = (id: string, delays: number[] = COVER_CHECKS_MS) =>
+  (dispatch: (action: APIAction) => unknown, getState: () => RootState): void => {
+    delays.forEach(delay => {
+      setTimeout(() => {
+        if (!findWishlistState(getState(), id)?.data?.comicBookCover) dispatch(refreshWishlist(id));
+      }, delay);
+    });
+  };
+
+/**
+ * Adds a comic to the wish list. Without a cover, the API looks one up on
+ * Comic Vine; awaitCover brings it into the page once it's found.
+ */
+export const addToWishlist = (wishlist: Omit<WishlistComic, 'id' | 'userId'>) =>
+  async (dispatch: (action: any) => any): Promise<APICallResult> => {
+    const id = uuidv4();
+    const outcome = (await dispatch(createWishlist(wishlist, id))) as APICallResult;
+    if (outcome?.ok && !wishlist.comicBookCover?.trim()) {
+      dispatch(awaitCover(id));
+    }
+    return outcome;
+  };
 
 export const updateWishlist = (wishlist: Partial<WishlistComic> & { id: string }): APIAction => {
   validateWishlistComic(wishlist);
