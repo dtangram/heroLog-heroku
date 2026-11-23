@@ -12,6 +12,7 @@ import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import CoverPicker from '../../coverPicker/CoverPicker';
+import CoverCredit from '../../coverCredit/CoverCredit';
 import styles from './styles.module.css';
 
 interface RouteParams extends Record<string, string | undefined> {
@@ -193,6 +194,7 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
                 alt={comicBookTitle || 'Comic book cover'} 
               />
             </figure>
+            <CoverCredit covers={[comicBookCover]} />
 
             <article>
               <fieldset>

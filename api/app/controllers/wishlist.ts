@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
+import { findCover } from '../services/covers';
 
 interface WishListAttributes {
   id?: string;  // ✅ Changed to UUID
@@ -64,10 +61,6 @@ interface SequelizeValidationError extends Error {
   errors: Array<{ message: string }>;
 }
 
-// ============================================================================
-// MODEL GETTER
-// ============================================================================
-
 const getWishListModel = (): WishListModel => {
   const WishList = (db as any).WishLists || (db as any).Wishlist || (db as any).wishlist;
   
@@ -78,10 +71,6 @@ const getWishListModel = (): WishListModel => {
   
   return WishList as WishListModel;
 };
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
 
 const isSequelizeError = (error: Error): error is SequelizeValidationError => {
   return 'errors' in error && Array.isArray((error as SequelizeValidationError).errors);
@@ -226,10 +215,6 @@ const findWishLists = async (
   return results.map(item => item.toJSON());
 };
 
-// ============================================================================
-// CONTROLLER FUNCTIONS
-// ============================================================================
-
 export const getWishLists = async (
   req: Request<{ userId: string }>,
   res: Response<ApiResponse<WishListAttributes[]>>
@@ -345,6 +330,26 @@ export const getOneById = async (
   }
 };
 
+/**
+ * Finds a cover for a wish list item and saves it, unless someone has added
+ * their own cover in the meantime. Failures leave the placeholder.
+ */
+export const addCoverInBackground = (
+  id: string,
+  series: string,
+  issue: number,
+  year: number | null
+): Promise<void> =>
+  findCover({ series, issue, year })
+    .then(async cover => {
+      if (!cover) return;
+      await getWishListModel().update(
+        { comicBookCover: cover },
+        { where: { id, comicBookCover: null }, returning: false }
+      );
+    })
+    .catch(error => console.warn('Could not save the cover for a wish list item:', error));
+
 export const createWishList = async (
   req: Request<Record<string, never>, Record<string, never>, Partial<WishListAttributes>>,
   res: Response<ApiResponse<{ id: string }>>  // ✅ Changed to string
@@ -429,6 +434,12 @@ export const createWishList = async (
       wishUsersId: wishUsersId!,  // ✅ UUID string
     });
     
+    // No cover given (e.g. added from Search): look one up on Comic Vine.
+    // Runs after the reply, so adding to the wish list stays instant.
+    if (!newWishList.comicBookCover && comicIssueNum !== null) {
+      addCoverInBackground(newWishList.id!, comicBookTitle!.trim(), comicIssueNum, comicBookYearNum);
+    }
+
     return res.status(201).json({ 
       success: true,
       data: { id: newWishList.id! },

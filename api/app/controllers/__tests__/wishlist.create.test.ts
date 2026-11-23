@@ -2,13 +2,22 @@
 import { Request, Response } from 'express';
 
 const mockUpdate = jest.fn();
+const mockCreate = jest.fn();
 
 jest.mock('../../models', () => ({
   __esModule: true,
-  default: { WishLists: { update: (...args: unknown[]) => mockUpdate(...args) } },
+  default: {
+    WishLists: {
+      update: (...args: unknown[]) => mockUpdate(...args),
+      create: (...args: unknown[]) => mockCreate(...args),
+    },
+  },
 }));
 
-import { updateWishList } from '../wishlist';
+const mockFindCover = jest.fn();
+jest.mock('../../services/covers', () => ({ findCover: (...args: unknown[]) => mockFindCover(...args) }));
+
+import { addCoverInBackground, createWishList, updateWishList } from '../wishlist';
 
 const WISH_ID = '185e2f4a-3816-4184-8340-e35ecdde5a22';
 const USER_ID = '11111111-2222-4333-8444-555555555555';
@@ -79,6 +88,57 @@ describe('updateWishList number fields', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ success: false, error: message });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+});
+describe('covers for wish list items added without one', () => {
+  const create = async (body: Record<string, unknown>) => {
+    const res = mockRes();
+    await createWishList({ body } as unknown as Request<any, any, any>, res);
+    return res;
+  };
+
+  // What Add to Wish List on the Search page sends: no cover
+  const fromSearch = {
+    comicBookTitle: 'Batman', comicIssue: '497', comicBookYear: '1993',
+    comicBookPublisher: 'DC Comics', type: 'regular', wishUsersId: USER_ID,
+  };
+
+  beforeEach(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockCreate.mockReset().mockImplementation(async (data: object) => ({ id: WISH_ID, ...data }));
+    mockUpdate.mockReset().mockResolvedValue([1]);
+    mockFindCover.mockReset().mockResolvedValue('https://comicvine.gamespot.com/a/uploads/batman-497.jpg');
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it('looks up the cover on Comic Vine', async () => {
+    const res = await create(fromSearch);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(mockFindCover).toHaveBeenCalledWith({ series: 'Batman', issue: 497, year: 1993 });
+  });
+
+  it("leaves a cover the collector chose alone", async () => {
+    await create({ ...fromSearch, comicBookCover: 'https://my-bucket.example/batman-497.jpg' });
+
+    expect(mockFindCover).not.toHaveBeenCalled();
+  });
+
+  it('saves the cover only if the item still has none', async () => {
+    await addCoverInBackground(WISH_ID, 'Batman', 497, 1993);
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      { comicBookCover: 'https://comicvine.gamespot.com/a/uploads/batman-497.jpg' },
+      expect.objectContaining({ where: { id: WISH_ID, comicBookCover: null } })
+    );
+  });
+
+  it('keeps the placeholder when no cover is found', async () => {
+    mockFindCover.mockResolvedValue(null);
+
+    await addCoverInBackground(WISH_ID, 'Batman', 497, 1993);
+
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,7 @@ import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import Empty from '../empty';
 import ComicCard, { ComicCardGrid } from '../comicCard';
+import CoverCredit from '../coverCredit/CoverCredit';
 import logo from '../../img/logo.png';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
@@ -205,6 +206,7 @@ const WishList = ({
             />
           ))}
         </ComicCardGrid>
+        <CoverCredit covers={currentWishlists.map(({ comicBookCover }) => comicBookCover)} />
       </article>
     </article>
   );
