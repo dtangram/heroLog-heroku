@@ -13,7 +13,7 @@ import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import { PRICE_INPUT, SALE_CONDITIONS, validatePrice } from '../../../utils/sale';
-import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
+import CoverPicker from '../../coverPicker/CoverPicker';
 import styles from './styles.module.css';
 
 interface RouteParams extends Record<string, string | undefined> {
@@ -129,11 +129,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
       }),
   });
 
-  const { isUploading, handleFileInputChange } = useCoverUpload(
-    useCallback(url => setField('comicBookCover', url), [setField])
-  );
-
-  const { handleScanCover, isScanning, scanError } = useCoverScan(
+  const { handleScanCover, scanNewCover, isScanning, scanError } = useCoverScan(
     comicBookCover,
     useCallback(
       (result: ScanResult) =>
@@ -148,6 +144,20 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
         })),
       [setFormState]
     )
+  );
+
+  // The title as it is now, for deciding whether to scan a new cover straight away
+  const titleRef = useRef(comicBookTitle);
+  titleRef.current = comicBookTitle;
+
+  const { isUploading, handleFileInputChange } = useCoverUpload(
+    useCallback(url => {
+      setField('comicBookCover', url);
+      // Nothing typed yet: fill the form from the cover straight away.
+      // Once there's a title, scanning waits for the button, so it never
+      // overwrites what's been entered.
+      if (!titleRef.current.trim()) scanNewCover(url);
+    }, [setField, scanNewCover])
   );
 
   const validateFields = (): boolean => {
@@ -242,28 +252,16 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
 
             <article className={styles.fields}>
               <fieldset>
-                <label htmlFor="comicBookCover">
-                  {isEditMode ? 'Change Comic Book Cover' : 'Upload Comic Book Cover'}
-                  <input
-                    id="comicBookCover"
-                    className={styles.inputBorder}
-                    type="file"
-                    name="comicBookCover"
-                    accept="image/jpeg,image/jpg,image/png"
-                    onChange={handleFileInputChange}
-                    disabled={isUploading || isSubmitting}
-                  />
-                  {isUploading && <span> Uploading...</span>}
-                </label>
-
-                {comicBookCover && (
-                  <ScanCoverButton
-                    onScan={handleScanCover}
-                    isScanning={isScanning}
-                    disabled={isSubmitting || isUploading}
-                    error={scanError}
-                  />
-                )}
+                <CoverPicker
+                  label="Upload Comic Book Cover"
+                  hasCover={Boolean(comicBookCover)}
+                  isUploading={isUploading}
+                  disabled={isSubmitting}
+                  onFileChange={handleFileInputChange}
+                  onScan={handleScanCover}
+                  isScanning={isScanning}
+                  scanError={scanError}
+                />
 
                 <label htmlFor="comicBookTitle">
                   Comic Book Title *
