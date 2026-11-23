@@ -12,7 +12,7 @@ import { useCoverUpload } from '../../../hooks/useCoverUpload';
 import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
-import ScanCoverButton from '../../scanCoverButton/ScanCoverButton';
+import CoverPicker from '../../coverPicker/CoverPicker';
 import styles from './styles.module.css';
 
 interface RouteParams extends Record<string, string | undefined> {
@@ -114,11 +114,7 @@ const ComicBookComponent = ({
       }),
   });
 
-  const { isUploading, handleFileInputChange } = useCoverUpload(
-    useCallback(url => setField('comicBookCover', url), [setField])
-  );
-
-  const { handleScanCover, isScanning, scanError } = useCoverScan(
+  const { handleScanCover, scanNewCover, isScanning, scanError } = useCoverScan(
     formState.comicBookCover,
     useCallback(
       (result: ScanResult) =>
@@ -136,6 +132,20 @@ const ComicBookComponent = ({
         })),
       [setFormState]
     )
+  );
+
+  // The title as it is now, for deciding whether to scan a new cover straight away
+  const titleRef = useRef(formState.title);
+  titleRef.current = formState.title;
+
+  const { isUploading, handleFileInputChange } = useCoverUpload(
+    useCallback(url => {
+      setField('comicBookCover', url);
+      // Nothing typed yet: fill the form from the cover straight away.
+      // Once there's a title, scanning waits for the button, so it never
+      // overwrites what's been entered.
+      if (!titleRef.current.trim()) scanNewCover(url);
+    }, [setField, scanNewCover])
   );
 
   const validateFields = (): boolean => {
@@ -220,28 +230,16 @@ const ComicBookComponent = ({
 
             <article>
               <fieldset>
-                <label htmlFor="comicBookCover">
-                  Comic Book Cover
-                  <input
-                    id="comicBookCover"
-                    className={styles.inputBorder}
-                    type="file"
-                    name="comicBookCover"
-                    accept="image/jpeg,image/jpg,image/png"
-                    onChange={handleFileInputChange}
-                    disabled={isUploading || isSubmitting}
-                  />
-                  {isUploading && <span> Uploading...</span>}
-                </label>
-
-                {formState.comicBookCover && (
-                  <ScanCoverButton
-                    onScan={handleScanCover}
-                    isScanning={isScanning}
-                    disabled={isSubmitting || isUploading}
-                    error={scanError}
-                  />
-                )}
+                <CoverPicker
+                  label="Comic Book Cover"
+                  hasCover={Boolean(formState.comicBookCover)}
+                  isUploading={isUploading}
+                  disabled={isSubmitting}
+                  onFileChange={handleFileInputChange}
+                  onScan={handleScanCover}
+                  isScanning={isScanning}
+                  scanError={scanError}
+                />
 
                 <label htmlFor="title">
                   Title *

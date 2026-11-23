@@ -1,0 +1,61 @@
+/* The field: label, button and hint stacked */
+.picker {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* The real file input, hidden from view but still focusable and announced */
+.picker .input {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* What you see and click: the label wraps the input, so clicking it opens the picker */
+.button {
+  align-items: center;
+  background: #FFF;
+  border: 2px solid #770422;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #770422;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.6rem;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 20px;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.picker:hover .button {
+  background: #770422;
+  color: #FFF;
+}
+
+.picker:focus-within .button {
+  outline: 3px solid #AECEAB;
+  outline-offset: 2px;
+}
+
+.picker .input:disabled + .button {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.hint {
+  color: #555;
+  font-size: 1.4rem;
+}

@@ -16,7 +16,7 @@ const ScanCoverButton: React.FC<ScanCoverButtonProps> = ({
   error
 }) => {
   return (
-    <div className={styles.scanContainer}>
+    <section className={styles.scanContainer} aria-label="Scan the cover">
       <button
         type="button"
         onClick={onScan}
@@ -40,11 +40,11 @@ const ScanCoverButton: React.FC<ScanCoverButtonProps> = ({
       )}
       
       {isScanning && (
-        <p className={styles.scanInfo}>
+        <p className={styles.scanInfo} role="status">
           AI is analyzing your cover image...
         </p>
       )}
-    </div>
+    </section>
   );
 };
 

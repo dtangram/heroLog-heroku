@@ -260,6 +260,22 @@ const checkText = (
   return errors;
 };
 
+/** Problems with one recommendation; empty means it's grounded in the facts. */
+const checkRecommendation = (facts: CollectionFacts, rec: Recommendation, i: number): string[] => {
+  const errors: string[] = [];
+  const series = findSeries(facts, rec.series);
+  if (series) {
+    const alreadyOwned = rec.issues.filter(n => series.ownedIssues.includes(n));
+    if (alreadyOwned.length) {
+      errors.push(
+        `recommendations[${i}] suggests ${series.seriesName} #${alreadyOwned.join(', #')}, which the collector already owns.`
+      );
+    }
+  }
+  errors.push(...checkText(facts, `recommendations[${i}].reason`, rec.reason, new Set(rec.issues)));
+  return errors;
+};
+
 /** Returns a list of problems; empty means the analysis is grounded in the facts. */
 export const validateAnalysis = (facts: CollectionFacts, analysis: CollectionAnalysis): string[] => {
   const errors: string[] = [];
@@ -267,21 +283,37 @@ export const validateAnalysis = (facts: CollectionFacts, analysis: CollectionAna
   errors.push(...checkText(facts, 'summary', analysis.summary));
   analysis.highlights.forEach((h, i) => errors.push(...checkText(facts, `highlights[${i}]`, h)));
   errors.push(...checkText(facts, 'observation', analysis.observation));
-
-  analysis.recommendations.forEach((rec, i) => {
-    const series = findSeries(facts, rec.series);
-    if (series) {
-      const alreadyOwned = rec.issues.filter(n => series.ownedIssues.includes(n));
-      if (alreadyOwned.length) {
-        errors.push(
-          `recommendations[${i}] suggests ${series.seriesName} #${alreadyOwned.join(', #')}, which the collector already owns.`
-        );
-      }
-    }
-    errors.push(...checkText(facts, `recommendations[${i}].reason`, rec.reason, new Set(rec.issues)));
-  });
+  analysis.recommendations.forEach((rec, i) => errors.push(...checkRecommendation(facts, rec, i)));
 
   return errors;
+};
+
+/**
+ * The parts of an analysis that are grounded in the facts. One wrong number
+ * shouldn't cost the collector the whole analysis: a highlight, observation or
+ * recommendation that fails the checks is left out, and a summary that fails is
+ * replaced with one built from the data. Returns null when nothing from Claude
+ * is left worth showing.
+ */
+export const keepGrounded = (
+  facts: CollectionFacts,
+  analysis: CollectionAnalysis
+): CollectionAnalysis | null => {
+  const summaryOk = checkText(facts, 'summary', analysis.summary).length === 0;
+  const highlights = analysis.highlights.filter((h, i) => checkText(facts, `highlights[${i}]`, h).length === 0);
+  const recommendations = analysis.recommendations.filter((rec, i) => checkRecommendation(facts, rec, i).length === 0);
+  const observation = checkText(facts, 'observation', analysis.observation).length === 0 ? analysis.observation : '';
+
+  if (!summaryOk && highlights.length === 0 && recommendations.length === 0 && !observation) {
+    return null;
+  }
+
+  return {
+    summary: summaryOk ? analysis.summary : buildFallbackAnalysis(facts).summary,
+    highlights,
+    recommendations,
+    observation,
+  };
 };
 
 // ---------- Fallback built only from the data ----------
@@ -318,12 +350,40 @@ export const buildFallbackAnalysis = (facts: CollectionFacts): CollectionAnalysi
 
 // ---------- Claude call with one corrective retry ----------
 
+/** Busy or briefly unavailable: worth one more try after a short wait */
+const isTemporary = (error: any): boolean =>
+  [429, 500, 502, 503, 529].includes(Number(error?.status));
+
+const requestAnalysis = async (client: MessagesClient, model: string, messages: any[], waitMs = 1500): Promise<any> => {
+  const ask = () => client.messages.create({
+    model,
+    max_tokens: 1024,
+    // 0 = the same facts get the same answer (consistency over variety)
+    temperature: 0,
+    system: SYSTEM_PROMPT,
+    tools: [ANALYSIS_TOOL],
+    tool_choice: { type: 'tool', name: TOOL_NAME },
+    messages,
+  });
+
+  try {
+    return await ask();
+  } catch (error) {
+    if (!isTemporary(error)) throw error;
+    console.warn(`Collection analysis: Claude was busy (${(error as any).status}), trying once more.`);
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+    return ask();
+  }
+};
+
 export const generateCollectionAnalysis = async (
   facts: CollectionFacts,
   client: MessagesClient,
   { maxAttempts = 2, model = ANALYSIS_MODEL }: { maxAttempts?: number; model?: string } = {}
 ): Promise<AnalysisResult> => {
   const rejected: string[][] = [];
+  /** The most recent well-formed answer, in case every attempt is rejected */
+  let lastAnalysis: CollectionAnalysis | undefined;
   const messages: any[] = [
     {
       role: 'user',
@@ -334,16 +394,7 @@ export const generateCollectionAnalysis = async (
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     let response: any;
     try {
-      response = await client.messages.create({
-        model,
-        max_tokens: 1024,
-        // 0 = the same facts get the same answer (consistency over variety)
-        temperature: 0,
-        system: SYSTEM_PROMPT,
-        tools: [ANALYSIS_TOOL],
-        tool_choice: { type: 'tool', name: TOOL_NAME },
-        messages,
-      });
+      response = await requestAnalysis(client, model, messages);
     } catch (error) {
       console.error('Collection analysis request failed:', error);
       break;
@@ -359,6 +410,7 @@ export const generateCollectionAnalysis = async (
 
     const { analysis, errors: shapeErrors } = parseAnalysis(toolUse.input);
     const errors = analysis ? validateAnalysis(facts, analysis) : shapeErrors;
+    if (analysis) lastAnalysis = analysis;
 
     if (analysis && errors.length === 0) {
       return { analysis, source: 'ai', attempts: attempt, rejected };
@@ -379,6 +431,13 @@ export const generateCollectionAnalysis = async (
         },
       ],
     });
+  }
+
+  // Every attempt had something wrong: keep the parts that check out
+  const grounded = lastAnalysis ? keepGrounded(facts, lastAnalysis) : null;
+  if (grounded) {
+    console.warn('Collection analysis: showing the parts of the last attempt that match the facts.');
+    return { analysis: grounded, source: 'ai', attempts: rejected.length, rejected };
   }
 
   return {
