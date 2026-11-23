@@ -16,6 +16,7 @@ jest.mock('axios');
 jest.mock('../../API', () => ({
   __esModule: true,
   default: { get: jest.fn(() => new Promise(() => {})), post: jest.fn() },
+  API_URL: 'https://herolog.example/api',
   // Search sends the session token with each request
   sessionHeaders: jest.fn(async () => ({ Authorization: 'Bearer test-token' })),
 }));

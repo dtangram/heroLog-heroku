@@ -44,9 +44,9 @@ const PasswordReset: React.FC<ContainerProps> = () => {
     }
     
     try {
-      console.log('🔍 Calling API:', `/api/passwordreset/${token}`);
+      console.log('🔍 Calling API:', `/passwordreset/${token}`);
       
-      const response = await API.get<TokenValidationResponse>(`/api/passwordreset/${token}`);
+      const response = await API.get<TokenValidationResponse>(`/passwordreset/${token}`);
       
       console.log('🔍 Response data:', response.data);
       
@@ -114,7 +114,7 @@ const PasswordReset: React.FC<ContainerProps> = () => {
     try {
       console.log('🔍 Submitting password reset for username:', username);  // Debug
       
-      await API.put('/api/passwordreset/passwordResetUpdate', {
+      await API.put('/passwordreset/passwordResetUpdate', {
         username,
         password,
       });

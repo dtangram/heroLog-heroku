@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { sessionHeaders } from '../API';
+import { API_URL, sessionHeaders } from '../API';
 
 export interface EnrichmentJob {
   id: number;
@@ -12,7 +12,6 @@ export interface EnrichmentJob {
   completed_at?: string | null;
 }
 
-const API_BASE = process.env.REACT_APP_API_URL || '';
 
 /** How often to check a running catch-up */
 export const POLL_INTERVAL = 3000;
@@ -36,7 +35,7 @@ export const useEnrichment = (userId: string | undefined) => {
 
     const poll = async (jobId: number) => {
       try {
-        const response = await axios.get(`${API_BASE}/api/search/enrich-progress/${jobId}`, {
+        const response = await axios.get(`${API_URL}/search/enrich-progress/${jobId}`, {
           headers: await sessionHeaders(),
         });
         if (!active) return;
@@ -54,7 +53,7 @@ export const useEnrichment = (userId: string | undefined) => {
 
     const start = async () => {
       try {
-        const response = await axios.post(`${API_BASE}/api/search/enrich-all/${userId}`, undefined, {
+        const response = await axios.post(`${API_URL}/search/enrich-all/${userId}`, undefined, {
           headers: await sessionHeaders(),
         });
         if (!active) return;

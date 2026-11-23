@@ -1,10 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import axios from 'axios';
-import { useEnrichment, POLL_INTERVAL } from './useEnrichment';
-import { sessionHeaders } from '../API';
+import { useEnrichment, POLL_INTERVAL } from '../useEnrichment';
+import { API_URL, sessionHeaders } from '../../API';
 
 jest.mock('axios');
-jest.mock('../API', () => ({ sessionHeaders: jest.fn(async () => ({ Authorization: 'Bearer t' })) }));
+jest.mock('../API', () => ({
+  API_URL: 'https://herolog.example/api',
+  sessionHeaders: jest.fn(async () => ({ Authorization: 'Bearer t' })),
+}));
 
 const mocked = axios as jest.Mocked<typeof axios>;
 const USER = '11111111-2222-4333-8444-555555555555';
@@ -29,7 +32,7 @@ describe('useEnrichment', () => {
     const { result } = renderHook(() => useEnrichment(USER));
 
     await waitFor(() => expect(result.current.enrichmentJob?.processed_comics).toBe(1));
-    expect(mocked.post).toHaveBeenCalledWith(`/api/search/enrich-all/${USER}`, undefined, {
+    expect(mocked.post).toHaveBeenCalledWith(`${API_URL}/search/enrich-all/${USER}`, undefined, {
       headers: { Authorization: 'Bearer t' },
     });
     expect(result.current.isCatchingUp).toBe(true);
@@ -48,7 +51,7 @@ describe('useEnrichment', () => {
     const { result } = renderHook(() => useEnrichment(USER));
 
     await waitFor(() => expect(result.current.enrichmentJob?.processed_comics).toBe(2));
-    expect(mocked.get).toHaveBeenCalledWith('/api/search/enrich-progress/7', expect.anything());
+    expect(mocked.get).toHaveBeenCalledWith(`${API_URL}/search/enrich-progress/7`, expect.anything());
   });
 
   it('shows nothing when every comic is already ready', async () => {

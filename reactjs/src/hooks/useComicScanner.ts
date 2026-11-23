@@ -41,7 +41,7 @@ export const useComicScanner = () => {
     try {
       console.log('🔍 Scanning cover:', imageUrl);
 
-      const response = await API.post<ScanResponse>('/api/ai/scan-comic-cover', {
+      const response = await API.post<ScanResponse>('/ai/scan-comic-cover', {
         imageUrl
       }) as any;
 

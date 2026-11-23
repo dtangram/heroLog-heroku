@@ -1,10 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { sessionHeaders } from '../API';
-
-// ============================================================================
-// INTERFACES
-// ============================================================================
+import { API_URL, sessionHeaders } from '../API';
 
 export interface CollectionResult {
   comic_id: string;
@@ -35,14 +31,9 @@ export interface ClaudeResult {
 
 export type SearchMode = 'collection' | 'all' | 'missing';
 
-const API_BASE = process.env.REACT_APP_API_URL || '';
 
 /** After this long, tell the user the search is still running and why. */
 export const SLOW_SEARCH_MS = 8000;
-
-// ============================================================================
-// HOOK
-// ============================================================================
 
 export const useSearch = (userId: string | undefined) => {
   const [query, setQuery] = useState<string>('');
@@ -100,9 +91,9 @@ export const useSearch = (userId: string | undefined) => {
       const config = { params, signal: controller.signal, headers: await sessionHeaders() };
 
       const url =
-        mode === 'collection' ? `${API_BASE}/api/search/search/${userId}`
-        : mode === 'all' ? `${API_BASE}/api/search/search-all`
-        : `${API_BASE}/api/search/search-missing/${userId}`;
+        mode === 'collection' ? `${API_URL}/search/search/${userId}`
+        : mode === 'all' ? `${API_URL}/search/search-all`
+        : `${API_URL}/search/search-missing/${userId}`;
 
       const response = await axios.get(url, config);
 
