@@ -4,6 +4,7 @@ import {
   COLLECTION_RESULT_LIMIT,
   SEARCH_MODEL,
   SEARCH_RESULT_COUNT,
+  closeMatches,
   isOpenAIUnavailable,
   normalizeTitle,
   summarizeOwned,
@@ -69,5 +70,20 @@ describe('matching owned comics', () => {
     expect(summarizeOwned(['Batman #491', 'Batman #492', 'Detective Comics #659'])).toBe(
       'Batman: #491, #492\nDetective Comics: #659'
     );
+  });
+});
+
+describe('My Collection: only matches close to the best one', () => {
+  // The scores from the "Knightfall saga" search on the live site
+  const scores = [0.47, 0.46, 0.45, 0.44, 0.44, 0.42, 0.42, 0.42, 0.36, 0.32, 0.31, 0.30, 0.29, 0.25];
+  const rows = scores.map((similarity_score, i) => ({ comic_id: `c${i}`, similarity_score }));
+
+  it('keeps the Knightfall issues and drops the unrelated Batman and Spider-Man issues', () => {
+    const kept = closeMatches(rows).map(r => r.similarity_score);
+    expect(kept).toEqual([0.47, 0.46, 0.45, 0.44, 0.44, 0.42, 0.42, 0.42, 0.36]);
+  });
+
+  it('handles no matches', () => {
+    expect(closeMatches([])).toEqual([]);
   });
 });

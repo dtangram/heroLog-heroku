@@ -193,6 +193,40 @@ export const summarizeOwned = (titles: string[]): string => {
     .join('\n');
 };
 
+/** How results are grouped on the page; anything unexpected counts as Related */
+export const RESULT_GROUPS = ['Main story', 'Tie-in', 'Related'] as const;
+export type ResultGroup = typeof RESULT_GROUPS[number];
+
+export const normalizeGroup = (group: unknown): ResultGroup => {
+  const found = RESULT_GROUPS.find(g => g.toLowerCase() === String(group ?? '').trim().toLowerCase());
+  return found ?? 'Related';
+};
+
+/** A comic's title written the way the search data writes it */
+const comicTitle = (row: { cbTitle: string; comicIssue: unknown }): string =>
+  row.comicIssue == null || row.comicIssue === '' ? String(row.cbTitle) : `${row.cbTitle} #${row.comicIssue}`;
+
+/**
+ * The collector's comics, straight from the collection, with what Search needs
+ * to show and link to each one.
+ */
+const getOwnedComics = async (userId: string, limit?: number) => {
+  const result = await getHerokuDb().query(`
+    SELECT cb.id::text AS id, cbt."cbTitle", cb."comicIssue", cb."comicBookCover",
+           cbt.id::text AS "titleId", cp.id::text AS "publisherId", cp."publisherName"
+    FROM "ComicBooks" cb
+    JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
+    JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
+    WHERE cp."collectpubUsersId" = $1
+    ORDER BY cbt."cbTitle", cb."comicIssue"
+    ${limit ? 'LIMIT $2' : ''};
+  `, limit ? [userId, limit] : [userId]);
+  return result.rows as Array<{
+    id: string; cbTitle: string; comicIssue: unknown; comicBookCover: string | null;
+    titleId: string; publisherId: string; publisherName: string;
+  }>;
+};
+
 /** Ask Claude for comics, and log why if none come back */
 const askClaudeForComics = async (q: string, prompt = comicPrompt(q), maxTokens = SEARCH_MAX_TOKENS): Promise<any[]> => {
   const message = await getAnthropic().messages.create({
@@ -202,7 +236,7 @@ const askClaudeForComics = async (q: string, prompt = comicPrompt(q), maxTokens 
   });
 
   const text = replyText(message.content);
-  const comics = parseComicList(text);
+  const comics = parseComicList(text).map(comic => ({ ...comic, group: normalizeGroup(comic.group) }));
 
   if (comics.length === 0) {
     console.warn(
@@ -227,6 +261,8 @@ Each item must have exactly these fields:
 - description: one short sentence about tone and themes only
 - publisher: publisher name
 - year: publication year as a string
+- group: "Main story" for an issue of the storyline itself, "Tie-in" for a crossover issue in another series,
+  or "Related" for anything else (a prelude, aftermath, or a comic that simply matches the search)
 
 Example of exact format to return:
 [{"title": "Batman #497", "description": "A dark psychological thriller.", "publisher": "DC Comics", "year": "1993"}]`;
@@ -254,6 +290,8 @@ Each item must have exactly these fields:
 - description: one short sentence about tone and themes only
 - publisher: publisher name
 - year: publication year as a string
+- group: "Main story" for an issue of the storyline itself, "Tie-in" for a crossover issue in another series,
+  or "Related" for anything else (a prelude, aftermath, or a comic that simply matches the search)
 
 Aim for ${MISSING_RESULT_COUNT} comics; return fewer only if fewer that they're missing genuinely match. Example of exact format to return:
 [{"title": "Detective Comics #659", "description": "A gritty street-level tie-in.", "publisher": "DC Comics", "year": "1993"}]`;
@@ -570,12 +608,27 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
       LIMIT $4;
     `, [embeddingStr, userId, COLLECTION_MIN_SIMILARITY, COLLECTION_RESULT_LIMIT]);
 
-    const results = closeMatches(result.rows.map(row => ({
+    type Match = { comic_id: string; title: string; description: string; similarity_score: number };
+    const matches = closeMatches<Match>(result.rows.map((row: any) => ({
       comic_id: row.comic_id,
       title: row.title,
       description: row.description,
       similarity_score: parseFloat(parseFloat(row.similarity).toFixed(4))
     })));
+
+    // The cover and where each comic lives, so a result can show and link to it
+    const details = new Map((matches.length ? await getOwnedComics(userId) : []).map(comic => [comic.id, comic]));
+    const results = matches.map(match => {
+      const comic = details.get(String(match.comic_id));
+      return {
+        ...match,
+        cover: comic?.comicBookCover || null,
+        publisher_id: comic?.publisherId ?? null,
+        publisher_name: comic?.publisherName ?? null,
+        title_id: comic?.titleId ?? null,
+        series: comic?.cbTitle ?? null,
+      };
+    });
 
     res.json({ status: 'Success', query: q, results });
 
@@ -593,10 +646,19 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
 // Search all comics using Claude knowledge
 router.get('/search-all', async (req: Request, res: Response) => {
   const { q } = req.query as { q: string };
+  const userId = (req as any).user?.id as string | undefined;
 
   try {
-    const results = (await askClaudeForComics(q)).map(result => ({
+    // Asked at the same time as Claude, so marking owned comics adds no wait
+    const [comics, ownedComics] = await Promise.all([
+      askClaudeForComics(q),
+      userId ? getOwnedComics(userId) : Promise.resolve([]),
+    ]);
+    const owned = new Set(ownedComics.map(comic => normalizeTitle(comicTitle(comic))));
+
+    const results = comics.map(result => ({
       ...result,
+      already_owned: owned.has(normalizeTitle(result.title)),
       source: 'claude'
     }));
 
@@ -616,18 +678,7 @@ router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, 
   try {
     // From the collection itself, so a comic counts as owned even before it's
     // ready for My Collection search
-    const ownedResult = await getHerokuDb().query(`
-      SELECT DISTINCT cbt."cbTitle", cb."comicIssue"
-      FROM "ComicBooks" cb
-      JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
-      JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
-      WHERE cp."collectpubUsersId" = $1
-      ORDER BY cbt."cbTitle", cb."comicIssue"
-      LIMIT $2;
-    `, [userId, MISSING_OWNED_LIMIT]);
-
-    const ownedTitles: string[] = ownedResult.rows.map((row: any) =>
-      row.comicIssue == null || row.comicIssue === '' ? String(row.cbTitle) : `${row.cbTitle} #${row.comicIssue}`);
+    const ownedTitles = [...new Set((await getOwnedComics(userId, MISSING_OWNED_LIMIT)).map(comicTitle))];
     const owned = new Set(ownedTitles.map(normalizeTitle));
 
     const suggestions = await askClaudeForComics(q, missingPrompt(q, summarizeOwned(ownedTitles)), MISSING_MAX_TOKENS);
