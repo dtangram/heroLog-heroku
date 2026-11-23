@@ -126,7 +126,7 @@ const CollectionIntel: React.FC = () => {
     setError('');
 
     try {
-      const response = await API.get(`/api/insights/${userId}`, { timeout: INSIGHTS_TIMEOUT }) as any;
+      const response = await API.get(`/insights/${userId}`, { timeout: INSIGHTS_TIMEOUT }) as any;
 
       // The backend returns { success: true, data: {...} }
       if (response && response.data) {

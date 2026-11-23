@@ -172,7 +172,7 @@ describe('CollectionInsights', () => {
     render(<CollectionInsights />);
 
     await screen.findByText('Total Comics');
-    expect(API.get).toHaveBeenCalledWith('/api/insights/test-user-id', { timeout: 30000 });
+    expect(API.get).toHaveBeenCalledWith('/insights/test-user-id', { timeout: 30000 });
   });
 
   it('shows empty state when no comics', async () => {

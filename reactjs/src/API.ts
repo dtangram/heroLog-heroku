@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 /**
- * Determine the API base URL based on environment
+ * Where the server is, based on environment
  */
-const getBaseURL = (): string => {
+const getServerURL = (): string => {
   // Check for explicit environment variable first
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
@@ -28,10 +28,17 @@ const getBaseURL = (): string => {
 };
 
 /**
+ * Where the API is: every API route is under /api on the server, so no page
+ * in the app (/wishlist/:userId, …) can share an address with it. Calls are
+ * written without the prefix, e.g. API.get('/wishlist/…').
+ */
+export const API_URL = `${getServerURL().replace(/\/+$/, '')}/api`;
+
+/**
  * Axios instance with custom configuration
  */
 const API: AxiosInstance = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: API_URL,
   timeout: 15000, // 15 second timeout
   headers: {
     'Content-Type': 'application/json',

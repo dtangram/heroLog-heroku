@@ -1,11 +1,11 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useComicScanner } from './useComicScanner';
+import { useComicScanner } from '../useComicScanner';
 
 // Mock the API module
-jest.mock('../API');
+jest.mock('../../API');
 
 // Import after mocking
-import API from '../API';
+import API from '../../API';
 
 describe('useComicScanner', () => {
   beforeEach(() => {

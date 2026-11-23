@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction, Router } from 'express';
 import cors from 'cors';
 import debug from 'debug';
 import dotenv from 'dotenv';
@@ -20,10 +20,8 @@ import searchRouter from './routes/search';
 import s3Router from './routes/s3upload';
 import aiScanner from './routes/aiScanner';
 import collectionInsights from './routes/collectionInsights';
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
+import { servePageLoads } from './middleware/pageLoads';
+import { API_PREFIX, LEGACY_ROOT_ROUTES } from './apiRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -39,10 +37,6 @@ const ENV = {
     ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
     : ['http://localhost:3000', 'http://localhost:3001'],
 };
-
-// ============================================================================
-// APP SETUP
-// ============================================================================
 
 const app: Express = express();
 
@@ -151,24 +145,44 @@ app.get('/health', async (_req: Request, res: Response) => {
   }
 });
 
-// API routes
-app.use('/collectpub', collectionpublisherRouter);
-app.use('/comicbooktitles', comicbooktitleRouter);
-app.use('/comicbook', comicbookRouter);
-app.use('/messaging', messagingRouter);
-app.use('/salelist', salelistRouter);
-app.use('/salelistALL', salelistALLRouter);
-app.use('/wishlist', wishlistRouter);
-app.use('/users', usersRouter);
-app.use('/auth', authRouter);
-app.use('/api/passwordreset', passwordresetRouter);
-app.use('/emailpasswordreset', emailPasswordResetRouter);
-app.use('/api/ai', aiScanner);
-app.use('/api/insights', collectionInsights);
-app.use('/api/search', searchRouter);
+// A browser page load (refresh, bookmark, typed address) gets the React app,
+// even where a page's address starts like an API route (/wishlist/:userId).
+// Set once the React build is found, below.
+let reactIndexFile: string | null = null;
+app.use(servePageLoads(() => reactIndexFile));
 
-// Utility routes
-app.use('/s3', s3Router);
+// API routes. Every route lives under /api (see API_PREFIX), so no page in the
+// React app can ever share an address with the API. Add new routes to the
+// table, never with app.use('/something') directly: a test checks.
+const API_ROUTES: Array<[string, Router]> = [
+  ['/collectpub', collectionpublisherRouter],
+  ['/comicbooktitles', comicbooktitleRouter],
+  ['/comicbook', comicbookRouter],
+  ['/messaging', messagingRouter],
+  ['/salelist', salelistRouter],
+  ['/salelistALL', salelistALLRouter],
+  ['/wishlist', wishlistRouter],
+  ['/users', usersRouter],
+  ['/auth', authRouter],
+  ['/passwordreset', passwordresetRouter],
+  ['/emailpasswordreset', emailPasswordResetRouter],
+  ['/ai', aiScanner],
+  ['/insights', collectionInsights],
+  ['/search', searchRouter],
+  ['/s3', s3Router],
+];
+
+for (const [routePath, router] of API_ROUTES) {
+  app.use(`${API_PREFIX}${routePath}`, router);
+}
+
+// LEGACY: the addresses these routes had before everything moved under /api.
+// Kept for one release so a browser tab still running the previous version of
+// the app keeps working through the deploy. Remove this block in the next
+// release (the API routes test lists what may still be mounted here).
+for (const [routePath, router] of API_ROUTES.filter(([routePath]) => LEGACY_ROOT_ROUTES.includes(routePath))) {
+  app.use(routePath, router);
+}
 
 // ============================================================================
 // SERVE REACT APP (Production only)
@@ -195,6 +209,8 @@ if (ENV.nodeEnv === 'production') {
   if (reactBuildPath) {
     console.log('✅ Serving React build from:', reactBuildPath);
     
+    reactIndexFile = path.join(reactBuildPath, 'index.html');
+
     // Serve static files from React build
     app.use(express.static(reactBuildPath));
     

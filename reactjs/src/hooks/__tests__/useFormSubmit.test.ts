@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { FormEvent } from 'react';
-import { useFormSubmit, REDIRECT_DELAY } from './useFormSubmit';
-import { getSubmitLabel } from '../utils/forms';
+import { useFormSubmit, REDIRECT_DELAY } from '../useFormSubmit';
+import { getSubmitLabel } from '../../utils/forms';
 
 const submitEvent = () => ({ preventDefault: jest.fn() }) as unknown as FormEvent<HTMLFormElement>;
 
