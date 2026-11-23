@@ -8,6 +8,9 @@ jest.mock('@anthropic-ai/sdk', () => jest.fn().mockImplementation(() => ({ messa
 const query = jest.fn();
 jest.mock('pg', () => ({ Pool: jest.fn().mockImplementation(() => ({ query })) }));
 
+const embed = jest.fn();
+jest.mock('openai', () => jest.fn().mockImplementation(() => ({ embeddings: { create: embed } })));
+
 // Signed in as the owner of the collection being searched
 jest.mock('../../middleware/auth', () => ({
   requireIdentity: (req: any, _res: any, next: any) => { req.user = { id: 'user-1' }; next(); },
@@ -32,7 +35,13 @@ const thinkingFirst = {
 
 beforeEach(() => {
   create.mockReset();
-  query.mockReset();
+  query.mockReset().mockResolvedValue({ rows: [] });
+  embed.mockReset().mockResolvedValue({ data: [{ embedding: [0.1, 0.2] }] });
+});
+
+/** A comic in the collection, as the collection query returns it */
+const ownedComic = (id: string, cbTitle: string, comicIssue: string, comicBookCover: string | null = null) => ({
+  id, cbTitle, comicIssue, comicBookCover, titleId: 'title-batman', publisherId: 'pub-dc', publisherName: 'DC',
 });
 
 it('All Comics shows the comics when the reply starts with a thinking block', async () => {
@@ -78,4 +87,49 @@ it('a reply with no list is an error, not "no comics found"', async () => {
   const res = await request(app).get('/api/search/search-all').query({ q: 'Knightfall saga' });
 
   expect(res.status).toBe(500);
+});
+it('All Comics marks the comics already in the collection', async () => {
+  create.mockResolvedValue(thinkingFirst);
+  query.mockResolvedValue({ rows: [ownedComic('c-497', 'Batman', '497')] });
+
+  const res = await request(app).get('/api/search/search-all').query({ q: 'Knightfall saga' });
+
+  expect(res.body.results.map((r: any) => [r.title, r.already_owned])).toEqual([
+    ['Batman #492', false],
+    ['Batman #497', true],
+  ]);
+});
+
+it('puts each comic in a group, counting anything unexpected as Related', async () => {
+  create.mockResolvedValue({
+    content: [{ type: 'text', text: JSON.stringify([
+      { title: 'Batman #492', group: 'Main story' },
+      { title: 'Detective Comics #659', group: 'tie-in' },
+      { title: 'Vengeance of Bane #1', group: 'Prelude' },
+      { title: 'Robin #1' },
+    ]) }],
+    stop_reason: 'end_turn',
+  });
+
+  const res = await request(app).get('/api/search/search-all').query({ q: 'Knightfall saga' });
+
+  expect(res.body.results.map((r: any) => r.group)).toEqual(['Main story', 'Tie-in', 'Related', 'Related']);
+});
+
+it('My Collection gives each match its cover and where it lives in the collection', async () => {
+  query
+    .mockResolvedValueOnce({ rows: [{ comic_id: 'c-497', title: 'Batman #497', description: 'Bane breaks Batman.', similarity: '0.46' }] })
+    .mockResolvedValueOnce({ rows: [ownedComic('c-497', 'Batman', '497', 'https://covers.example/497.jpg')] });
+
+  const res = await request(app).get('/api/search/search/user-1').query({ q: 'Knightfall saga' });
+
+  expect(res.status).toBe(200);
+  expect(res.body.results[0]).toMatchObject({
+    comic_id: 'c-497',
+    cover: 'https://covers.example/497.jpg',
+    publisher_id: 'pub-dc',
+    publisher_name: 'DC',
+    title_id: 'title-batman',
+    series: 'Batman',
+  });
 });

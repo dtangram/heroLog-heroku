@@ -11,7 +11,17 @@ export interface CollectionResult {
   title: string;
   description: string;
   similarity_score: number;
+  /** The comic's cover, if it has one */
+  cover?: string | null;
+  /** Where the comic lives in the collection, for linking to it */
+  publisher_id?: string | null;
+  publisher_name?: string | null;
+  title_id?: string | null;
+  series?: string | null;
 }
+
+/** How All Comics and Find Missing results are grouped */
+export type ResultGroup = 'Main story' | 'Tie-in' | 'Related';
 
 export interface ClaudeResult {
   title: string;
@@ -19,6 +29,7 @@ export interface ClaudeResult {
   publisher: string;
   year: string;
   already_owned?: boolean;
+  group?: ResultGroup;
   source: string;
 }
 

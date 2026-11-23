@@ -6,7 +6,7 @@ import { useSearch, SearchMode } from '../../hooks/useSearch';
 import SearchIcon from '@mui/icons-material/Search';
 import clsx from 'clsx';
 import { fetchWishlists } from '../../store/wishlist/actions';
-import AddToWishList from './AddToWishList';
+import { ClaudeResultList, CollectionResultCard } from './ResultCards';
 import { useEnrichment } from '../../hooks/useEnrichment';
 import styles from './styles.module.css';
 
@@ -213,15 +213,7 @@ const Search: React.FC = () => {
             <section className={styles.results}>
               <h2>Results for "{searchedQuery}"</h2>
               {collectionResults.map((result) => (
-                <article key={result.comic_id} className={styles.resultCard}>
-                  <section className={styles.resultHeader}>
-                    <h3>{result.title}</h3>
-                    <span className={styles.scoreBadge}>
-                      {Math.round(result.similarity_score * 100)}% match
-                    </span>
-                  </section>
-                  <p className={styles.description}>{result.description}</p>
-                </article>
+                <CollectionResultCard key={result.comic_id} result={result} userId={userId || ''} />
               ))}
             </section>
           )}
@@ -230,33 +222,7 @@ const Search: React.FC = () => {
           {claudeResults.length > 0 && (
             <section className={styles.results}>
               <h2>Results for "{searchedQuery}"</h2>
-              {claudeResults.map((result, index) => (
-                <article
-                  key={index}
-                  className={`${styles.resultCard} ${result.already_owned ? styles.owned : ''}`}
-                >
-                  <section className={styles.resultHeader}>
-                    <h3>{result.title}</h3>
-                    <aside className={styles.badges}>
-                      {result.year && (
-                        <span className={styles.yearBadge}>{result.year}</span>
-                      )}
-                      {searchedMode === 'missing' && (
-                        <span className={result.already_owned ? styles.ownedBadge : styles.missingBadge}>
-                          {result.already_owned ? 'Owned' : 'Not Owned'}
-                        </span>
-                      )}
-                    </aside>
-                  </section>
-                  {result.publisher && (
-                    <p className={styles.publisher}>{result.publisher}</p>
-                  )}
-                  <p className={styles.description}>{result.description}</p>
-                  {!result.already_owned && (
-                    <AddToWishList result={result} userId={localStorage.getItem('id') || ''} />
-                  )}
-                </article>
-              ))}
+              <ClaudeResultList results={claudeResults} userId={localStorage.getItem('id') || ''} />
             </section>
           )}
 
