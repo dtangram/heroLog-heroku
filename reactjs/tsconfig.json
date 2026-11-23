@@ -23,7 +23,7 @@
   },
   "include": [
     "src"
-  ],
+, "../api/app/utils/clientId.ts"  ],
   "exclude": [
     "node_modules",
     "build",

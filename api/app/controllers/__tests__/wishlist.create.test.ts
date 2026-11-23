@@ -141,4 +141,12 @@ describe('covers for wish list items added without one', () => {
 
     expect(mockUpdate).not.toHaveBeenCalled();
   });
+
+  it("files the new item under the ID the app gave it, so the app can load, edit or delete it straight away", async () => {
+    const appId = '0c045a2f-5683-41c4-86bf-e062366dcf4c';
+
+    await create({ ...fromSearch, id: appId });
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ id: appId }));
+  });
 });

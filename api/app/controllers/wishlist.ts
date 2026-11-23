@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 import { findCover } from '../services/covers';
+import { clientId } from '../utils/clientId';
 
 interface WishListAttributes {
   id?: string;  // ✅ Changed to UUID
@@ -424,6 +425,7 @@ export const createWishList = async (
   try {
     const WishLists = getWishListModel();
     const newWishList = await WishLists.create({
+      ...clientId(req.body?.id),
       comicBookTitle: comicBookTitle!.trim(),
       comicIssue: comicIssueNum,
       comicBookVolume: comicBookVolumeNum,

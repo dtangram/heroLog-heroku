@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import { clientId } from '../utils/clientId';
 
 // Properly typed model interface
 interface MessagingModel {
@@ -407,6 +408,7 @@ export const createMessaging = async (
   
   try {
     const newMessaging = await Messagings.create({
+      ...clientId((req.body as { id?: unknown })?.id),
       name: name.trim(),
       email: email.trim().toLowerCase(),
       subject: subject.trim(),

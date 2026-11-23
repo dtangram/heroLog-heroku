@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
+import { clientId } from '../utils/clientId';
 
 type SaleListType = 'regular' | 'variant';
 
@@ -90,10 +87,6 @@ interface SequelizeError {
   errors: Array<{ message: string }>;
 }
 
-// ============================================================================
-// MODEL GETTER
-// ============================================================================
-
 const getSaleListModel = (): SaleListModel => {
   const SaleList = (db as any).SaleLists || (db as any).SaleList || (db as any).Salelist || (db as any).salelist;
   
@@ -104,10 +97,6 @@ const getSaleListModel = (): SaleListModel => {
   
   return SaleList as SaleListModel;
 };
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
 
 const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
   return 'errors' in error && Array.isArray((error as SequelizeError).errors);
@@ -289,10 +278,6 @@ const findSaleLists = async (
   const SaleLists = getSaleListModel();
   return await SaleLists.findAll({ where: whereClause });
 };
-
-// ============================================================================
-// CONTROLLER FUNCTIONS
-// ============================================================================
 
 export const getSaleLists = async (
   req: Request<{ userId: string }>,
@@ -551,6 +536,7 @@ export const createSaleList = async (
     
     console.log('✅ Creating sale list...');
     const newSaleList = await SaleLists.create({
+      ...clientId((req.body as { id?: unknown })?.id),
       comicBookTitle: comicBookTitle.trim(),
       comicIssue: comicIssueNum,
       comicBookVolume: comicBookVolumeNum,
