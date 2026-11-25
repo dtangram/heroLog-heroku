@@ -106,11 +106,12 @@
   color: #770422;
   display: block;
   float: none;
-  font-size: 1.3rem;
+  font-size: 1.5rem; /* was 13px: too small */
   /* margin-bottom: 25px; */
 }
 
-.wrapper form > fieldset > label > input{
+.wrapper form > fieldset > label > input,
+.wrapper form > fieldset > label > .passwordRow > input{
   font-size: 1.5rem;
   padding: .4rem;
   width: 100%;
@@ -125,7 +126,8 @@
   -o-transition: all 0.30s ease-in-out;
 }
 
-.wrapper form > fieldset > label > input.inputBorder:focus{
+.wrapper form > fieldset > label > input.inputBorder:focus,
+.wrapper form > fieldset > label > .passwordRow > input.inputBorder:focus{
   border: 2px solid #770422;
 }
 
@@ -175,8 +177,63 @@
   text-align: center;
 }
 
+.wrapper form p,
 .wrapper form p a{
-  font-size: 1.3rem;
+  font-size: 1.5rem; /* was 13px */
+}
+
+.wrapper form p a{
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* Password: the input with a Show/Hide button beside it */
+.passwordRow{
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.passwordRow > input{
+  flex: 1;
+  min-width: 0;
+}
+
+/* Overrides the global button rule (green, 54% wide, positioned) */
+.wrapper form .showPassword{
+  background: transparent;
+  border: 2px solid #770422;
+  border-radius: 4px;
+  bottom: auto;
+  color: #770422;
+  flex-shrink: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+  min-height: 44px;
+  min-width: 64px;
+  padding: 0 10px;
+  position: static;
+  width: auto;
+}
+
+.wrapper form .showPassword:hover{
+  background: #fff5f5;
+}
+
+/* "At least 8 characters, with a letter and a number." */
+.hint{
+  color: #555;
+  display: block;
+  font-size: 1.4rem;
+  margin-top: 6px;
+}
+
+/* "By creating an account, you agree to the Terms of Use." */
+.wrapper form p.terms{
+  color: #2B2B2B;
+  line-height: 1.5;
+  margin: 0 0 16px;
 }
 
 .signBCK{

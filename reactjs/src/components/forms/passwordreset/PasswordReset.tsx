@@ -4,6 +4,7 @@ import API from '../../../API';
 import FormErrors from '../../../formErrors';
 import styles from './styles.module.css';
 import { ContainerProps } from './container';
+import { PASSWORD_RULE, passwordProblem } from '../../../utils/password';
 
 interface FormErrorsState {
   password: string;
@@ -87,11 +88,13 @@ const PasswordReset: React.FC<ContainerProps> = () => {
   };
 
   const validateFields = (): boolean => {
-    const isPasswordValid = password.length >= MIN_PASSWORD_LENGTH;
+    // The same rule the API enforces
+    const problem = passwordProblem(password);
+    const isPasswordValid = !problem;
     const doPasswordsMatch = password === passwordConfirm;
     
     setFormErrors({
-      password: isPasswordValid ? '' : `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+      password: problem,
       confirmed: doPasswordsMatch ? '' : 'Passwords do not match',
     });
     
@@ -181,7 +184,12 @@ const PasswordReset: React.FC<ContainerProps> = () => {
                   minLength={MIN_PASSWORD_LENGTH}
                   required
                   disabled={isLoading}
+                  autoComplete="new-password"
+                  aria-describedby="resetPasswordRule"
                 />
+                <span id="resetPasswordRule" className={styles.hint}>
+                  {PASSWORD_RULE}
+                </span>
               </label>
             </fieldset>
             

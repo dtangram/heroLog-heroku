@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, ChangeEvent, FormEvent } from 
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import styles from './styles.module.css';
+import { PASSWORD_RULE, passwordProblem } from '../../../utils/password';
+import { TERMS_URL } from '../../../siteLinks';
 
 interface FormErrorsType {
   firstname: string;
@@ -38,7 +40,6 @@ interface SignupProps {
 
 const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
 const MIN_NAME_LENGTH = 2;
-const MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_PROFILE_PIC = 'https://dothanthorntonbucket.s3.amazonaws.com/material-design-account-icon.png';
 
 const Signup = ({
@@ -57,6 +58,7 @@ const Signup = ({
     password: ''
   });
   
+  const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrorsType>({
     firstname: '',
     lastname: '',
@@ -112,7 +114,8 @@ const Signup = ({
       lastname: value.length >= MIN_NAME_LENGTH ? '' : 'Last name is required',
       username: value.length >= MIN_NAME_LENGTH ? '' : 'Username is required',
       email: EMAIL_REGEX.test(value) ? '' : 'Email is invalid',
-      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password is too short'
+      // The same rule the API enforces, so it never rejects a password this form accepted
+      password: passwordProblem(value)
     };
     
     return validations[fieldName];
@@ -181,11 +184,12 @@ const Signup = ({
 
             <fieldset>
               <label htmlFor="firstname">
-                First Name
+                First name
                 <input
                   id="firstname"
                   className={styles.inputBorder}
                   type="text"
+                  autoComplete="given-name"
                   name="firstname"
                   value={firstname}
                   onChange={handleInputChange}
@@ -193,11 +197,12 @@ const Signup = ({
               </label>
 
               <label htmlFor="lastname">
-                Last Name
+                Last name
                 <input
                   id="lastname"
                   className={styles.inputBorder}
                   type="text"
+                  autoComplete="family-name"
                   name="lastname"
                   value={lastname}
                   onChange={handleInputChange}
@@ -210,6 +215,7 @@ const Signup = ({
                   id="username"
                   className={styles.inputBorder}
                   type="text"
+                  autoComplete="username"
                   name="username"
                   value={username}
                   onChange={handleInputChange}
@@ -221,7 +227,8 @@ const Signup = ({
                 <input
                   id="email"
                   className={styles.inputBorder}
-                  type="text"
+                  type="email"
+                  autoComplete="email"
                   name="email"
                   value={email}
                   onChange={handleInputChange}
@@ -230,16 +237,38 @@ const Signup = ({
 
               <label htmlFor="password">
                 Password
-                <input
-                  id="password"
-                  className={styles.inputBorder}
-                  type="password"
-                  name="password"
-                  value={password}
-                  onChange={handleInputChange}
-                />
+                {/* The input and its Show/Hide button side by side */}
+                <span className={styles.passwordRow}>
+                  <input
+                    id="password"
+                    className={styles.inputBorder}
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    name="password"
+                    value={password}
+                    onChange={handleInputChange}
+                    aria-describedby="passwordRule"
+                  />
+                  <button
+                    className={styles.showPassword}
+                    type="button"
+                    onClick={() => setShowPassword(shown => !shown)}
+                    aria-pressed={showPassword}
+                    aria-controls="password"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </span>
+                <span id="passwordRule" className={styles.hint}>
+                  {PASSWORD_RULE}
+                </span>
               </label>
             </fieldset>
+
+            <p className={styles.terms}>
+              By creating an account, you agree to the{' '}
+              <a href={TERMS_URL}>Terms of Use</a>.
+            </p>
 
             <input
               id="submitQ1"
@@ -249,11 +278,9 @@ const Signup = ({
               disabled={isLoading}
             />
 
-            <div>
-              <p>
-                <Link to="/signin">Already have an Account?</Link>
-              </p>
-            </div>
+            <p>
+              Already have an account? <Link to="/signin">Sign in</Link>
+            </p>
           </form>
         </section>
 

@@ -2,6 +2,7 @@ import React from 'react';
 import facebook from '../../img/facebook.png';
 import twitter from '../../img/twitter.png';
 import instagram from '../../img/instagram.png';
+import { HELP_URL, PRIVACY_URL, TERMS_URL } from '../../siteLinks';
 
 interface SocialLink {
   name: string;
@@ -38,9 +39,9 @@ const SOCIAL_LINKS: SocialLink[] = [
 ];
 
 const FOOTER_LINKS: FooterLink[] = [
-  { text: 'Help', title: 'Help', url: 'https://herologapp-b9f8cc091dd2.herokuapp.com/landing' },
-  { text: 'Privacy', title: 'Hero-Log Privacy Policy', url: 'https://herologapp-b9f8cc091dd2.herokuapp.com/landing' },
-  { text: 'Terms of Use', title: 'Hero-Log Terms of Use', url: 'https://herologapp-b9f8cc091dd2.herokuapp.com/landing' }
+  { text: 'Help', title: 'Help', url: HELP_URL },
+  { text: 'Privacy', title: 'Hero-Log Privacy Policy', url: PRIVACY_URL },
+  { text: 'Terms of Use', title: 'Hero-Log Terms of Use', url: TERMS_URL }
 ];
 
 const Footer = () => {

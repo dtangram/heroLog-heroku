@@ -133,7 +133,7 @@ useEffect(() => {
                     to="/signup"
                     onClick={toggleMenuItem}
                   >
-                    SIGNUP
+                    SIGN UP
                   </NavLink>
                 </NavItem>
 
@@ -143,7 +143,7 @@ useEffect(() => {
                     to="/signin"
                     onClick={toggleMenuItem}
                   >
-                    SIGNIN
+                    SIGN IN
                   </NavLink>
                 </NavItem>
               </Nav>
@@ -254,7 +254,7 @@ useEffect(() => {
                     toggleMenuItem();
                   }}
                 >
-                  SIGNOUT
+                  SIGN OUT
                 </NavLink>
               </NavItem>
             </Nav>

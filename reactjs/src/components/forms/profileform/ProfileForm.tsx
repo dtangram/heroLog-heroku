@@ -11,6 +11,7 @@ import { AccountCircle } from '@mui/icons-material';
 import CoverPicker from '../../coverPicker/CoverPicker';
 import Breadcrumbs from '../../breadcrumbs';
 import { usePageTitle } from '../../documentTitle';
+import { passwordProblem } from '../../../utils/password';
 
 interface FormErrorsType {
   firstname: string;
@@ -43,7 +44,6 @@ interface S3SignResponse {
 
 const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
 const MIN_NAME_LENGTH = 2;
-const MIN_PASSWORD_LENGTH = 8;
 const MAX_FILE_SIZE = 1e6;
 const ALLOWED_FILE_TYPES = ['jpg', 'jpeg', 'png'];
 
@@ -106,7 +106,8 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       username: value.length >= 3 ? '' : 'Username must be at least 3 characters',
       email: EMAIL_REGEX.test(value) ? '' : 'Email is invalid',
       // Optional: blank keeps the current password
-      password: value.length === 0 || value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password must be at least 8 characters'
+      // Optional: blank keeps the current one; otherwise the same rule the API enforces
+      password: value.length === 0 ? '' : passwordProblem(value)
     };
     
     return validations[fieldName];
