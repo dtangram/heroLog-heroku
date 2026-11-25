@@ -1,29 +1,75 @@
-.loadMessageWrap{
-  text-align: center;
+/* Empty states, mobile first: logo, what's missing, why, and the next step */
 
-  /* align-items: center;
-  background: #770422;
-  border-radius: 15px;
-  margin: auto;
-  padding: 20px 2%;
-  width: 80%; */
+.loadMessageWrap {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 auto;
+  max-width: 560px;
+  padding: 0 6% 40px;
+  text-align: center;
 }
 
-.loadMessageWrap > section{
+.loadMessageWrap > section {
   margin: 0 auto;
   min-height: auto !important;
-  width: 200px;
+  width: 140px;
 }
 
-.loadMessageWrap > section img{
+.loadMessageWrap > section img {
   opacity: .2;
   width: 100%;
 }
 
-.loadMessageWrap p.loadMessage{
+.loadMessageWrap .loadMessage {
   color: #2B2B2B;
-  font-size: 4rem !important;
-  padding: 3% 0;
-  text-align: center;
+  font-size: 2.6rem;
+  margin: 0;
   width: 100%;
+}
+
+.loadMessageWrap .message {
+  color: #555;
+  font-size: 1.7rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* The next step: a burgundy button, at least 44px tall */
+.action {
+  align-items: center;
+  background: #770422;
+  border-radius: 4px;
+  color: #FFF;
+  display: inline-flex;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  justify-content: center;
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 10px 24px;
+  text-decoration: none;
+}
+
+.action:hover,
+.action:focus-visible {
+  background: #4E0216;
+  color: #FFF;
+}
+
+.action:focus-visible {
+  outline: 3px solid #AECEAB;
+  outline-offset: 2px;
+}
+
+@media (min-width: 600px) {
+  .loadMessageWrap > section {
+    width: 180px;
+  }
+
+  .loadMessageWrap .loadMessage {
+    font-size: 3.2rem;
+  }
 }

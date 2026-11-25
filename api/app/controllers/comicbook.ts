@@ -3,6 +3,7 @@ import { WhereOptions } from 'sequelize';
 import db from '../models';
 import { autoEnrichComic } from '../utils/autoEnrich';
 import { clearComicSearchData } from '../routes/search';
+import { findDuplicateIssue, allowsDuplicate, sendDuplicate } from '../services/duplicates';
 
 // Comic book type literal
 type ComicBookType = 'regular' | 'variant';
@@ -501,6 +502,12 @@ export const createComicBook = async (
   console.log('All validations passed, attempting to create...');
   
   try {
+    // A second copy of an issue is allowed, but only after the user confirms it
+    if (!allowsDuplicate(req.body)) {
+      const duplicate = await findDuplicateIssue(comicbooktitlerelId, { comicIssue, volume, type });
+      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+    }
+
     const newComicBook = await ComicBooks.create({
       title: title.trim(),
       comicIssue: comicIssue.trim(),
@@ -679,6 +686,17 @@ export const updateComicBook = async (
   console.log('Sanitized update data:', updateData);
   
   try {
+    // Changing the number, volume or cover type to match another issue in the list
+    const changesIdentity = ['comicIssue', 'volume', 'type', 'comicbooktitlerelId'].some(field => field in updateData);
+    if (changesIdentity && !allowsDuplicate(req.body)) {
+      const current = (await ComicBooks.findByPk(id))?.toJSON();
+      const merged = { ...current, ...updateData };
+      const duplicate = merged.comicbooktitlerelId
+        ? await findDuplicateIssue(merged.comicbooktitlerelId, merged, id)
+        : null;
+      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+    }
+
     const [rowsUpdated, updatedRecords] = await ComicBooks.update(
       updateData,
       {

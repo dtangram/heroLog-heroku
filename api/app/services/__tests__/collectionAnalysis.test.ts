@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import { buildCollectionFacts } from '../collectionFacts';
-import { generateCollectionAnalysis, keepGrounded } from '../collectionAnalysis';
+import { generateCollectionAnalysis, keepGrounded, validateAnalysis } from '../collectionAnalysis';
 
 // A collection like the one on the live site
 const issues = (title: string, numbers: number[]) =>
@@ -86,5 +86,32 @@ describe('generateCollectionAnalysis', () => {
 
     expect(result.source).toBe('fallback');
     expect(create).toHaveBeenCalledTimes(1);
+  });
+});
+describe('filler and overclaims', () => {
+  const facts = buildCollectionFacts([
+    { title: 'Detective Comics', comicIssue: '659', type: 'regular' },
+    { title: 'Detective Comics', comicIssue: '660', type: 'regular' },
+  ] as any);
+
+  const analysis = {
+    summary: 'You own a complete run of Detective Comics.',
+    highlights: ['Issue 660 continues the sequence.', 'Detective Comics #659 is part of the Knightfall saga.'],
+    recommendations: [],
+    observation: 'Issue 659 marks the beginning of your Detective Comics run.',
+  };
+
+  it('flags lines that only restate the list or call a short span a complete run', () => {
+    const errors = validateAnalysis(facts, analysis);
+    expect(errors.some(e => e.startsWith('summary says "complete run"'))).toBe(true);
+    expect(errors.some(e => e.startsWith('highlights[0] says "continues the sequence"'))).toBe(true);
+    expect(errors.some(e => e.startsWith('observation says "marks the beginning of your"'))).toBe(true);
+  });
+
+  it('keeps only the useful lines', () => {
+    const kept = keepGrounded(facts, analysis);
+    expect(kept?.highlights).toEqual(['Detective Comics #659 is part of the Knightfall saga.']);
+    expect(kept?.observation).toBe('');
+    expect(kept?.summary).not.toMatch(/complete run/);
   });
 });

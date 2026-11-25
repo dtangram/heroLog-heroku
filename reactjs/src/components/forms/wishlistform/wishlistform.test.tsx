@@ -1,6 +1,14 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { legacy_createStore as createStore } from 'redux';
+
+/** The collector's publishers, for the Publisher suggestions */
+const publisherStore = () =>
+  createStore((state: unknown) => state, {
+    publishers: { byId: { p1: { data: { publisherName: 'DC Comics' } } }, allIds: ['p1'], isLoading: false },
+  } as any);
 import WishListForm from './WishListForm';
 import { mapStateToProps } from './container';
 
@@ -42,11 +50,13 @@ const renderForm = (path: string, route: string) => {
     updateWishList: jest.fn().mockResolvedValue(undefined),
   };
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path={route} element={<WishListForm {...(mapStateToProps(state as any) as any)} {...(actions as any)} />} />
-      </Routes>
-    </MemoryRouter>
+    <Provider store={publisherStore()}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path={route} element={<WishListForm {...(mapStateToProps(state as any) as any)} {...(actions as any)} />} />
+        </Routes>
+      </MemoryRouter>
+    </Provider>
   );
   return actions;
 };
@@ -78,8 +88,8 @@ describe('WishListForm', () => {
     expect(field('comicIssue')).toHaveValue('25');
     expect(field('comicBookYear')).toHaveValue('2025');
     expect(field('comicBookVolume')).toHaveValue('');
-    // Saved as "regular"; the radio button is "Regular"
-    expect(screen.getByLabelText('Regular Cover')).toBeChecked();
+    // Saved as "regular"; the radio button is "Regular cover"
+    expect(screen.getByLabelText('Regular cover')).toBeChecked();
   });
 
   it('submits Update without needing a scan first', async () => {
@@ -92,6 +102,29 @@ describe('WishListForm', () => {
       expect(actions.updateWishList).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'comic-superman-25', comicIssue: '25', comicBookYear: '2025' })
       )
+    );
+  });
+
+  it('needs an issue and a publisher, like the Sale form', async () => {
+    const actions = renderForm('/forms/wishlistform/new/user-1', '/forms/wishlistform/new/:userId');
+    fireEvent.change(field('comicBookTitle'), { target: { value: 'Batman' } });
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+    expect(await screen.findByText('Issue number is required')).toBeInTheDocument();
+    expect(screen.getByText('Publisher is required')).toBeInTheDocument();
+    expect(actions.createWishList).not.toHaveBeenCalled();
+  });
+
+  it("saves the collection's spelling of a publisher you already have", async () => {
+    const actions = renderForm('/forms/wishlistform/new/user-1', '/forms/wishlistform/new/:userId');
+    fireEvent.change(field('comicBookTitle'), { target: { value: 'Batman' } });
+    fireEvent.change(field('comicIssue'), { target: { value: '497' } });
+    fireEvent.change(field('comicBookPublisher'), { target: { value: 'DC' } });
+    fireEvent.click(screen.getByLabelText('Regular cover'));
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+    await waitFor(() =>
+      expect(actions.createWishList).toHaveBeenCalledWith(expect.objectContaining({ comicBookPublisher: 'DC Comics' }))
     );
   });
 });

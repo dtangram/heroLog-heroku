@@ -124,7 +124,11 @@ const ViewMessages = ({
         <article className="cbList">
           <section>
             <article>
-              <Empty />
+              <Empty
+                title="No messages yet"
+                message="When a collector asks about one of your comics for sale, their message will show up here."
+                action={{ label: 'Browse comics for sale', to: '/#forSale' }}
+              />
             </article>
           </section>
         </article>

@@ -103,7 +103,7 @@ const WishList = ({
     return (
       <article id="cbWishList">
         <h1>
-          Your Comics for Wish List
+          Your Wish List
           <figure className="graphic" aria-label="Small burgundy rectangle graphic" />
         </h1>
 
@@ -141,7 +141,7 @@ const WishList = ({
     return (
       <article id="cbWishList">
         <h1>
-          Your Comics for Wish List
+          Your Wish List
           <figure className="graphic" aria-label="Small burgundy rectangle graphic" />
         </h1>
 
@@ -157,7 +157,11 @@ const WishList = ({
         <article className="cbList">
           <section>
             <article>
-              <Empty />
+              <Empty
+                title="Your Wish List is empty"
+                message="Add comics you're hunting for, or use Find Missing in Search to see what's missing from a storyline."
+                action={{ label: 'Find missing comics', to: `/search/${userId}` }}
+              />
             </article>
           </section>
         </article>
@@ -169,7 +173,7 @@ const WishList = ({
   return (
     <article id="cbWishList">
       <h1>
-        Your Comics for Wish List
+        Your Wish List
         <figure className="graphic" aria-label="Small burgundy rectangle graphic" />
       </h1>
 

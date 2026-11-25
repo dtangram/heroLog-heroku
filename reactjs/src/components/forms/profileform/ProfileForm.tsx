@@ -7,6 +7,10 @@ import SuccessDisplay from '../success';
 import styles from './styles.module.css';
 import API from '../../../API';
 import { showAlert } from '../../dialog';
+import { AccountCircle } from '@mui/icons-material';
+import CoverPicker from '../../coverPicker/CoverPicker';
+import Breadcrumbs from '../../breadcrumbs';
+import { usePageTitle } from '../../documentTitle';
 
 interface FormErrorsType {
   firstname: string;
@@ -66,6 +70,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
   });
   
   const [successMessage, setSuccessMessage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,7 +92,8 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
         lastname: signup.lastname || '',
         username: signup.username || '',
         email: signup.email || '',
-        password: signup.password || '',
+        // The API never sends the password back; blank means "keep it"
+        password: '',
         profilePic: signup.profilePic || ''
       });
     }
@@ -99,7 +105,8 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       lastname: value.length >= MIN_NAME_LENGTH ? '' : 'Last name is required',
       username: value.length >= 3 ? '' : 'Username must be at least 3 characters',
       email: EMAIL_REGEX.test(value) ? '' : 'Email is invalid',
-      password: value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password must be at least 8 characters'
+      // Optional: blank keeps the current password
+      password: value.length === 0 || value.length >= MIN_PASSWORD_LENGTH ? '' : 'Password must be at least 8 characters'
     };
     
     return validations[fieldName];
@@ -120,74 +127,41 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
   }, [formData, validateField]);
 
   const handleFileInputChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0];
-  
-  if (!file || !fileInputRef.current) {
-    return;
-  }
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) return;
 
-  fileInputRef.current.disabled = false;
-
-  const fileName = file.name;
-  const fileType = file.type;
-  const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
-
-  if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
-    fileInputRef.current.disabled = false;
-    showAlert('Please choose a JPG or PNG image.', { title: "That file type won't work" });
-    return;
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    fileInputRef.current.disabled = false;
-    showAlert('Please choose an image smaller than 1MB.', { title: 'That image is too large' });
-    return;
-  }
-
-  try {
-    console.log('📤 Uploading:', { fileName, fileType });
-    
-    const response = await API.post<S3SignResponse>('/s3/sign', {
-      fileName,
-      fileType
-    })  // ✅ Use any temporarily
-
-    console.log('📦 Full S3 response:', response);
-
-    // ✅ The data is inside response.data (backend returns { success, data, timestamp })
-    const { signedRequest, url } = response.data;
-
-    if (!signedRequest || !url) {
-      console.error('❌ Missing signedRequest or url:', { signedRequest, url });
-      throw new Error('Invalid S3 response - missing signed URL');
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_FILE_TYPES.includes(fileExtension)) {
+      showAlert('Please choose a JPG or PNG image.', { title: "That file type won't work" });
+      input.value = '';
+      return;
     }
 
-    console.log('📤 Uploading to S3:', signedRequest);
-
-    fileInputRef.current.disabled = true;
-
-    await axios.put(signedRequest, file, {
-      headers: {
-        'Content-Type': fileType
-      }
-    });
-
-    console.log('✅ Upload successful:', url);
-
-    setFormData(prev => ({ ...prev, profilePic: url }));
-
-    const figureElement = document.querySelector<HTMLElement>('form > article > fieldset figure');
-    if (figureElement) {
-      figureElement.style.display = 'inline-block';
+    if (file.size > MAX_FILE_SIZE) {
+      showAlert('Please choose an image smaller than 1MB.', { title: 'That image is too large' });
+      input.value = '';
+      return;
     }
-    
-  } catch (error) {
-    console.error('❌ Upload error:', error);
-    if (fileInputRef.current) {
-      fileInputRef.current.disabled = false;
+
+    setIsUploading(true);
+    try {
+      const response = await API.post<S3SignResponse>('/s3/sign', { fileName: file.name, fileType: file.type });
+      // The API sends { success, data, timestamp }; the signed URL is in data
+      const { signedRequest, url } = response.data;
+      if (!signedRequest || !url) throw new Error('Invalid S3 response - missing signed URL');
+
+      await axios.put(signedRequest, file, { headers: { 'Content-Type': file.type } });
+      setFormData(prev => ({ ...prev, profilePic: url }));
+    } catch (error) {
+      console.error('❌ Upload error:', error);
+      showAlert("Your photo couldn't be uploaded. Please try again.", { title: 'Upload failed' });
+    } finally {
+      setIsUploading(false);
+      // Lets the same file be chosen again after a failed upload
+      input.value = '';
     }
-  }
-}, []);
+  }, []);
 
   const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -209,9 +183,10 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
       lastname: formData.lastname,
       username: formData.username,
       email: formData.email,
-      password: formData.password,
+      // Only sent when a new one was typed, so a blank field keeps the current password
+      ...(formData.password ? { password: formData.password } : {}),
       profilePic: formData.profilePic
-    };
+    } as User;
 
     updateUser(updatedUser);
     setSuccessMessage('success');
@@ -222,13 +197,17 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
   }, [id, formData, validateAllFields, updateUser]);
 
   const { firstname, lastname, username, email, password, profilePic } = formData;
+  // The same words for the heading and the browser tab
+  const pageTitle = 'Edit Profile';
+  usePageTitle(pageTitle);
   const hasNoErrors = Object.values(formErrors).every(error => error.length === 0);
 
   return (
     <>
       <article id="cbComicForm" className={styles.cbWrapper}>
+        <Breadcrumbs items={[{ label: 'Profile', to: `/profile/${userId}` }, { label: pageTitle }]} />
         <h1>
-          {id && `Update ${firstname}'s Profile`}
+          {pageTitle}
           <figure className={styles.graphic} aria-label="Small burgundy, rectangle graphic." />
         </h1>
 
@@ -241,25 +220,27 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
 
               <article>
                 <fieldset>
-                  <figure>
-                    <img src={profilePic} alt={profilePic || 'Profile picture'} />
+                  {/* Your photo, or a person icon until you add one (never a broken image) */}
+                  <figure className={styles.profilePhoto}>
+                    {profilePic ? (
+                      <img src={profilePic} alt="Your profile photo" />
+                    ) : (
+                      <AccountCircle className={styles.profileIcon} titleAccess="No profile photo yet" />
+                    )}
                   </figure>
 
-                  <label htmlFor="profilePic">
-                    Change Profile Picture
-                    <input
-                      ref={fileInputRef}
-                      id="profilePic"
-                      className={styles.inputBorder}
-                      type="file"
-                      name="profilePic"
-                      onInput={handleInputChange}
-                      onChange={handleFileInputChange}
-                    />
-                  </label>
+                  <CoverPicker
+                    id="profilePic"
+                    label="Profile photo"
+                    chooseText="Choose photo"
+                    changeText="Change photo"
+                    hasCover={Boolean(profilePic)}
+                    isUploading={isUploading}
+                    onFileChange={handleFileInputChange}
+                  />
 
                   <label htmlFor="firstname">
-                    Change First Name
+                    First name
                     <input
                       ref={inputRef}
                       id="firstname"
@@ -272,7 +253,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
                   </label>
 
                   <label htmlFor="lastname">
-                    Change Last Name
+                    Last name
                     <input
                       id="lastname"
                       className={styles.inputBorder}
@@ -284,7 +265,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
                   </label>
 
                   <label htmlFor="username">
-                    Change Username
+                    Username
                     <input
                       id="username"
                       className={styles.inputBorder}
@@ -298,7 +279,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
 
                 <fieldset>
                   <label htmlFor="email">
-                    Change Email
+                    Email
                     <input
                       id="email"
                       className={styles.inputBorder}
@@ -310,7 +291,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
                   </label>
 
                   <label htmlFor="password">
-                    Change Password
+                    New password (leave blank to keep your current one)
                     <input
                       id="password"
                       className={styles.inputBorder}

@@ -205,3 +205,25 @@
     flex-direction: column;
   }
 }
+
+/* The profile photo above the picker, or a person icon until there is one */
+.wrapper form > article > fieldset figure.profilePhoto {
+  align-items: center;
+  display: flex;
+  height: 120px;
+  justify-content: center;
+  margin: 0 auto 16px;
+  width: 120px;
+}
+
+.profilePhoto img {
+  border-radius: 50%;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.profileIcon {
+  color: #770422;
+  font-size: 120px !important;
+}

@@ -6,7 +6,8 @@ import '../../../link/styles.module.css';
 import Empty from '../../empty';
 import Breadcrumbs from '../../breadcrumbs';
 import ComicCard, { ComicCardGrid } from '../../comicCard';
-import { countLabel, issueRange } from '../../../utils/collection';
+import { countLabel, issueRange, splitEmpty } from '../../../utils/collection';
+import CompactList from '../../compactList';
 import { showAlert, showConfirm } from '../../dialog';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
@@ -125,7 +126,7 @@ const ComicBookList = ({
         <section>
           <RRLink to={`/forms/${userId}/${pubId}/${publisherName}/comicbooklisttitle/new`}>
             <figure><LibraryAddIcon /></figure>
-            <p className={styles.link}>Add Comic Book Title</p>
+            <p className={styles.link}>Add a Title</p>
           </RRLink>
         </section>
       </h2>
@@ -153,11 +154,18 @@ const ComicBookList = ({
       <article id="cbComBookList" className={styles.cbWrap}>
         {renderHeader()}
         <article className={styles.cbList}>
-          <Empty />
+          <Empty
+            title="No titles yet"
+            message={`Add the first ${publisherName} series you collect, like Batman or Detective Comics.`}
+            action={{ label: 'Add a title', to: `/forms/${userId}/${pubId}/${publisherName}/comicbooklisttitle/new` }}
+          />
         </article>
       </article>
     );
   }
+
+  // Titles without issues get a short row below the cards (same as empty publishers on the Dashboard)
+  const { cards: cardTitles, empty: emptyTitles } = splitEmpty(comicBookTitles, title => (title.issueCount || 0) > 0);
 
   // Main render: one card per title (the API sends them A to Z)
   return (
@@ -165,7 +173,7 @@ const ComicBookList = ({
       {renderHeader()}
       <article className={styles.cbList}>
         <ComicCardGrid label={`${publisherName} titles`}>
-          {comicBookTitles.map(({ id, cbTitle, issueCount = 0, coverUrl, firstIssue, lastIssue }) => (
+          {cardTitles.map(({ id, cbTitle, issueCount = 0, coverUrl, firstIssue, lastIssue }) => (
             <ComicCard
               key={id}
               title={cbTitle}
@@ -177,6 +185,20 @@ const ComicBookList = ({
             />
           ))}
         </ComicCardGrid>
+
+        <CompactList
+          heading="No issues yet"
+          description="Add an issue to give a title its own card."
+          addLabel="Add issue"
+          items={emptyTitles.map(({ id, cbTitle }) => ({
+            id,
+            name: cbTitle,
+            href: `/dashboard/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbooklistissues`,
+            addUrl: `/forms/${userId}/${pubId}/${publisherName}/${id}/${cbTitle}/comicbook/new`,
+            editUrl: `/forms/${userId}/${pubId}/${publisherName}/comicbooklisttitle/edit/${id}`,
+            onDelete: () => handleDelete(id, cbTitle),
+          }))}
+        />
       </article>
     </article>
   );

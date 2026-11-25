@@ -180,6 +180,32 @@
   color: #2B2B2B;
 }
 
+/* "Highlights" and "Worth noting" inside the analysis */
+.insightsHeading {
+  color: #770422;
+  font-size: 2rem;
+  margin: 2.4rem 0 0.8rem;
+}
+
+/* Highlights as a real list, with burgundy markers */
+.highlights {
+  color: #2B2B2B;
+  list-style: disc outside; /* the global reset removes bullets */
+  font-size: 2rem; /* same size as the analysis paragraphs */
+  line-height: 1.8;
+  margin: 0 0 1rem;
+  padding-left: 2.4rem;
+}
+
+.highlights li {
+  margin-bottom: 0.8rem;
+  padding-left: 0.4rem;
+}
+
+.highlights li::marker {
+  color: #770422;
+}
+
 /* Recommendations */
 .recommendations {
   background: #fff5f5;
@@ -203,7 +229,7 @@
 .recommendations li {
   border-bottom: 1px solid #fed7d7;
   color: #2B2B2B;
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   line-height: 1.6;
   padding: 0.75rem 0;
 }

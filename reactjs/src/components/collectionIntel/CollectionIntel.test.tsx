@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '../../test-utils';
+import { act, fireEvent, render, screen, waitFor, within } from '../../test-utils';
 import CollectionInsights, { SLOW_AFTER } from '.';
 import API from '../../API';
 import * as anonymousUserModule from '../../utils/anonymousUser';
@@ -134,14 +134,55 @@ describe('CollectionInsights', () => {
   });
 
   it('shows run progress as an accessible progress bar', async () => {
-    const run = { ...batmanSeries, seriesName: 'Spawn', pattern: 'run', completionPercentage: 75, missingIssues: [7], missingRanges: ['#7'] };
+    const run = {
+      ...batmanSeries,
+      seriesName: 'Spawn',
+      pattern: 'run',
+      completionPercentage: 75,
+      span: { first: 5, last: 8 },
+      missingIssues: [7],
+      missingRanges: ['#7'],
+    };
     (API.get as jest.Mock).mockResolvedValue({ ...mockInsights, topSeries: [run] });
 
     render(<CollectionInsights />);
 
-    const bar = await screen.findByRole('progressbar', { name: 'Spawn run completed' });
+    const bar = await screen.findByRole('progressbar', { name: 'Spawn: issues owned from #5–#8' });
     expect(bar).toHaveAttribute('aria-valuenow', '75');
-    expect(screen.getByText('75% of run')).toBeInTheDocument();
+    expect(screen.getByText('1 gap')).toBeInTheDocument();
+    expect(screen.getByText('Missing between #5–#8: 1 issue')).toBeInTheDocument();
+  });
+
+  it("doesn't call two issues in a row a complete run", async () => {
+    const shortRun = {
+      ...batmanSeries,
+      seriesName: 'Detective Comics',
+      pattern: 'run',
+      completionPercentage: 100,
+      ownedIssues: [659, 660],
+      span: { first: 659, last: 660 },
+      missingIssues: [],
+      missingRanges: [],
+    };
+    (API.get as jest.Mock).mockResolvedValue({ ...mockInsights, topSeries: [shortRun] });
+
+    render(<CollectionInsights />);
+
+    expect(await screen.findByText('No gaps')).toBeInTheDocument();
+    expect(screen.queryByText(/of run/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Missing/)).not.toBeInTheDocument();
+  });
+
+  it('shows highlights as a list', async () => {
+    (API.get as jest.Mock).mockResolvedValue({
+      ...mockInsights,
+      analysis: { ...mockInsights.analysis, highlights: ['First point.', 'Second point.'] },
+    });
+
+    render(<CollectionInsights />);
+
+    const list = await screen.findByRole('list', { name: 'Highlights' });
+    expect(within(list).getAllByRole('listitem').map(item => item.textContent)).toEqual(['First point.', 'Second point.']);
   });
 
   it('displays error message on failure', async () => {

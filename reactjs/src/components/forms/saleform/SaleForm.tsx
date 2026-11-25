@@ -9,12 +9,22 @@ import { ScanResult } from '../../../hooks/useComicScanner';
 import { useFormFields } from '../../../hooks/useFormFields';
 import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
-import { useCoverScan } from '../../../hooks/useCoverScan';
+import { useCoverScan, ScanField } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import { PRICE_INPUT, SALE_CONDITIONS, validatePrice } from '../../../utils/sale';
 import CoverPicker from '../../coverPicker/CoverPicker';
 import styles from './styles.module.css';
+import Breadcrumbs from '../../breadcrumbs';
+import CoverTypeField from '../coverType';
+import { usePageTitle } from '../../documentTitle';
+import { usePublisherNames } from '../../../hooks/usePublisherNames';
+import { matchPublisherName } from '../../../utils/collection';
+
+const LIST_LABEL = 'Your Comics for Sale';
+
+/** The fields a cover scan can fill on this form, so the scan message can name any it couldn't read */
+const SALE_SCAN_FIELDS: ScanField[] = ['title', 'issue', 'volume', 'year', 'publisher'];
 
 interface RouteParams extends Record<string, string | undefined> {
   id?: string;
@@ -70,6 +80,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
 
   const inputRef = useRef<HTMLInputElement>(null);
   const userId = localStorage.getItem('id') || getAnonymousUserId();
+  const publisherNames = usePublisherNames();
 
   const {
     formState,
@@ -143,7 +154,8 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
           type: toCoverType(result.type) || prev.type,
         })),
       [setFormState]
-    )
+    ),
+    SALE_SCAN_FIELDS
   );
 
   // The title as it is now, for deciding whether to scan a new cover straight away
@@ -167,7 +179,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
       errors.comicBookTitle = 'Comic book title is required';
     }
     if (!comicIssue.trim()) {
-      errors.comicIssue = 'Comic issue is required';
+      errors.comicIssue = 'Issue number is required';
     }
     if (!comicBookPublisher.trim()) {
       errors.comicBookPublisher = 'Publisher is required';
@@ -193,7 +205,8 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
       comicIssue: comicIssue.trim(),
       comicBookVolume: comicBookVolume.trim(),
       comicBookYear: comicBookYear.trim(),
-      comicBookPublisher: comicBookPublisher.trim(),
+      // Your collection's spelling: "DC" is saved as "DC Comics" if that's what you use
+      comicBookPublisher: matchPublisherName(comicBookPublisher, publisherNames),
       comicBookCover,
       type,
       price: price.trim(),
@@ -215,20 +228,18 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
     failureMessage: 'Failed to save sale',
   });
 
-  const handleGoBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
   const showSuccess = Object.keys(formErrors).length === 0 && isSaved;
-  const pageTitle = isEditMode ? `Edit ${comicBookTitle || 'Sale Comic'}` : 'Add New Sale Comic';
+  // The same words for the heading and the browser tab
+  const pageTitle = isEditMode
+    ? `Edit ${[comicBookTitle || 'Listing', comicIssue && `#${comicIssue}`].filter(Boolean).join(' ')}`
+    : 'Sell a Comic';
+  usePageTitle(pageTitle);
   const cancelUrl = `/sale/${userId}`;
 
   return (
     <article id="saleForm" className={styles.cbWrapper}>
-      <button className={styles.backLink} type="button" onClick={handleGoBack} disabled={isSubmitting}>
-        Back
-      </button>
-      
+      <Breadcrumbs items={[{ label: LIST_LABEL, to: cancelUrl }, { label: pageTitle }]} />
+
       <h1>
         {pageTitle}
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
@@ -253,7 +264,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
             <article className={styles.fields}>
               <fieldset>
                 <CoverPicker
-                  label="Upload Comic Book Cover"
+                  label="Cover"
                   hasCover={Boolean(comicBookCover)}
                   isUploading={isUploading}
                   disabled={isSubmitting}
@@ -264,7 +275,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
                 />
 
                 <label htmlFor="comicBookTitle">
-                  Comic Book Title *
+                  Title *
                   <input
                     ref={inputRef}
                     id="comicBookTitle"
@@ -279,7 +290,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
                 </label>
 
                 <label htmlFor="comicIssue">
-                  Comic Issue *
+                  Issue *
                   <input
                     id="comicIssue"
                     className={styles.inputBorder}
@@ -327,11 +338,19 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
                     className={styles.inputBorder}
                     type="text"
                     name="comicBookPublisher"
+                    list="publisherSuggestions"
+                    autoComplete="off"
                     value={comicBookPublisher}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
                     required
                   />
+                  {/* Your own publishers, so "DC Comics" is spelled the same everywhere */}
+                  <datalist id="publisherSuggestions">
+                    {publisherNames.map(name => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
                 </label>
 
                 <label htmlFor="price">
@@ -373,31 +392,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
               </fieldset>
             </article>
 
-            <article>
-              <label className={styles.labelRadio} htmlFor="regular">
-                <input
-                  id="regular"
-                  type="radio"
-                  value="Regular"
-                  checked={type === 'Regular'}
-                  onChange={handleTypeChange}
-                  disabled={isSubmitting}
-                />
-                Regular
-              </label>
-
-              <label className={styles.labelRadio} htmlFor="variant">
-                <input
-                  id="variant"
-                  type="radio"
-                  value="Variant"
-                  checked={type === 'Variant'}
-                  onChange={handleTypeChange}
-                  disabled={isSubmitting}
-                />
-                Variant
-              </label>
-            </article>
+            <CoverTypeField value={type} onChange={handleTypeChange} disabled={isSubmitting} />
 
             <article>
               <p>

@@ -10,6 +10,8 @@ import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel } from '../../../utils/forms';
 import styles from './styles.module.css';
+import Breadcrumbs from '../../breadcrumbs';
+import { usePageTitle } from '../../documentTitle';
 
 interface FormState extends Record<string, string> {
   cbTitle: string;
@@ -80,10 +82,19 @@ const ComicBookListTitle = ({
   });
 
   const showSuccess = !formErrors.cbTitle && isSaved;
-  const pageTitle = isEditMode ? `Edit ${cbTitle}` : `Add Comic Book Title to ${publisherName} Collection`;
+  // The same words for the heading and the browser tab
+  const pageTitle = isEditMode ? `Edit ${cbTitle || 'Title'}` : `Add a Title to ${publisherName}`;
+  usePageTitle(pageTitle);
 
   return (
     <article id="cbComicBookListTitle" className={styles.cbWrapper}>
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: `/dashboard/${userId}` },
+          { label: publisherName || 'Publisher', to: listUrl },
+          { label: pageTitle },
+        ]}
+      />
       <h1>
         {pageTitle}
         <figure

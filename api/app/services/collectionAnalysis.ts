@@ -33,7 +33,7 @@ export const ANALYSIS_MODEL = 'claude-haiku-4-5-20251001';
  * Bump when the prompt, tool schema or validation changes, so saved analyses
  * (services/analysisCache.ts) are written again with the new rules.
  */
-export const ANALYSIS_VERSION = 1;
+export const ANALYSIS_VERSION = 2;
 const TOOL_NAME = 'record_collection_analysis';
 const MAX_SERIES_IN_PROMPT = 10;
 const MAX_MISSING_IN_PROMPT = 30;
@@ -89,7 +89,8 @@ Rules:
 - In summary, highlights and observation, only mention issue numbers the collector owns. Put issues they should look for in recommendations.
 - Don't restate counts or percentages; the page already shows them. If you reference one, copy it exactly from the facts.
 - "scattered" series: the collector picks individual issues instead of completing a run. Don't describe the numbers between them as missing or call the collection incomplete. Recommend standout issues or story arcs instead.
-- "run" series: recommend specific issues from missing_issues.
+- "run" series: recommend specific issues from missing_issues. A run only covers the span between the first and last issue owned; never call a series complete, a complete run or a full run.
+- Every highlight and the observation must tell the collector something they can't see by looking at their list: a story arc, a key issue, a creator, or why an issue matters. Don't say issues are consecutive, continue a sequence, or begin or end a run.
 - Plain text only: no markdown, headings, bullet characters or emoji.
 - Address the collector as "you". Be concise, accurate and encouraging.
 
@@ -112,7 +113,8 @@ export const buildFactsPayload = (facts: CollectionFacts) => ({
     owned_issues: s.ownedIssues,
     owned_count: s.ownedIssues.length,
     span: `#${s.span.first}–#${s.span.last}`,
-    completion_percent: round(s.completionPercentage),
+    // Only measures the span between the first and last owned issue, not the whole series
+    percent_of_span_owned: round(s.completionPercentage),
     missing_count: s.missingIssues.length,
     ...(s.pattern === 'run'
       ? { missing_issues: s.missingIssues.slice(0, MAX_MISSING_IN_PROMPT) }
@@ -260,6 +262,28 @@ const checkText = (
   return errors;
 };
 
+/**
+ * Lines that only restate what the list already shows ("Issue 660 continues the
+ * sequence") or overclaim ("a complete run"). Checked in the summary, highlights
+ * and observation.
+ */
+const FILLER = [
+  /\bcontinu(?:es|ing) (?:the|your|this) (?:sequence|run|series|numbering)\b/i,
+  /\bconsecutive\b/i,
+  /\bin (?:numerical )?sequence\b/i,
+  /\b(?:marks|is) the (?:beginning|start|end) of (?:your|the)\b/i,
+  /\b(?:begins|starts|ends) your\b/i,
+  /\b(?:complete|completed|full|unbroken) (?:run|set|series|collection)\b/i,
+  /\bcompletes? (?:the|your) (?:run|set|series)\b/i,
+];
+
+const checkFiller = (field: string, text: string): string[] => {
+  const match = FILLER.map(pattern => text.match(pattern)).find(Boolean);
+  return match
+    ? [`${field} says "${match[0]}", which only restates the list or overstates it. Say something the collector can't see from their list.`]
+    : [];
+};
+
 /** Problems with one recommendation; empty means it's grounded in the facts. */
 const checkRecommendation = (facts: CollectionFacts, rec: Recommendation, i: number): string[] => {
   const errors: string[] = [];
@@ -280,9 +304,11 @@ const checkRecommendation = (facts: CollectionFacts, rec: Recommendation, i: num
 export const validateAnalysis = (facts: CollectionFacts, analysis: CollectionAnalysis): string[] => {
   const errors: string[] = [];
 
-  errors.push(...checkText(facts, 'summary', analysis.summary));
-  analysis.highlights.forEach((h, i) => errors.push(...checkText(facts, `highlights[${i}]`, h)));
-  errors.push(...checkText(facts, 'observation', analysis.observation));
+  errors.push(...checkText(facts, 'summary', analysis.summary), ...checkFiller('summary', analysis.summary));
+  analysis.highlights.forEach((h, i) =>
+    errors.push(...checkText(facts, `highlights[${i}]`, h), ...checkFiller(`highlights[${i}]`, h))
+  );
+  errors.push(...checkText(facts, 'observation', analysis.observation), ...checkFiller('observation', analysis.observation));
   analysis.recommendations.forEach((rec, i) => errors.push(...checkRecommendation(facts, rec, i)));
 
   return errors;
@@ -299,10 +325,12 @@ export const keepGrounded = (
   facts: CollectionFacts,
   analysis: CollectionAnalysis
 ): CollectionAnalysis | null => {
-  const summaryOk = checkText(facts, 'summary', analysis.summary).length === 0;
-  const highlights = analysis.highlights.filter((h, i) => checkText(facts, `highlights[${i}]`, h).length === 0);
+  const passes = (field: string, text: string) =>
+    checkText(facts, field, text).length === 0 && checkFiller(field, text).length === 0;
+  const summaryOk = passes('summary', analysis.summary);
+  const highlights = analysis.highlights.filter((h, i) => passes(`highlights[${i}]`, h));
   const recommendations = analysis.recommendations.filter((rec, i) => checkRecommendation(facts, rec, i).length === 0);
-  const observation = checkText(facts, 'observation', analysis.observation).length === 0 ? analysis.observation : '';
+  const observation = passes('observation', analysis.observation) ? analysis.observation : '';
 
   if (!summaryOk && highlights.length === 0 && recommendations.length === 0 && !observation) {
     return null;

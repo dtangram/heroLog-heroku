@@ -81,8 +81,8 @@ describe('ComicBook edit form', () => {
 
     await waitFor(() => expect(screen.getByLabelText(/issue/i)).toHaveValue('401'));
     expect(actions.fetchComicBook).toHaveBeenCalledWith('comic-401');
-    // Saved as "regular"; the radio button is "Regular"
-    expect(screen.getByLabelText('Regular Cover')).toBeChecked();
+    // Saved as "regular"; the radio button is "Regular cover"
+    expect(screen.getByLabelText('Regular cover')).toBeChecked();
   });
 
   it('opens a different comic correctly too', async () => {
@@ -135,7 +135,7 @@ describe('ComicBook new comic: year validation', () => {
   it('submits a valid year like 1994', async () => {
     const actions = fillAndSubmit('1994');
     await waitFor(() =>
-      expect(actions.createComicBook).toHaveBeenCalledWith(expect.objectContaining({ year: '1994' }))
+      expect(actions.createComicBook).toHaveBeenCalledWith(expect.objectContaining({ year: '1994' }), { allowDuplicate: false })
     );
     expect(screen.getByLabelText(/year/i)).toHaveAttribute('aria-invalid', 'false');
   });
@@ -195,12 +195,12 @@ describe('ComicBook scan: creator credits', () => {
   it('selects Variant when the scan says the cover is a variant', async () => {
     mockScanCover.mockResolvedValue(scanResult({ type: 'variant' }));
     renderEditPage('comic-401');
-    await waitFor(() => expect(screen.getByLabelText('Regular Cover')).toBeChecked());
+    await waitFor(() => expect(screen.getByLabelText('Regular cover')).toBeChecked());
 
     fireEvent.click(screen.getByRole('button', { name: /scan cover with ai/i }));
 
-    await waitFor(() => expect(screen.getByLabelText('Variant Cover')).toBeChecked());
-    expect(screen.getByLabelText('Regular Cover')).not.toBeChecked();
+    await waitFor(() => expect(screen.getByLabelText('Variant cover')).toBeChecked());
+    expect(screen.getByLabelText('Regular cover')).not.toBeChecked();
   });
 
   it('keeps names already entered when the cover shows no credits', async () => {

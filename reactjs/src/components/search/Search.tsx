@@ -46,9 +46,10 @@ const Search: React.FC = () => {
     query,
     setQuery,
     mode,
-    setMode,
+    changeMode,
     collectionResults,
     claudeResults,
+    ownedCounts,
     isLoading,
     isSlow,
     error,
@@ -97,7 +98,7 @@ const Search: React.FC = () => {
           <nav className={styles.modeSelector} aria-label="Search mode">
             <button
               className={`${styles.modeButton} ${mode === 'collection' ? styles.modeActive : ''}`}
-              onClick={() => setMode('collection')}
+              onClick={() => changeMode('collection')}
               type="button"
               aria-pressed={mode === 'collection'}
             >
@@ -105,7 +106,7 @@ const Search: React.FC = () => {
             </button>
             <button
               className={`${styles.modeButton} ${mode === 'all' ? styles.modeActive : ''}`}
-              onClick={() => setMode('all')}
+              onClick={() => changeMode('all')}
               type="button"
               aria-pressed={mode === 'all'}
             >
@@ -113,7 +114,7 @@ const Search: React.FC = () => {
             </button>
             <button
               className={`${styles.modeButton} ${mode === 'missing' ? styles.modeActive : ''}`}
-              onClick={() => setMode('missing')}
+              onClick={() => changeMode('missing')}
               type="button"
               aria-pressed={mode === 'missing'}
             >
@@ -149,7 +150,7 @@ const Search: React.FC = () => {
               aria-label="Search comics"
             />
             <button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={!query.trim() || isLoading}
               className={clsx(styles.searchButton, styles.buttonStylesSearchPage)}
               type="button"
@@ -201,8 +202,15 @@ const Search: React.FC = () => {
             </section>
           )}
 
+          {/* Find Missing with nothing missing: say they own it all, not "no comics found" */}
+          {hasSearched && !isLoading && !error && !hasResults && searchedMode === 'missing' && Object.keys(ownedCounts).length > 0 && (
+            <aside className={styles.empty} role="status">
+              <p>You already own every comic we found for "{searchedQuery}". Nothing's missing.</p>
+            </aside>
+          )}
+
           {/* No Results */}
-          {hasSearched && !isLoading && !error && !hasResults && (
+          {hasSearched && !isLoading && !error && !hasResults && !(searchedMode === 'missing' && Object.keys(ownedCounts).length > 0) && (
             <aside className={styles.empty} role="status">
               <p>No comics found matching your search. Try a different query.</p>
             </aside>
@@ -212,8 +220,14 @@ const Search: React.FC = () => {
           {collectionResults.length > 0 && (
             <section className={styles.results}>
               <h2>Results for "{searchedQuery}"</h2>
-              {collectionResults.map((result) => (
-                <CollectionResultCard key={result.comic_id} result={result} userId={userId || ''} />
+              {collectionResults.map((result, rank) => (
+                <CollectionResultCard
+                  key={result.comic_id}
+                  result={result}
+                  userId={userId || ''}
+                  rank={rank}
+                  bestScore={collectionResults[0].similarity_score}
+                />
               ))}
             </section>
           )}
@@ -222,7 +236,11 @@ const Search: React.FC = () => {
           {claudeResults.length > 0 && (
             <section className={styles.results}>
               <h2>Results for "{searchedQuery}"</h2>
-              <ClaudeResultList results={claudeResults} userId={localStorage.getItem('id') || ''} />
+              <ClaudeResultList
+                results={claudeResults}
+                userId={localStorage.getItem('id') || ''}
+                ownedCounts={searchedMode === 'missing' ? ownedCounts : {}}
+              />
             </section>
           )}
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Container, Row } from 'reactstrap';
-import { Link as RRLink } from 'react-router-dom';
+import { Link as RRLink, useLocation } from 'react-router-dom';
 import { BeatLoader } from 'react-spinners';
 import MessageIcon from '@mui/icons-material/Message';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
@@ -14,7 +14,7 @@ import type { ConnectorProps } from './container';
 
 /**
  * The greeting over the comics collage, with somewhere to go next:
- * the dashboard, collection intel, or the comics for sale below.
+ * the dashboard, collection insights, or the comics for sale below.
  */
 const WelcomeHero = ({ firstname, userId }: { firstname: string; userId: string }) => (
   <article className={styles.welcome}>
@@ -30,7 +30,7 @@ const WelcomeHero = ({ firstname, userId }: { firstname: string; userId: string 
         Open your dashboard
       </RRLink>
       <RRLink className={styles.ctaSecondary} to={`/intel/${userId}`}>
-        See your collection intel
+        See your collection insights
       </RRLink>
     </nav>
     <a className={styles.ctaLink} href="#forSale">
@@ -50,11 +50,21 @@ const Home = ({
   
   const userId = localStorage?.getItem('id') ?? '';
 
+  const { hash } = useLocation();
+
   // Fetch all sales on mount
   useEffect(() => {
-    window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+    // A link to "/#forSale" (e.g. from an empty Messages page) scrolls to the comics below instead
+    if (!window.location.hash) window?.scrollTo?.({ top: 0, behavior: 'smooth' });
     fetchAllSales?.();  // Fixed: was fetchALLSales
   }, [fetchAllSales]);  // Fixed: was fetchALLSales
+
+  // Go to the For Sale section once it's on the page
+  const hasSales = salesALL.length > 0;
+  useEffect(() => {
+    if (hash !== '#forSale') return;
+    document.getElementById('forSale')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }, [hash, isLoading, hasSales]);
 
   // Show the spinner only on the first load. When the list is reloading,
   // keep showing the current comics until the fresh list arrives.

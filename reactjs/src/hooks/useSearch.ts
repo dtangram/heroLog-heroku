@@ -31,6 +31,21 @@ export interface ClaudeResult {
 
 export type SearchMode = 'collection' | 'all' | 'missing';
 
+/** Find Missing: how many issues of each group the collector already owns */
+export type OwnedCounts = Partial<Record<ResultGroup, number>>;
+
+/** How long a tab remembers its results for the same search */
+export const SEARCH_CACHE_MS = 10 * 60 * 1000;
+
+interface CachedSearch {
+  at: number;
+  collectionResults: CollectionResult[];
+  claudeResults: ClaudeResult[];
+  ownedCounts: OwnedCounts;
+}
+
+const cacheKey = (mode: SearchMode, query: string) => `${mode}|${query.trim().toLowerCase()}`;
+
 
 /** After this long, tell the user the search is still running and why. */
 export const SLOW_SEARCH_MS = 8000;
@@ -40,6 +55,7 @@ export const useSearch = (userId: string | undefined) => {
   const [mode, setMode] = useState<SearchMode>('collection');
   const [collectionResults, setCollectionResults] = useState<CollectionResult[]>([]);
   const [claudeResults, setClaudeResults] = useState<ClaudeResult[]>([]);
+  const [ownedCounts, setOwnedCounts] = useState<OwnedCounts>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSlow, setIsSlow] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -51,6 +67,8 @@ export const useSearch = (userId: string | undefined) => {
   // Lets a new search cancel one that's still running
   const abortRef = useRef<AbortController | null>(null);
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Each tab's results for each search, so switching back is instant
+  const cacheRef = useRef(new Map<string, CachedSearch>());
 
   const clearSlowTimer = () => {
     if (slowTimerRef.current) {
@@ -65,11 +83,29 @@ export const useSearch = (userId: string | undefined) => {
     clearSlowTimer();
   }, []);
 
-  const handleSearch = useCallback(async (): Promise<void> => {
-    const trimmed = query.trim();
+  const handleSearch = useCallback(async (searchMode: SearchMode = mode, searchQuery: string = query): Promise<void> => {
+    const trimmed = searchQuery.trim();
     if (!trimmed) return;
 
     abortRef.current?.abort();
+
+    // Same tab, same search, a few minutes ago: show those results again straight away
+    const key = cacheKey(searchMode, trimmed);
+    const cached = cacheRef.current.get(key);
+    if (cached && Date.now() - cached.at < SEARCH_CACHE_MS) {
+      clearSlowTimer();
+      setIsSlow(false);
+      setIsLoading(false);
+      setError('');
+      setHasSearched(true);
+      setSearchedQuery(trimmed);
+      setSearchedMode(searchMode);
+      setCollectionResults(cached.collectionResults);
+      setClaudeResults(cached.claudeResults);
+      setOwnedCounts(cached.ownedCounts);
+      return;
+    }
+
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -81,9 +117,10 @@ export const useSearch = (userId: string | undefined) => {
     setError('');
     setHasSearched(true);
     setSearchedQuery(trimmed);
-    setSearchedMode(mode);
+    setSearchedMode(searchMode);
     setCollectionResults([]);
     setClaudeResults([]);
+    setOwnedCounts({});
 
     try {
       const params = { q: trimmed };
@@ -91,8 +128,8 @@ export const useSearch = (userId: string | undefined) => {
       const config = { params, signal: controller.signal, headers: await sessionHeaders() };
 
       const url =
-        mode === 'collection' ? `${API_URL}/search/search/${userId}`
-        : mode === 'all' ? `${API_URL}/search/search-all`
+        searchMode === 'collection' ? `${API_URL}/search/search/${userId}`
+        : searchMode === 'all' ? `${API_URL}/search/search-all`
         : `${API_URL}/search/search-missing/${userId}`;
 
       const response = await axios.get(url, config);
@@ -101,11 +138,16 @@ export const useSearch = (userId: string | undefined) => {
       if (controller.signal.aborted) return;
 
       if (response.data.status === 'Success') {
-        if (mode === 'collection') {
-          setCollectionResults(response.data.results);
-        } else {
-          setClaudeResults(response.data.results);
-        }
+        const entry: CachedSearch = {
+          at: Date.now(),
+          collectionResults: searchMode === 'collection' ? response.data.results : [],
+          claudeResults: searchMode === 'collection' ? [] : response.data.results,
+          ownedCounts: response.data.owned_counts ?? {},
+        };
+        cacheRef.current.set(key, entry);
+        setCollectionResults(entry.collectionResults);
+        setClaudeResults(entry.claudeResults);
+        setOwnedCounts(entry.ownedCounts);
       }
     } catch (err) {
       // A newer search replaced this one; leave the state to it
@@ -126,6 +168,19 @@ export const useSearch = (userId: string | undefined) => {
     }
   }, [query, mode, userId]);
 
+  /**
+   * Switch tabs. After a search, the new tab searches for the same thing
+   * (instantly if it already has results for it).
+   */
+  const changeMode = useCallback((next: SearchMode): void => {
+    setMode(next);
+    // What's in the search box now, in case it was changed since the last search
+    const text = query.trim() || searchedQuery;
+    if (hasSearched && text && next !== searchedMode) {
+      handleSearch(next, text);
+    }
+  }, [query, hasSearched, searchedQuery, searchedMode, handleSearch]);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter') handleSearch();
   }, [handleSearch]);
@@ -145,8 +200,10 @@ export const useSearch = (userId: string | undefined) => {
     setQuery,
     mode,
     setMode,
+    changeMode,
     collectionResults,
     claudeResults,
+    ownedCounts,
     isLoading,
     isSlow,
     error,

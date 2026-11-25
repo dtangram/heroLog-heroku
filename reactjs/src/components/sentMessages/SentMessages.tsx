@@ -122,7 +122,11 @@ const SentMessages = ({
         <article className="cbList">
           <section>
             <article>
-              <Empty />
+              <Empty
+                title="No sent messages yet"
+                message="To ask a seller about a comic, open it in Comics for Sale and send them a message."
+                action={{ label: 'Browse comics for sale', to: '/#forSale' }}
+              />
             </article>
           </section>
         </article>

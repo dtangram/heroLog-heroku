@@ -34,7 +34,7 @@ const setupForm = (path: string, saveResult: unknown = { ok: true, data: {} }) =
           path="/forms/:userId/createpublisher/edit/:id"
           element={<CreatePublisher {...(mapStateToProps(state as any) as any)} {...(actions as any)} />}
         />
-        <Route path="/dashboard/:userId" element={<p>Dashboard</p>} />
+        <Route path="/dashboard/:userId" element={<p>Dashboard page</p>} />
       </Routes>
     </MemoryRouter>
   );
@@ -73,7 +73,7 @@ describe('Add a Publisher', () => {
     act(() => {
       jest.advanceTimersByTime(1500);
     });
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard page')).toBeInTheDocument();
   });
 
   it('shows the error and stays on the form when the save fails', async () => {
@@ -90,7 +90,7 @@ describe('Add a Publisher', () => {
     act(() => {
       jest.advanceTimersByTime(1500);
     });
-    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument();
   });
 });
 
@@ -117,5 +117,18 @@ describe('Edit a publisher', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Saved your changes to Marvel Comics.');
     expect(actions.updatePublisher).toHaveBeenCalledWith({ id: 'pub-marvel', publisherName: 'Marvel Comics' });
+  });
+});
+describe('Duplicate publisher', () => {
+  it('says the publisher already exists, without the generic prefix', async () => {
+    setupForm('/forms/createpublisher/new/user-1', {
+      ok: false,
+      error: 'You already have a publisher called DC Comics.',
+      status: 409,
+      duplicate: { kind: 'publisher', id: 'p1', name: 'DC Comics', canSaveAnyway: false },
+    });
+    fireEvent.change(screen.getByLabelText(/publisher name/i), { target: { value: 'DC' } });
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+    expect(await screen.findByText('You already have a publisher called DC Comics.')).toBeInTheDocument();
   });
 });

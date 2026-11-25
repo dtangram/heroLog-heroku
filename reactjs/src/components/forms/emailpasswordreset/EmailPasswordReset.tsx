@@ -79,7 +79,7 @@ const EmailPasswordReset = ({
     <main id="emailpassReset" className={styles.signupMain}>
       <section className={styles.wrapper}>
         <h1>
-          Change Password
+          Forgot Your Password?
           <div
             className={styles.graphic}
             aria-label="Small burgundy rectangle graphic"

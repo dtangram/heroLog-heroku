@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { combineReducers, legacy_createStore as createStore } from 'redux';
 import wishlists from '../../store/wishlist/reducer';
-import { ClaudeResultList, CollectionResultCard } from './ResultCards';
+import { ClaudeResultList, CollectionResultCard, matchLabel } from './ResultCards';
 import type { ClaudeResult, CollectionResult } from '../../hooks/useSearch';
 
 jest.mock('../../API');
@@ -69,6 +69,35 @@ describe('All Comics and Find Missing results', () => {
   });
 });
 
+describe('Find Missing notes and guests', () => {
+  afterEach(() => localStorage.clear());
+
+  it('says when a whole group is already owned', () => {
+    localStorage.setItem('token', 't');
+    show(
+      <ClaudeResultList
+        userId={USER}
+        results={[comic('Robin #1', { group: 'Tie-in' })]}
+        ownedCounts={{ 'Main story': 10, 'Tie-in': 2 }}
+      />
+    );
+
+    expect(screen.getByRole('list', { name: 'Already in your collection' })).toHaveTextContent(
+      'You own all 10 main story issues'
+    );
+    expect(screen.getByRole('heading', { level: 3, name: 'Tie-ins (1 missing · you own 2)' })).toBeInTheDocument();
+  });
+
+  it('shows guests one sign-in prompt instead of one per card', () => {
+    show(
+      <ClaudeResultList userId="" results={[comic('Batman #492', { group: 'Main story' }), comic('Batman #493', { group: 'Main story' })]} />
+    );
+
+    expect(screen.getAllByRole('link', { name: 'Sign in' })).toHaveLength(1);
+    expect(screen.queryByText(/Sign in to add/)).not.toBeInTheDocument();
+  });
+});
+
 describe('My Collection results', () => {
   const match: CollectionResult = {
     comic_id: 'c-497',
@@ -88,7 +117,14 @@ describe('My Collection results', () => {
     expect(screen.getByRole('img', { name: 'Cover of Batman #497' })).toHaveAttribute('src', match.cover);
     expect(screen.getByRole('link', { name: 'Batman #497' }))
       .toHaveAttribute('href', `/dashboard/${USER}/pub-dc/DC/title-batman/Batman/comicbooklistissues`);
-    expect(screen.getByText('46% match')).toBeInTheDocument();
+    expect(screen.getByText('Best match')).toBeInTheDocument();
+  });
+
+  it('describes later results compared with the best one, not as raw percentages', () => {
+    expect(matchLabel(0.46, 0.46, 0)).toBe('Best match');
+    expect(matchLabel(0.43, 0.46, 1)).toBe('Strong match');
+    expect(matchLabel(0.36, 0.46, 2)).toBe('Good match');
+    expect(matchLabel(0.2, 0.46, 3)).toBe('Related');
   });
 
   it('offers "Read more" only when the description is cut off', () => {

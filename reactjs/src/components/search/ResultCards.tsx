@@ -2,7 +2,8 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import AddToWishList from './AddToWishList';
-import { ClaudeResult, CollectionResult, ResultGroup } from '../../hooks/useSearch';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { ClaudeResult, CollectionResult, OwnedCounts, ResultGroup } from '../../hooks/useSearch';
 import logo from '../../img/logo.png';
 import styles from './styles.module.css';
 
@@ -43,8 +44,28 @@ const issuesPath = (userId: string, result: CollectionResult): string | null =>
     ? `/dashboard/${userId}/${result.publisher_id}/${encodeURIComponent(result.publisher_name)}/${result.title_id}/${encodeURIComponent(result.series)}/comicbooklistissues`
     : null;
 
+/**
+ * How well a comic matches, in words. Raw similarity scores run low (the
+ * right comic often scores around 40%), which reads as a poor result, so each
+ * score is compared with the best one in the same search instead.
+ */
+export const matchLabel = (score: number, bestScore: number, rank: number): string => {
+  if (rank === 0) return 'Best match';
+  const relative = bestScore > 0 ? score / bestScore : 0;
+  if (relative >= 0.9) return 'Strong match';
+  if (relative >= 0.75) return 'Good match';
+  return 'Related';
+};
+
 /** A comic from the collection: its cover, how well it matches, and a link to it */
-export const CollectionResultCard: React.FC<{ result: CollectionResult; userId: string }> = ({ result, userId }) => {
+export const CollectionResultCard: React.FC<{
+  result: CollectionResult;
+  userId: string;
+  /** Position in the results, best first */
+  rank?: number;
+  /** The best score in this search */
+  bestScore?: number;
+}> = ({ result, userId, rank = 0, bestScore = result.similarity_score }) => {
   const path = issuesPath(userId, result);
 
   return (
@@ -58,7 +79,7 @@ export const CollectionResultCard: React.FC<{ result: CollectionResult; userId: 
         <section className={styles.resultHeader}>
           <h3>{path ? <Link to={path}>{result.title}</Link> : result.title}</h3>
           <span className={styles.scoreBadge}>
-            {Math.round(result.similarity_score * 100)}% match
+            {matchLabel(result.similarity_score, bestScore, rank)}
           </span>
         </section>
         <Description text={result.description} />
@@ -103,16 +124,62 @@ const ClaudeResultCard: React.FC<{
   </article>
 );
 
+/** "main story issues", "tie-ins", "related comics", for the owned notes */
+const OWNED_NOUN: Record<ResultGroup, [string, string]> = {
+  'Main story': ['main story issue', 'main story issues'],
+  'Tie-in': ['tie-in', 'tie-ins'],
+  Related: ['related comic', 'related comics'],
+};
+
+const ownedPhrase = (group: ResultGroup, count: number) =>
+  `${count} ${OWNED_NOUN[group][count === 1 ? 0 : 1]}`;
+
+/**
+ * Find Missing leaves out what you own. These notes say so, so a group that's
+ * complete doesn't just disappear: "You own all 10 main story issues ✓".
+ */
+export const OwnedNotes: React.FC<{ results: ClaudeResult[]; ownedCounts: OwnedCounts }> = ({ results, ownedCounts }) => {
+  const complete = GROUPS.filter(({ group }) => {
+    const owned = ownedCounts[group] ?? 0;
+    return owned > 0 && !results.some(result => (result.group ?? 'Related') === group);
+  });
+  if (complete.length === 0) return null;
+
+  return (
+    <ul className={styles.ownedNotes} aria-label="Already in your collection">
+      {complete.map(({ group }) => (
+        <li key={group}>
+          <CheckCircleIcon fontSize="inherit" aria-hidden="true" />
+          You own all {ownedPhrase(group, ownedCounts[group] ?? 0)}
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+/** One sign-in prompt for guests, instead of one on every card */
+const GuestWishListBanner: React.FC = () => (
+  <aside className={styles.guestBanner}>
+    <p>
+      <Link to="/signin">Sign in</Link> or <Link to="/signup">create an account</Link> to add these comics to your Wish List.
+    </p>
+  </aside>
+);
+
 export const ClaudeResultList: React.FC<{
   results: ClaudeResult[];
   userId: string;
-}> = ({ results, userId }) => {
+  /** Find Missing only: owned issues per group, for the "You own all…" notes */
+  ownedCounts?: OwnedCounts;
+}> = ({ results, userId, ownedCounts = {} }) => {
   const groups = groupResults(results);
-  const showGroups = groups.length > 1;
+  const showGroups = groups.length > 1 || Object.keys(ownedCounts).length > 0;
+  const isGuest = !userId || !localStorage.getItem('token');
 
   if (!showGroups) {
     return (
       <>
+        {isGuest && <GuestWishListBanner />}
         {results.map((result, index) => (
           <ClaudeResultCard key={`${result.title}-${index}`} result={result} userId={userId} Heading="h3" />
         ))}
@@ -122,16 +189,21 @@ export const ClaudeResultList: React.FC<{
 
   return (
     <>
-      {groups.map(({ group, heading, results: inGroup }) => (
-        <section key={group} className={styles.resultGroup} aria-labelledby={`results-${group.replace(' ', '-')}`}>
-          <h3 id={`results-${group.replace(' ', '-')}`} className={styles.groupHeading}>
-            {heading} <span className={styles.groupCount}>({inGroup.length})</span>
-          </h3>
-          {inGroup.map((result, index) => (
-            <ClaudeResultCard key={`${result.title}-${index}`} result={result} userId={userId} Heading="h4" />
-          ))}
-        </section>
-      ))}
+      <OwnedNotes results={results} ownedCounts={ownedCounts} />
+      {isGuest && <GuestWishListBanner />}
+      {groups.map(({ group, heading, results: inGroup }) => {
+        const owned = ownedCounts[group] ?? 0;
+        return (
+          <section key={group} className={styles.resultGroup} aria-labelledby={`results-${group.replace(' ', '-')}`}>
+            <h3 id={`results-${group.replace(' ', '-')}`} className={styles.groupHeading}>
+              {heading} <span className={styles.groupCount}>({inGroup.length}{owned > 0 ? ` missing · you own ${owned}` : ''})</span>
+            </h3>
+            {inGroup.map((result, index) => (
+              <ClaudeResultCard key={`${result.title}-${index}`} result={result} userId={userId} Heading="h4" />
+            ))}
+          </section>
+        );
+      })}
     </>
   );
 };
