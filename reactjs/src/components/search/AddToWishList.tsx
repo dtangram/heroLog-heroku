@@ -110,7 +110,7 @@ const AddToWishList = ({ result, userId }: Props) => {
         className={styles.wishButton}
         onClick={handleAdd}
         disabled={isAdding}
-        aria-label={`Add ${name} to your Wish List`}
+        aria-label={`${isAdding ? "Adding" : "Add to Wish List"}: ${name}`}
       >
         <BookmarkAddIcon fontSize="inherit" aria-hidden="true" />
         {isAdding ? 'Adding…' : 'Add to Wish List'}

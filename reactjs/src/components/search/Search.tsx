@@ -89,7 +89,7 @@ const Search: React.FC = () => {
     <article id="cbSearch" className={styles.cbWrap}>
       <h1>
         Search the Multiverse
-        <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
+        <figure className={styles.graphic} aria-hidden="true" />
       </h1>
 
       <article className={styles.cbList}>

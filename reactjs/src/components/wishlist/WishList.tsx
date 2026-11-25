@@ -104,7 +104,7 @@ const WishList = ({
       <article id="cbWishList">
         <h1>
           Your Wish List
-          <figure className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <figure className="graphic" aria-hidden="true" />
         </h1>
 
         <h2>
@@ -142,7 +142,7 @@ const WishList = ({
       <article id="cbWishList">
         <h1>
           Your Wish List
-          <figure className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <figure className="graphic" aria-hidden="true" />
         </h1>
 
         <h2>
@@ -174,7 +174,7 @@ const WishList = ({
     <article id="cbWishList">
       <h1>
         Your Wish List
-        <figure className="graphic" aria-label="Small burgundy rectangle graphic" />
+        <figure className="graphic" aria-hidden="true" />
       </h1>
 
       <h2>

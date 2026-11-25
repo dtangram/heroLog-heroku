@@ -145,7 +145,7 @@ const ReplyMessage = ({ messaging, fetchMessaging, updateMessaging }: ContainerP
           Send Reply About
           <br />
           {subjectComicBookTitle}
-          <figure className={styles.graphic} aria-label="Small burgundy, rectangle graphic." />
+          <figure className={styles.graphic} aria-hidden="true" />
         </h1>
 
         <article className={styles.cbList}>

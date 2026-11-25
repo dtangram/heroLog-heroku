@@ -48,7 +48,7 @@ describe('Home page', () => {
 
     const cards = screen.getByRole('list', { name: 'Comics for sale' });
     expect(within(cards).getByRole('heading', { name: 'Superman #25' })).toBeInTheDocument();
-    expect(within(cards).getByRole('link', { name: 'Message the seller of Superman #25' })).toHaveAttribute(
+    expect(within(cards).getByRole('link', { name: 'Message seller of Superman #25' })).toHaveAttribute(
       'href',
       '/forms/messaging/a-owner/Superman/25/me/dtangram/me@example.com'
     );
@@ -60,7 +60,7 @@ describe('Home page', () => {
     renderHome([{ ...sale('a', 25, 'dtangram'), saleUsersId: 'me' }]);
 
     expect(screen.getByText(/Your listing/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Edit your listing for Superman #25' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Edit listing for Superman #25' })).toHaveAttribute(
       'href',
       '/forms/saleform/edit/a'
     );

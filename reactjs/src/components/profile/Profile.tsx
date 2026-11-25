@@ -90,7 +90,7 @@ const Profile = ({
           Profile
           <figure 
             className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
         </h1>
         <article className={styles.cbList}>
@@ -108,7 +108,7 @@ const Profile = ({
           Profile
           <figure 
             className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
         </h1>
         <article className={styles.cbList}>
@@ -129,7 +129,7 @@ const Profile = ({
         Profile
         <figure 
           className={styles.graphic} 
-          aria-label="Small burgundy rectangle graphic" 
+          aria-hidden="true" 
         />
       </h1>
       
@@ -183,7 +183,7 @@ const Profile = ({
                       className={`${cardStyles.action} ${styles.naturalWidth}`}
                       type="button"
                       onClick={() => handleDelete(profileId, username)}
-                      aria-label={`Delete the account for ${username}`}
+                      aria-label={`Delete account for ${username}`}
                     >
                       <DeleteIcon fontSize="inherit" aria-hidden="true" />
                       <span className={cardStyles.label}>Delete account</span>

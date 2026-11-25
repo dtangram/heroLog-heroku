@@ -73,7 +73,7 @@ const SentMessages = ({
       <article id="cbVeiwMessage">
         <h1>
           Your Sent Messages
-          <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <span className="graphic" aria-hidden="true" />
         </h1>
 
         <article className={styles.viewMess}>
@@ -109,7 +109,7 @@ const SentMessages = ({
       <article id="cbVeiwMessage">
         <h1>
           Your Sent Messages
-          <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <span className="graphic" aria-hidden="true" />
         </h1>
 
         <article className={styles.viewMess}>
@@ -139,7 +139,7 @@ const SentMessages = ({
     <article id="cbVeiwMessage">
       <h1>
         Your Sent Messages
-        <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+        <span className="graphic" aria-hidden="true" />
       </h1>
 
       <article className={styles.viewMess}>

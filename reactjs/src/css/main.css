@@ -1,4 +1,4 @@
-.graphic, .logo_graphic, button, form, #main, #root > section:nth-child(2) h1 .graphic, section:nth-child(3) .container .row .card button, .cbWrapper .cbList > .wrapper form, #cbDash > .wrapper form, #cbComicForm .cbList > .wrapper form {
+.graphic, .logo_graphic, button, form, #main, #root > section:nth-child(2) h1 .graphic, section:nth-child(3):not(:where([data-landing])) .container .row .card button, section[data-landing="plans"] .container .row .card button, .cbWrapper .cbList > .wrapper form, #cbDash > .wrapper form, #cbComicForm .cbList > .wrapper form {
   margin: 0 auto; }
 
 * {
@@ -6,6 +6,54 @@
   margin: 0;
   outline: 0;
   padding: 0; }
+
+/* LANDING SECTIONS ============================ */
+/* Older rules below style sections by position (section:nth-child(3), (4)).
+   Landing's sections are named with data-landing instead, so moving them
+   (e.g. into <main>) can't restyle them, and the position rules skip them.
+   Attributes, not classes, because this file is also loaded as a CSS module
+   (composes: link), which renames classes but not attributes. */
+
+/* KEYBOARD FOCUS ============================== */
+/* The reset above removes every focus ring. This puts one back for keyboard
+   users only (not mouse clicks): a burgundy ring with a white edge, so it
+   shows on white pages, burgundy cards and the dark header and footer alike. */
+:focus-visible {
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px #FFF;
+  outline: 3px solid #770422 !important;
+  outline-offset: 2px; }
+
+/* On the dark header and footer, a green ring reads better */
+header :focus-visible,
+footer :focus-visible {
+  box-shadow: 0 0 0 2px #2B2B2B;
+  outline-color: #AECEAB !important; }
+
+/* The page content gets focus from the skip link; no ring needed there */
+#content:focus {
+  outline: 0 !important; }
+
+/* SKIP LINK =================================== */
+/* Hidden until a keyboard user tabs to it, then shown top left */
+.skipLink {
+  background: #770422;
+  border-radius: 0 0 4px 0;
+  color: #FFF;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  left: 0;
+  padding: 12px 20px;
+  position: absolute;
+  text-decoration: none;
+  top: 0;
+  transform: translateY(-100%);
+  z-index: 2000; }
+
+.skipLink:focus {
+  color: #FFF;
+  transform: translateY(0); }
 
 html {
   font-size: 62.5%; }
@@ -95,6 +143,13 @@ p {
   color: #FFF;
   font-size: 2rem; }
 
+/* Decorative bars that are <span>s (hidden from screen readers) need to be
+   blocks to show, like the <div>s they replaced. Module classes look like
+   "styles_graphic__ab12c". */
+span.graphic,
+span[class*="_graphic__"] {
+  display: block; }
+
 .graphic {
   background: #770422;
   height: 10px;
@@ -166,7 +221,8 @@ figure {
   width: 80%; }
 
 /* BASE STRUCTURE =============================== */
-#main {
+/* The page: header, main and footer, with the footer pushed to the bottom */
+#root {
   display: flex;
   flex-direction: column;
   max-width: 100%;
@@ -175,9 +231,6 @@ figure {
   padding: 0;
   position: relative;
   width: 100%; }
-  @media (max-width: 1199px) {
-    #main {
-      width: 100%; } }
 
 /* HEADER ================================== */
 header {
@@ -229,17 +282,22 @@ header {
           margin: 0 auto; } }
     header .logoWrap a .logo figure img {
       width: 100%; }
-    header .logoWrap a .logo h1 {
+    /* "Hero-Log" next to the logo. Not a heading: each page has its own h1.
+       Mobile first; it looks exactly as it did when it was an h1. */
+    header .logoWrap a .logo .logoText {
       color: #AECEAB;
-      font-size: 1.8em;
-      font-weight: bold; }
-      @media (max-width: 500px) {
-        header .logoWrap a .logo h1 {
-          font-size: 1.3em;
-          line-height: normal;
-          margin-bottom: 0; } }
-      header .logoWrap a .logo h1 span {
-        font-weight: bold; }
+      font-family: "Source Sans Pro", Arial, sans-serif;
+      font-size: 1.3em;
+      font-weight: bold;
+      line-height: normal;
+      margin: 0;
+      padding: 0 1%; }
+      @media (min-width: 501px) {
+        header .logoWrap a .logo .logoText {
+          font-size: 1.8em;
+          line-height: 70px;
+          margin-bottom: .5rem;
+          padding: 0; } }
   header nav {
     float: right;
     margin-right: 0; }
@@ -403,26 +461,26 @@ section {
       height: 600px;
       min-height: 600px; } }
 
-section:nth-child(3) {
+section:nth-child(3):not(:where([data-landing])) , section[data-landing="plans"] {
   background: #FFF; }
-  section:nth-child(3) h2 {
+  section:nth-child(3):not(:where([data-landing])) h2 , section[data-landing="plans"] h2 {
     color: #2B2B2B; }
-  section:nth-child(3) .graphic {
+  section:nth-child(3):not(:where([data-landing])) .graphic , section[data-landing="plans"] .graphic {
     margin-bottom: 90px; }
-  section:nth-child(3) .container .row {
+  section:nth-child(3):not(:where([data-landing])) .container .row , section[data-landing="plans"] .container .row {
     display: flex;
     flex-direction: row;
     justify-content: center;
     margin: 0; }
-    section:nth-child(3) .container .row .cardWrap {
+    section:nth-child(3):not(:where([data-landing])) .container .row .cardWrap , section[data-landing="plans"] .container .row .cardWrap {
       margin: 0 auto 80px;
       text-align: center; }
       @media (max-width: 991px) {
-        section:nth-child(3) .container .row .cardWrap {
+        section:nth-child(3):not(:where([data-landing])) .container .row .cardWrap , section[data-landing="plans"] .container .row .cardWrap {
           display: flex;
           flex-direction: column;
           align-items: center; } }
-    section:nth-child(3) .container .row .card {
+    section:nth-child(3):not(:where([data-landing])) .container .row .card , section[data-landing="plans"] .container .row .card {
       background: #770422;
       border-bottom-left-radius: 15px;
       border-bottom-right-radius: 15px;
@@ -433,9 +491,9 @@ section:nth-child(3) {
       padding-right: 2%;
       position: relative; }
       @media (max-width: 991px) {
-        section:nth-child(3) .container .row .card {
+        section:nth-child(3):not(:where([data-landing])) .container .row .card , section[data-landing="plans"] .container .row .card {
           max-width: 400px; } }
-      section:nth-child(3) .container .row .card h3 {
+      section:nth-child(3):not(:where([data-landing])) .container .row .card h3 , section[data-landing="plans"] .container .row .card h3 {
         color: #FFF;
         margin-bottom: 40px;
         margin-top: 40px;
@@ -443,37 +501,37 @@ section:nth-child(3) {
         font-weight: bold;
         line-height: 30px; }
         @media (max-width: 500px) {
-          section:nth-child(3) .container .row .card h3 {
+          section:nth-child(3):not(:where([data-landing])) .container .row .card h3 , section[data-landing="plans"] .container .row .card h3 {
             margin-top: 60px;
             text-align: center; } }
         @media (max-width: 1199px) {
-          section:nth-child(3) .container .row .card h3 {
+          section:nth-child(3):not(:where([data-landing])) .container .row .card h3 , section[data-landing="plans"] .container .row .card h3 {
             font-size: 1.1em;
             margin-bottom: 20px;
             margin-top: 20px; } }
-      section:nth-child(3) .container .row .card h4 {
+      section:nth-child(3):not(:where([data-landing])) .container .row .card h4 , section[data-landing="plans"] .container .row .card h4 {
         color: #FFF;
         margin-bottom: 40px;
         font-size: 1.7em;
         font-weight: normal; }
         @media (max-width: 500px) {
-          section:nth-child(3) .container .row .card h4 {
+          section:nth-child(3):not(:where([data-landing])) .container .row .card h4 , section[data-landing="plans"] .container .row .card h4 {
             text-align: center; } }
         @media (max-width: 1199px) {
-          section:nth-child(3) .container .row .card h4 {
+          section:nth-child(3):not(:where([data-landing])) .container .row .card h4 , section[data-landing="plans"] .container .row .card h4 {
             font-size: 1.3em;
             margin-bottom: 20px; } }
-      section:nth-child(3) .container .row .card p {
+      section:nth-child(3):not(:where([data-landing])) .container .row .card p , section[data-landing="plans"] .container .row .card p {
         font-size: 1.7rem;
         margin-bottom: 20px;
         line-height: 30px; }
         @media (max-width: 500px) {
-          section:nth-child(3) .container .row .card p {
+          section:nth-child(3):not(:where([data-landing])) .container .row .card p , section[data-landing="plans"] .container .row .card p {
             text-align: center; } }
         @media (max-width: 1199px) {
-          section:nth-child(3) .container .row .card p {
+          section:nth-child(3):not(:where([data-landing])) .container .row .card p , section[data-landing="plans"] .container .row .card p {
             margin-bottom: 12px; } }
-      section:nth-child(3) .container .row .card button {
+      section:nth-child(3):not(:where([data-landing])) .container .row .card button , section[data-landing="plans"] .container .row .card button {
         background: #AECEAB;
         bottom: 30px;
         color: #770422;
@@ -486,35 +544,35 @@ section:nth-child(3) {
         text-transform: uppercase;
         width: 90%; }
 
-section:nth-child(4) {
+section:nth-child(4):not(:where([data-landing])) , section[data-landing="features"] {
   background: url(../img/neven-krcmarek-Tm6RYZmBsH8-unsplash.jpg) no-repeat 0 0/cover;
   padding-top: 70px; }
-  section:nth-child(4) article {
+  section:nth-child(4):not(:where([data-landing])) article , section[data-landing="features"] article {
     max-width: 100%; }
-    section:nth-child(4) article .row {
+    section:nth-child(4):not(:where([data-landing])) article .row , section[data-landing="features"] article .row {
       display: flex;
       flex-direction: row;
       justify-content: space-around;
       margin: 0; }
-      section:nth-child(4) article .row .cardWrap {
+      section:nth-child(4):not(:where([data-landing])) article .row .cardWrap , section[data-landing="features"] article .row .cardWrap {
         margin: 0 auto 80px;
         text-align: center; }
         @media (max-width: 991px) {
-          section:nth-child(4) article .row .cardWrap {
+          section:nth-child(4):not(:where([data-landing])) article .row .cardWrap , section[data-landing="features"] article .row .cardWrap {
             display: flex;
             flex-direction: column;
             align-items: center; } }
-      section:nth-child(4) article .row .cardWrap section {
+      section:nth-child(4):not(:where([data-landing])) article .row .cardWrap section , section[data-landing="features"] article .row .cardWrap section {
         background: #FFF;
         border-bottom-left-radius: 15px;
         border-bottom-right-radius: 15px;
         padding: 5px 1% 40px;
         position: relative; }
         @media (max-width: 991px) {
-          section:nth-child(4) article .row .cardWrap section {
+          section:nth-child(4):not(:where([data-landing])) article .row .cardWrap section , section[data-landing="features"] article .row .cardWrap section {
             max-width: 400px;
             padding: 5px 1% 0; } }
-        section:nth-child(4) article .row .cardWrap section p {
+        section:nth-child(4):not(:where([data-landing])) article .row .cardWrap section p , section[data-landing="features"] article .row .cardWrap section p {
           color: #2B2B2B;
           font-size: 1.8rem;
           font-weight: bold;
@@ -525,17 +583,17 @@ section:nth-child(4) {
           top: 310px;
           width: 100%; }
           @media (max-width: 991px) {
-            section:nth-child(4) article .row .cardWrap section p {
+            section:nth-child(4):not(:where([data-landing])) article .row .cardWrap section p , section[data-landing="features"] article .row .cardWrap section p {
               padding: 30px 0; } }
-      section:nth-child(4) article .row .cardWrap:nth-child(1) figure {
+      section:nth-child(4):not(:where([data-landing])) article .row .cardWrap:nth-child(1) figure , section[data-landing="features"] article .row .cardWrap:nth-child(1) figure {
         background: url(../img/img1.jpg) no-repeat 0 0/cover;
         height: 300px;
         width: 100%; }
-      section:nth-child(4) article .row .cardWrap:nth-child(2) figure {
+      section:nth-child(4):not(:where([data-landing])) article .row .cardWrap:nth-child(2) figure , section[data-landing="features"] article .row .cardWrap:nth-child(2) figure {
         background: url(../img/img2.jpg) no-repeat 0 0/cover;
         height: 300px;
         width: 100%; }
-      section:nth-child(4) article .row .cardWrap:nth-child(3) figure {
+      section:nth-child(4):not(:where([data-landing])) article .row .cardWrap:nth-child(3) figure , section[data-landing="features"] article .row .cardWrap:nth-child(3) figure {
         background: url(../img/img3.jpg) no-repeat 0 0/cover;
         height: 300px;
         width: 100%; }
@@ -1549,14 +1607,24 @@ footer {
         footer > article section figure:nth-child(4) {
           margin-right: 0; }
   footer ul {
+    align-items: center;
     display: flex;
     flex-direction: row;
-    width: 220px; }
+    gap: 6px; }
+    /* A fixed gap between links (a % margin here was worked out from the
+       list's own width, which let the last link spill past the screen) */
     footer ul li, footer ul p {
-      margin-right: 3%; }
+      margin-right: 0; }
     footer ul li {
       cursor: pointer;
-      font-size: .8em; }
+      font-size: 1.5rem; }
+      /* Footer links: readable text and at least 44px tall to tap */
+      footer ul li a {
+        align-items: center;
+        display: inline-flex;
+        min-height: 44px;
+        padding: 0 6px;
+        white-space: nowrap; }
       footer ul li:hover {
         color: #AECEAB; }
     @media (max-width: 800px) {

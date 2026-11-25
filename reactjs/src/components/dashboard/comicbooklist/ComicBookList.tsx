@@ -112,7 +112,7 @@ const ComicBookList = ({
         Your List of {publisherName} Titles
         <figure 
           className={styles.graphic} 
-          aria-label="Small burgundy rectangle graphic" 
+          aria-hidden="true" 
         />
       </h1>
 

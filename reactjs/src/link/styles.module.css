@@ -1,5 +1,12 @@
 .link {
   composes: link from '../css/main.css';
+  align-items: center;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
 }
 
 .linkSecondary {

@@ -87,13 +87,13 @@ const SalePreview = () => {
   if (status === 'error') return null;
 
   return (
-    <section className={styles.saleSection} aria-labelledby="landingSaleTitle" aria-busy={status === 'loading'}>
+    <section className={styles.saleSection} data-landing="sale" aria-labelledby="landingSaleTitle" aria-busy={status === 'loading'}>
       <figure className="logo_graphic">
         <img src={logo} alt="Hero-Log logo" />
       </figure>
 
       <h2 id="landingSaleTitle" className={styles.heading}>Comics for Sale</h2>
-      <figure className="graphic" aria-label="Small burgundy rectangle graphic" />
+      <figure className="graphic" aria-hidden="true" />
 
       {status === 'loading' && (
         <>
