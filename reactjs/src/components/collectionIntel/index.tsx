@@ -10,6 +10,8 @@ interface SeriesAnalysis {
   ownedIssues: number[];
   missingIssues: number[];
   missingRanges: string[];
+  /** First and last issue owned; completionPercentage only covers this span */
+  span: { first: number; last: number };
   completionPercentage: number;
   /** 'run' = collecting consecutive issues; 'scattered' = picking individual issues */
   pattern: 'run' | 'scattered';
@@ -267,10 +269,22 @@ const CollectionIntel: React.FC = () => {
               <h2>Analysis</h2>
               <article className={styles.insightsText}>
                 <p>{analysis.summary}</p>
-                {analysis.highlights.map((highlight, index) => (
-                  <p key={index}>{highlight}</p>
-                ))}
-                {analysis.observation && <p>{analysis.observation}</p>}
+                {analysis.highlights.length > 0 && (
+                  <>
+                    <h3 id="analysisHighlights" className={styles.insightsHeading}>Highlights</h3>
+                    <ul className={styles.highlights} aria-labelledby="analysisHighlights">
+                      {analysis.highlights.map((highlight, index) => (
+                        <li key={index}>{highlight}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {analysis.observation && (
+                  <>
+                    <h3 className={styles.insightsHeading}>Worth noting</h3>
+                    <p>{analysis.observation}</p>
+                  </>
+                )}
                 {insights.analysisSource === 'fallback' && (
                   <aside className={styles.fallbackNote}>
                     <p>
@@ -316,13 +330,18 @@ const CollectionIntel: React.FC = () => {
                 // completion % and gap counts would be misleading; list what's owned instead.
                 const isRun = series.pattern === 'run';
                 const percent = Math.round(series.completionPercentage);
+                // The percentage only covers the issues between the first and last
+                // ones you own, so say that instead of "100% of run"
+                const { first, last } = series.span;
+                const spanLabel = first === last ? `#${first}` : `#${first}–#${last}`;
+                const gaps = series.missingIssues.length;
 
                 return (
                   <article key={index} className={styles.seriesCard}>
                     <hgroup className={styles.seriesHeader}>
                       <h3>{series.seriesName}</h3>
                       <p className={styles.completionBadge}>
-                        {isRun ? `${percent}% of run` : 'Selected issues'}
+                        {!isRun ? 'Selected issues' : gaps === 0 ? 'No gaps' : `${plural(gaps, 'gap')}`}
                       </p>
                     </hgroup>
 
@@ -330,7 +349,7 @@ const CollectionIntel: React.FC = () => {
                       <span
                         className={styles.progressBar}
                         role="progressbar"
-                        aria-label={`${series.seriesName} run completed`}
+                        aria-label={`${series.seriesName}: issues owned from ${spanLabel}`}
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-valuenow={percent}
@@ -344,7 +363,7 @@ const CollectionIntel: React.FC = () => {
 
                     <p className={styles.seriesStats}>
                       <span>Owned: {plural(series.ownedIssues.length, 'issue')}</span>
-                      {isRun && <span>Missing: {plural(series.missingIssues.length, 'issue')}</span>}
+                      {isRun && gaps > 0 && <span>Missing between {spanLabel}: {plural(gaps, 'issue')}</span>}
                       {series.variants > 0 && (
                         <span>Variants: {series.variants}</span>
                       )}

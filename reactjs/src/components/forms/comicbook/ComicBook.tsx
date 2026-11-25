@@ -9,11 +9,18 @@ import { ScanResult } from '../../../hooks/useComicScanner';
 import { useFormFields } from '../../../hooks/useFormFields';
 import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
-import { useCoverScan } from '../../../hooks/useCoverScan';
+import { useCoverScan, ScanField } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import CoverPicker from '../../coverPicker/CoverPicker';
 import styles from './styles.module.css';
+import { saveUnlessDuplicate } from '../../../utils/duplicates';
+import Breadcrumbs from '../../breadcrumbs';
+import CoverTypeField from '../coverType';
+import { usePageTitle } from '../../documentTitle';
+
+/** The fields a cover scan can fill on this form, so the scan message can name any it couldn't read */
+const COMIC_SCAN_FIELDS: ScanField[] = ['title', 'issue', 'volume', 'year', 'writer', 'penciler', 'inker', 'coverArtist'];
 
 interface RouteParams extends Record<string, string | undefined> {
   id?: string;
@@ -131,7 +138,8 @@ const ComicBookComponent = ({
           type: toCoverType(result.type) || prev.type,
         })),
       [setFormState]
-    )
+    ),
+    COMIC_SCAN_FIELDS
   );
 
   // The title as it is now, for deciding whether to scan a new cover straight away
@@ -153,6 +161,10 @@ const ComicBookComponent = ({
 
     if (!formState.title.trim()) {
       errors.title = 'Comic book title is required';
+    }
+
+    if (!formState.comicIssue.trim()) {
+      errors.comicIssue = 'Issue number is required';
     }
 
     if (!formState.type) {
@@ -188,7 +200,12 @@ const ComicBookComponent = ({
       titleID: coboTitleId!,
       comicBookTitle: cbTitle || '',
     };
-    return id ? updateComicBook({ id, ...comicBookData }) : createComicBook(comicBookData);
+    // If this issue is already in the list, ask before saving a second copy
+    return saveUnlessDuplicate(allowDuplicate =>
+      id
+        ? updateComicBook({ id, ...comicBookData }, { allowDuplicate })
+        : createComicBook(comicBookData, { allowDuplicate })
+    );
   };
 
   const { isSubmitting, isSaved, handleSubmit } = useFormSubmit({
@@ -204,11 +221,23 @@ const ComicBookComponent = ({
 
   const showSuccess = !formErrors.title && !formErrors.type && isSaved;
   const isEditMode = !!id;
-  const pageTitle = isEditMode ? `Edit ${formState.title || 'Comic Book'}` : 'Add Comic Book';
+  // The same words for the heading and the browser tab
+  const pageTitle = isEditMode
+    ? `Edit ${[formState.title || cbTitle, formState.comicIssue && `#${formState.comicIssue}`].filter(Boolean).join(' ')}`
+    : `Add an Issue to ${cbTitle}`;
+  usePageTitle(pageTitle);
   const cancelUrl = listUrl;
 
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
+      <Breadcrumbs
+        items={[
+          { label: 'Dashboard', to: `/dashboard/${userId}` },
+          { label: publisherName || 'Publisher', to: `/dashboard/${userId}/${pubId}/${publisherName}/comicbooklist` },
+          { label: cbTitle || 'Title', to: listUrl },
+          { label: pageTitle },
+        ]}
+      />
       <h1>
         {pageTitle}
         <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
@@ -231,7 +260,7 @@ const ComicBookComponent = ({
             <article>
               <fieldset>
                 <CoverPicker
-                  label="Comic Book Cover"
+                  label="Cover"
                   hasCover={Boolean(formState.comicBookCover)}
                   isUploading={isUploading}
                   disabled={isSubmitting}
@@ -257,15 +286,17 @@ const ComicBookComponent = ({
                 </label>
 
                 <label htmlFor="comicIssue">
-                  Issue
+                  Issue *
                   <input
                     id="comicIssue"
                     className={styles.inputBorder}
                     type="text"
+                    inputMode="numeric"
                     name="comicIssue"
                     value={formState.comicIssue}
                     onChange={(e) => handleNumberChange(e, 'comicIssue')}
                     disabled={isSubmitting}
+                    required
                   />
                 </label>
 
@@ -353,31 +384,7 @@ const ComicBookComponent = ({
               </fieldset>
             </article>
 
-            <article>
-              <label className={styles.labelRadio} htmlFor="regularcover">
-                <input
-                  id="regularcover"
-                  type="radio"
-                  value="Regular"
-                  checked={formState.type === 'Regular'}
-                  onChange={handleTypeChange}
-                  disabled={isSubmitting}
-                />
-                Regular Cover
-              </label>
-
-              <label className={styles.labelRadio} htmlFor="variantcover">
-                <input
-                  id="variantcover"
-                  type="radio"
-                  value="Variant"
-                  checked={formState.type === 'Variant'}
-                  onChange={handleTypeChange}
-                  disabled={isSubmitting}
-                />
-                Variant Cover
-              </label>
-            </article>
+            <CoverTypeField value={formState.type} onChange={handleTypeChange} disabled={isSubmitting} />
 
             <article>
               <p>

@@ -108,14 +108,12 @@ describe('AddToWishList', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('asks a signed-out visitor to sign in instead', () => {
+  it('shows nothing to a signed-out visitor (the results list has one sign-in prompt)', () => {
     localStorage.removeItem('token');
     setup();
 
-    expect(screen.getByRole('link', { name: 'Sign in to add Detective Comics #27 to your Wish List' })).toHaveAttribute(
-      'href',
-      '/signin'
-    );
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('offers nothing for a result that is not one numbered issue', () => {

@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 import { loadPublisherSummaries } from '../services/collectionSummary';
+import { findDuplicatePublisher, sendDuplicate } from '../services/duplicates';
 
 // Properly typed model interface
 interface CollectionPublisherModel {
@@ -300,6 +301,10 @@ export const createCollectionPublisher = async (
   console.log('All validations passed, attempting to create...');
   
   try {
+    // One publisher per name: "DC" and "DC Comics" count as the same one
+    const duplicate = await findDuplicatePublisher(collectpubUsersId, publisherName);
+    if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+
     const newCollectionPublisher = await CollectionPublishers.create({
       publisherName: publisherName.trim(),
       collectpubUsersId: collectpubUsersId,
@@ -386,6 +391,14 @@ export const updateCollectionPublisher = async (
   }
   
   try {
+    // Renaming to a publisher the user already has would make two of them
+    if (updateData.publisherName) {
+      const current = await CollectionPublishers.findByPk(id);
+      const ownerId = current?.toJSON().collectpubUsersId;
+      const duplicate = ownerId ? await findDuplicatePublisher(ownerId, updateData.publisherName, id) : null;
+      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+    }
+
     const [rowsUpdated, updatedRecords] = await CollectionPublishers.update(
       updateData,
       {

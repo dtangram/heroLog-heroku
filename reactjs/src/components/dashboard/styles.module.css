@@ -52,7 +52,7 @@ button a{
   width: 70px;
 }
 
-/* "Add Publisher" under the heading, styled like "Add Comic Book Title" */
+/* "Add Publisher" under the heading, styled like "Add a Title" */
 .cbWrap > h2{
   line-height: normal;
   text-align: center;

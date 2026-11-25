@@ -160,7 +160,11 @@ const Sale = ({
         <div className="cbList">
           <section>
             <article>
-              <Empty />
+              <Empty
+                title="You haven't listed any comics"
+                message="List a comic to sell or trade it with other collectors."
+                action={{ label: 'Sell a comic', to: `/forms/saleform/new/${userId}` }}
+              />
             </article>
           </section>
         </div>

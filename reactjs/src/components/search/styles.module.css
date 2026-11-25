@@ -675,3 +675,61 @@
     transition: none;
   }
 }
+/* Find Missing: "You own all 10 main story issues", mobile first */
+.ownedNotes {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+}
+
+.ownedNotes li {
+  align-items: center;
+  background: #EEF5ED;
+  border-left: 4px solid #4E7A4A;
+  color: #2B2B2B;
+  display: flex;
+  font-size: 1.6rem;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.ownedNotes svg {
+  color: #4E7A4A;
+  flex-shrink: 0;
+  font-size: 2.2rem;
+}
+
+/* Guests: one sign-in prompt above the results */
+.guestBanner {
+  background: #fff5f5;
+  border-left: 4px solid #770422;
+  margin: 0 0 24px;
+  padding: 12px 16px;
+}
+
+.guestBanner p {
+  color: #2B2B2B;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.guestBanner a {
+  color: #770422;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.guestBanner a:hover,
+.guestBanner a:focus-visible {
+  color: #4E0216;
+}
+
+@media (min-width: 500px) {
+  .ownedNotes li,
+  .guestBanner {
+    border-radius: 0 8px 8px 0;
+  }
+}

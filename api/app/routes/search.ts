@@ -272,6 +272,29 @@ Example of exact format to return:
  * is one they're missing. Asking for the whole storyline in publication order
  * gives much the same list each time, instead of a different handful.
  */
+/**
+ * Find Missing: keeps the comics the collector doesn't own (each once), and
+ * counts the owned ones by group instead of showing them.
+ */
+export const splitMissing = <T extends { title: string; group?: string }>(suggestions: T[], owned: Set<string>) => {
+  const seen = new Set<string>();
+  const ownedCounts: Partial<Record<ResultGroup, number>> = {};
+  const results: Array<T & { already_owned: false; source: 'claude' }> = [];
+
+  for (const result of suggestions) {
+    const key = normalizeTitle(result.title);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (owned.has(key)) {
+      const group = normalizeGroup(result.group);
+      ownedCounts[group] = (ownedCounts[group] ?? 0) + 1;
+    } else {
+      results.push({ ...result, already_owned: false, source: 'claude' });
+    }
+  }
+  return { results, ownedCounts };
+};
+
 const missingPrompt = (q: string, owned: string): string => `
 You are a comic book expert. A collector is searching for: "${q}"
 
@@ -280,7 +303,9 @@ ${owned || '(none yet)'}
 
 List the comics that match the search which they do NOT own. If the search names a storyline, event or run,
 list every issue in it that they are missing, including tie-ins in other series, in publication order.
-Otherwise list the best matches first. Never include a comic from the owned list above.
+Otherwise list the best matches first. For a storyline, event or run, also list the issues of it that they
+already own (same fields), so the app can tell them which parts they have complete; the app removes those
+before showing the results.
 
 Return ONLY a JSON array with no other text, no markdown, no backticks, no explanation.
 Just the raw JSON array starting with [ and ending with ]
@@ -293,7 +318,7 @@ Each item must have exactly these fields:
 - group: "Main story" for an issue of the storyline itself, "Tie-in" for a crossover issue in another series,
   or "Related" for anything else (a prelude, aftermath, or a comic that simply matches the search)
 
-Aim for ${MISSING_RESULT_COUNT} comics; return fewer only if fewer that they're missing genuinely match. Example of exact format to return:
+Aim for ${MISSING_RESULT_COUNT} comics they're missing, plus any they own; return fewer only if fewer that they're missing genuinely match. Example of exact format to return:
 [{"title": "Detective Comics #659", "description": "A gritty street-level tie-in.", "publisher": "DC Comics", "year": "1993"}]`;
 
 // ============================================================================
@@ -683,18 +708,11 @@ router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, 
 
     const suggestions = await askClaudeForComics(q, missingPrompt(q, summarizeOwned(ownedTitles)), MISSING_MAX_TOKENS);
 
-    // Only comics they don't own, each once (Claude can slip an owned one in)
-    const seen = new Set<string>();
-    const results = suggestions
-      .filter(result => {
-        const key = normalizeTitle(result.title);
-        if (owned.has(key) || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map(result => ({ ...result, already_owned: false, source: 'claude' }));
+    const { results, ownedCounts } = splitMissing(suggestions, owned);
 
-    res.json({ status: 'Success', query: q, results });
+    // owned_counts: how many of each group they already own, so the page can say
+    // "You own all 10 main story issues" instead of leaving that group out silently
+    res.json({ status: 'Success', query: q, results, owned_counts: ownedCounts });
 
   } catch (error) {
     console.error('❌ Search missing error:', error);

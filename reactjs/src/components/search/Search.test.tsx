@@ -143,6 +143,44 @@ describe('Search page while a search runs', () => {
   });
 });
 
+describe('Switching tabs', () => {
+  beforeAll(() => {
+    window.scrollTo = jest.fn();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (mockedAxios.isCancel as unknown as jest.Mock).mockReturnValue(false);
+  });
+
+  const claudeResponse = (titles: string[]) => ({
+    data: {
+      status: 'Success',
+      results: titles.map(title => ({ title, description: 'x', publisher: 'DC Comics', year: '1993', source: 'claude' })),
+    },
+  });
+
+  it('searches the new tab for the same words, and remembers each tab\'s results', async () => {
+    mockedAxios.get.mockImplementation((url: string) =>
+      Promise.resolve(url.includes('search-all') ? claudeResponse(['Robin #1']) : collectionResponse(['Batman #497']))
+    );
+    renderSearch();
+
+    search('Knightfall saga');
+    expect(await screen.findByText('Batman #497')).toBeInTheDocument();
+
+    // All Comics runs on its own, without pressing Search again
+    fireEvent.click(screen.getByRole('button', { name: 'All Comics' }));
+    expect(await screen.findByText('Robin #1')).toBeInTheDocument();
+    expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+
+    // Back to My Collection: shown from memory, no new request
+    fireEvent.click(screen.getByRole('button', { name: 'My Collection' }));
+    expect(await screen.findByText('Batman #497')).toBeInTheDocument();
+    expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('Search results and the Wish List', () => {
   beforeAll(() => {
     window.scrollTo = jest.fn();

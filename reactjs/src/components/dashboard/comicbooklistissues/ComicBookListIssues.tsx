@@ -4,7 +4,7 @@ import { BeatLoader } from 'react-spinners';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import Empty from '../../empty';
 import Breadcrumbs from '../../breadcrumbs';
-import { countLabel, issueRange } from '../../../utils/collection';
+import { comicsOf, countLabel, issueRange } from '../../../utils/collection';
 import { showConfirm } from '../../dialog';
 import ComicCard, { ComicCardGrid } from '../../comicCard';
 import logo from '../../../img/logo.png';
@@ -112,7 +112,7 @@ const ComicBookListIssues = ({
       />
 
       <h1>
-        Your List of {cbTitle} Comics
+        Your List of {comicsOf(cbTitle)}
         <figure 
           className={styles.graphic} 
           aria-label="Small burgundy rectangle graphic" 
@@ -130,7 +130,7 @@ const ComicBookListIssues = ({
         <section>
           <RRLink to={`/forms/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/new`}>
             <figure><LibraryAddIcon /></figure>
-            <p className={styles.link}>Add Comic Book</p>
+            <p className={styles.link}>Add an Issue</p>
           </RRLink>
         </section>
       </h2>
@@ -163,7 +163,11 @@ const ComicBookListIssues = ({
       <article id="cbComBookListIssues">
         {renderHeader()}
         <article className={styles.cbList}>
-          <Empty />
+          <Empty
+            title="No issues yet"
+            message="Add an issue by hand, or upload its cover and Hero-Log will fill in the details."
+            action={{ label: 'Add an issue', to: `/forms/${userId}/${pubId}/${publisherName}/${coboTitleId}/${cbTitle}/comicbook/new` }}
+          />
         </article>
       </article>
     );

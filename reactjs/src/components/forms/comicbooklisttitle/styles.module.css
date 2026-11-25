@@ -8,35 +8,6 @@
   width: 100%;
 }
 
-.backLink{
-  color: #333;
-  font-size: 2rem;
-  font-weight: bold;
-  margin: 0 0 40px 3%;
-}
-
-.backLink:hover{
-  color: #770422;
-}
-
-.backLink::after{
-  content: '';
-  display: block;
-  margin: auto;
-  height: 2px;
-  width: 0px;
-  background-color: #770422;
-  -webkit-transition: width .5s ease, background-color .5s ease;
-  -moz-transition: width .5s ease, background-color .5s ease;
-  -o-transition: width .5s ease, background-color .5s ease;
-  transition: width .5s ease, background-color .5s ease;
-}
-
-.backLink:hover::after{
-  background: #770422;
-  width: 50%;
-}
-
 .cbWrapper h1{
   color: #2B2B2B;
   font-size: 3.5rem;
@@ -226,7 +197,4 @@
     margin-top: 150px;
   }
 
-  .backLink{
-    margin: 0 0 10px 7%;
-  }
 }

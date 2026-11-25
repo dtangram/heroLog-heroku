@@ -1,6 +1,14 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { legacy_createStore as createStore } from 'redux';
+
+/** The collector's publishers, for the Publisher suggestions */
+const publisherStore = () =>
+  createStore((state: unknown) => state, {
+    publishers: { byId: { p1: { data: { publisherName: 'DC Comics' } } }, allIds: ['p1'], isLoading: false },
+  } as any);
 import SaleForm from './SaleForm';
 import { mapStateToProps } from './container';
 
@@ -62,11 +70,13 @@ const renderForm = (path: string, route: string) => {
     updateSale: jest.fn().mockResolvedValue(undefined),
   };
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path={route} element={<SaleForm {...(mapStateToProps(state as any) as any)} {...(actions as any)} />} />
-      </Routes>
-    </MemoryRouter>
+    <Provider store={publisherStore()}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path={route} element={<SaleForm {...(mapStateToProps(state as any) as any)} {...(actions as any)} />} />
+        </Routes>
+      </MemoryRouter>
+    </Provider>
   );
   return actions;
 };
@@ -101,8 +111,8 @@ describe('SaleForm', () => {
     expect(field('comicBookVolume')).toHaveValue('');
     expect(field('price')).toHaveValue('12.50');
     expect(field('comicCondition')).toHaveValue('Near Mint');
-    // Saved as "regular"; the radio button is "Regular"
-    expect(screen.getByLabelText('Regular')).toBeChecked();
+    // Saved as "regular"; the radio button is "Regular cover"
+    expect(screen.getByLabelText('Regular cover')).toBeChecked();
   });
 
   it('submits Update without needing a scan first', async () => {
@@ -130,7 +140,7 @@ describe('SaleForm', () => {
     type('comicBookTitle', 'Batman');
     type('comicIssue', '497');
     type('comicBookPublisher', 'DC Comics');
-    fireEvent.click(screen.getByLabelText('Regular'));
+    fireEvent.click(screen.getByLabelText('Regular cover'));
     type('price', '24.99');
     fireEvent.change(field('comicCondition'), { target: { value: 'Very Fine' } });
     fireEvent.click(screen.getByRole('button', { name: /submit/i }));

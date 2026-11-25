@@ -134,7 +134,7 @@ const PasswordReset: React.FC<ContainerProps> = () => {
     <main id="signin" className={styles.signupMain}>
       <section className={styles.wrapper}>
         <h1>
-          Reset Password
+          Reset Your Password
           <div 
             className={styles.graphic} 
             aria-label="Small burgundy rectangle graphic" 

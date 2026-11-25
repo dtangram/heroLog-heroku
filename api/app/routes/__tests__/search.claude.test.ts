@@ -133,3 +133,23 @@ it('My Collection gives each match its cover and where it lives in the collectio
     series: 'Batman',
   });
 });
+it('Find Missing counts the owned issues by group instead of hiding them silently', async () => {
+  create.mockResolvedValue({
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify([
+          { title: 'Batman #497', description: 'x', publisher: 'DC Comics', year: '1993', group: 'Main story' },
+          { title: 'Batman #498', description: 'x', publisher: 'DC Comics', year: '1993', group: 'Main story' },
+          { title: 'Robin #1', description: 'x', publisher: 'DC Comics', year: '1993', group: 'Tie-in' },
+        ]),
+      },
+    ],
+  });
+  query.mockResolvedValue({ rows: [{ cbTitle: 'Batman', comicIssue: '497' }, { cbTitle: 'Batman', comicIssue: '498' }] });
+
+  const res = await request(app).get('/api/search/search-missing/user-1').query({ q: 'Knightfall saga' });
+
+  expect(res.body.results.map((r: any) => r.title)).toEqual(['Robin #1']);
+  expect(res.body.owned_counts).toEqual({ 'Main story': 2 });
+});

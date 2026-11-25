@@ -3,15 +3,21 @@ import ScanCoverButton from '../scanCoverButton/ScanCoverButton';
 import styles from './styles.module.css';
 
 interface CoverPickerProps {
-  /** The field's label, e.g. "Comic Book Cover" */
+  /** The field's label, e.g. "Cover" */
   label: string;
   hasCover: boolean;
   isUploading: boolean;
   disabled?: boolean;
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onScan: () => void;
-  isScanning: boolean;
+  /** Leave out for images that aren't comic covers, e.g. a profile photo: no scan button */
+  onScan?: () => void;
+  isScanning?: boolean;
   scanError?: string;
+  /** The file input's id and name; "comicBookCover" unless set */
+  id?: string;
+  /** The button's words before and after an image is chosen */
+  chooseText?: string;
+  changeText?: string;
 }
 
 /**
@@ -27,28 +33,31 @@ const CoverPicker: React.FC<CoverPickerProps> = ({
   disabled = false,
   onFileChange,
   onScan,
-  isScanning,
+  isScanning = false,
   scanError,
+  id = 'comicBookCover',
+  chooseText = 'Choose cover',
+  changeText = 'Change cover',
 }) => (
   <>
-    <label htmlFor="comicBookCover" className={styles.picker}>
+    <label htmlFor={id} className={styles.picker}>
       {label}
       <input
-        id="comicBookCover"
+        id={id}
         className={styles.input}
         type="file"
-        name="comicBookCover"
+        name={id}
         accept="image/jpeg,image/jpg,image/png"
         onChange={onFileChange}
         disabled={disabled || isUploading}
       />
       <span className={styles.button} aria-hidden="true">
-        {isUploading ? 'Uploading…' : hasCover ? 'Change cover' : 'Choose cover'}
+        {isUploading ? 'Uploading…' : hasCover ? changeText : chooseText}
       </span>
       <span className={styles.hint}>JPG or PNG, up to 1MB</span>
     </label>
 
-    {hasCover && (
+    {hasCover && onScan && (
       <ScanCoverButton
         onScan={onScan}
         isScanning={isScanning}

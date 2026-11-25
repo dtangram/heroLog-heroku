@@ -147,7 +147,12 @@ export const fetchComicBook = (id: string): APIAction => ({
   transformResponse: transformComicBookResponse,
 });
 
-export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIAction => {
+/** allowDuplicate: the user has confirmed saving a second copy of an issue they already have */
+export interface SaveOptions {
+  allowDuplicate?: boolean;
+}
+
+export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>, { allowDuplicate = false }: SaveOptions = {}): APIAction => {
   validateComicBook(comicbooklistissue);
   
   // ✅ Use titleID or coboTitleId
@@ -173,6 +178,7 @@ export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIA
       type: comicbooklistissue.type,
       comicBookCover: comicbooklistissue.comicBookCover,
       titleID: titleID,  // ✅ Use the resolved titleID
+      ...(allowDuplicate ? { allowDuplicate: true } : {}),
     }),
     payload: { 
       titleID: titleID!,
@@ -185,7 +191,7 @@ export const createComicBook = (comicbooklistissue: Omit<ComicBook, 'id'>): APIA
   };
 };
 
-export const updateComicBook = (comicbook: ComicBook): APIAction => {
+export const updateComicBook = (comicbook: ComicBook, { allowDuplicate = false }: SaveOptions = {}): APIAction => {
   if (!comicbook.title?.trim()) {
     throw new Error('Comic book title is required');
   }
@@ -225,6 +231,7 @@ export const updateComicBook = (comicbook: ComicBook): APIAction => {
       year,
       type,
       comicBookCover,
+      ...(allowDuplicate ? { allowDuplicate: true } : {}),
     }),
     payload: { 
       id,

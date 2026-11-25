@@ -8,12 +8,22 @@ import { ScanResult } from '../../../hooks/useComicScanner';
 import { useFormFields } from '../../../hooks/useFormFields';
 import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
-import { useCoverScan } from '../../../hooks/useCoverScan';
+import { useCoverScan, ScanField } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import CoverPicker from '../../coverPicker/CoverPicker';
 import CoverCredit from '../../coverCredit/CoverCredit';
 import styles from './styles.module.css';
+import Breadcrumbs from '../../breadcrumbs';
+import CoverTypeField from '../coverType';
+import { usePageTitle } from '../../documentTitle';
+import { usePublisherNames } from '../../../hooks/usePublisherNames';
+import { matchPublisherName } from '../../../utils/collection';
+
+const LIST_LABEL = 'Your Wish List';
+
+/** The fields a cover scan can fill on this form, so the scan message can name any it couldn't read */
+const WISH_SCAN_FIELDS: ScanField[] = ['title', 'issue', 'volume', 'year', 'publisher'];
 
 interface RouteParams extends Record<string, string | undefined> {
   id?: string;
@@ -61,6 +71,7 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
 
   const inputRef = useRef<HTMLInputElement>(null);
   const userId = localStorage.getItem('id') || '';
+  const publisherNames = usePublisherNames();
 
   const {
     formState,
@@ -107,7 +118,8 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
           type: toCoverType(result.type) || prev.type,
         })),
       [setFormState]
-    )
+    ),
+    WISH_SCAN_FIELDS
   );
 
   // The title as it is now, for deciding whether to scan a new cover straight away
@@ -130,6 +142,13 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
     if (!comicBookTitle.trim() || comicBookTitle.trim().length < MIN_TITLE_LENGTH) {
       errors.comicBookTitle = 'Comic book title is required';
     }
+    // The same required fields as the Sale form
+    if (!comicIssue.trim()) {
+      errors.comicIssue = 'Issue number is required';
+    }
+    if (!comicBookPublisher.trim()) {
+      errors.comicBookPublisher = 'Publisher is required';
+    }
     if (!type) {
       errors.type = 'Please select regular or variant';
     }
@@ -144,7 +163,8 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
       comicIssue: comicIssue.trim(),
       comicBookVolume: comicBookVolume.trim(),
       comicBookYear: comicBookYear.trim(),
-      comicBookPublisher: comicBookPublisher.trim(),
+      // Your collection's spelling: "DC" is saved as "DC Comics" if that's what you use
+      comicBookPublisher: matchPublisherName(comicBookPublisher, publisherNames),
       comicBookCover,
       type,
     };
@@ -160,19 +180,17 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
     failureMessage: 'Failed to save wishlist',
   });
 
-  const handleGoBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
   const showSuccess = Object.keys(formErrors).length === 0 && isSaved;
-  const pageTitle = isEditMode ? `Edit ${comicBookTitle || 'WishList Comic'}` : 'Add Comic WishList';
+  // The same words for the heading and the browser tab
+  const pageTitle = isEditMode
+    ? `Edit ${[comicBookTitle || 'Wish List Comic', comicIssue && `#${comicIssue}`].filter(Boolean).join(' ')}`
+    : 'Add to Wish List';
+  usePageTitle(pageTitle);
   const cancelUrl = `/wishlist/${userId}`;
 
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
-      <button className={styles.backLink} type="button" onClick={handleGoBack} disabled={isSubmitting}>
-        Back
-      </button>
+      <Breadcrumbs items={[{ label: LIST_LABEL, to: cancelUrl }, { label: pageTitle }]} />
 
       <h1>
         {pageTitle}
@@ -199,7 +217,7 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
             <article>
               <fieldset>
                 <CoverPicker
-                  label="Comic Book Cover"
+                  label="Cover"
                   hasCover={Boolean(comicBookCover)}
                   isUploading={isUploading}
                   disabled={isSubmitting}
@@ -225,15 +243,17 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
                 </label>
 
                 <label htmlFor="comicIssue">
-                  Issue
+                  Issue *
                   <input
                     id="comicIssue"
                     className={styles.inputBorder}
                     type="text"
+                    inputMode="numeric"
                     name="comicIssue"
                     value={comicIssue}
                     onChange={(e) => handleNumberChange(e, 'comicIssue')}
                     disabled={isSubmitting}
+                    required
                   />
                 </label>
 
@@ -265,45 +285,30 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
                 </label>
 
                 <label htmlFor="comicBookPublisher">
-                  Publisher
+                  Publisher *
                   <input
                     id="comicBookPublisher"
                     className={styles.inputBorder}
                     type="text"
                     name="comicBookPublisher"
+                    list="publisherSuggestions"
+                    autoComplete="off"
                     value={comicBookPublisher}
                     onChange={handleInputChange}
                     disabled={isSubmitting}
+                    required
                   />
+                  {/* Your own publishers, so "DC Comics" is spelled the same everywhere */}
+                  <datalist id="publisherSuggestions">
+                    {publisherNames.map(name => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
                 </label>
               </fieldset>
             </article>
 
-            <article>
-              <label className={styles.labelRadio} htmlFor="regularcover">
-                <input
-                  id="regularcover"
-                  type="radio"
-                  value="Regular"
-                  checked={type === 'Regular'}
-                  onChange={handleTypeChange}
-                  disabled={isSubmitting}
-                />
-                Regular Cover
-              </label>
-
-              <label className={styles.labelRadio} htmlFor="variantcover">
-                <input
-                  id="variantcover"
-                  type="radio"
-                  value="Variant"
-                  checked={type === 'Variant'}
-                  onChange={handleTypeChange}
-                  disabled={isSubmitting}
-                />
-                Variant Cover
-              </label>
-            </article>
+            <CoverTypeField value={type} onChange={handleTypeChange} disabled={isSubmitting} />
 
             <article>
               <p>

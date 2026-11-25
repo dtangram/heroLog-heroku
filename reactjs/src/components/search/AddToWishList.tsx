@@ -62,15 +62,8 @@ const AddToWishList = ({ result, userId }: Props) => {
 
   const name = `${parsed.title} #${parsed.issue}`;
 
-  if (!signedIn) {
-    return (
-      <p className={styles.wishAction}>
-        <RRLink className={styles.wishLink} to="/signin">
-          Sign in to add {name} to your Wish List
-        </RRLink>
-      </p>
-    );
-  }
+  // Guests get one sign-in banner above the results instead of a link on every card
+  if (!signedIn) return null;
 
   if (alreadyWished) {
     return (

@@ -6,7 +6,7 @@ import '../../link/styles.module.css';
 import Empty from '../empty';
 import ComicCard, { ComicCardGrid } from '../comicCard';
 import CompactList from '../compactList';
-import { countLabel } from '../../utils/collection';
+import { countLabel, splitEmpty } from '../../utils/collection';
 import type { ConnectorProps } from './container';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import { showAlert, showConfirm } from '../dialog';
@@ -146,7 +146,11 @@ const Dashboard = ({
       <article id="cbDash" className={styles.cbWrap}>
         {renderHeader()}
         <article className={styles.cbList}>
-          <Empty />
+          <Empty
+            title="No publishers yet"
+            message="Start your collection by adding a publisher, like DC or Marvel. Then add titles and issues under it."
+            action={{ label: 'Add a publisher', to: `/forms/createpublisher/new/${userId}` }}
+          />
         </article>
       </article>
     );
@@ -158,10 +162,10 @@ const Dashboard = ({
   // Publishers without titles get a short row below the cards instead of a
   // full card, so DC and Marvel aren't crowded out by empty ones. If none
   // has titles yet, they all stay as cards, so the page doesn't look empty.
-  const hasTitles = (publisher: typeof publishers[number]) => (publisher.titleCount || 0) > 0;
-  const anyHasTitles = sortedPublishers.some(hasTitles);
-  const cardPublishers = anyHasTitles ? sortedPublishers.filter(hasTitles) : sortedPublishers;
-  const emptyPublishers = anyHasTitles ? sortedPublishers.filter(publisher => !hasTitles(publisher)) : [];
+  const { cards: cardPublishers, empty: emptyPublishers } = splitEmpty(
+    sortedPublishers,
+    publisher => (publisher.titleCount || 0) > 0
+  );
 
   return (
     <article id="cbDash" className={styles.cbWrap}>

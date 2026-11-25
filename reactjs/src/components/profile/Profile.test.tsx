@@ -79,7 +79,7 @@ describe('Profile', () => {
   it('links to the profile form and offers to delete the account', () => {
     showProfile();
 
-    expect(screen.getByRole('link', { name: 'Update Profile' })).toHaveAttribute('href', `/forms/profileform/edit/${USER_ID}`);
+    expect(screen.getByRole('link', { name: 'Edit Profile' })).toHaveAttribute('href', `/forms/profileform/edit/${USER_ID}`);
     expect(screen.getByRole('button', { name: 'Delete the account for dtangram' })).toBeInTheDocument();
   });
 

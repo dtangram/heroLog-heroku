@@ -11,8 +11,8 @@ const PAGE_TITLES: Array<[string, string | ((params: Params) => string)]> = [
   ['/landing', 'Digitize Your Comic Collection'],
   ['/signup', 'Sign Up'],
   ['/signin', 'Sign In'],
-  ['/forms/emailpasswordreset', 'Change Password'],
-  ['/forms/passwordreset/:token', 'Change Password'],
+  ['/forms/emailpasswordreset', 'Forgot Your Password?'],
+  ['/forms/passwordreset/:token', 'Reset Your Password'],
 
   ['/dashboard/:userId', 'Your Collection'],
   ['/dashboard/:userId/:pubId/:publisherName/comicbooklist', ({ publisherName }) => `${publisherName} Titles`],
@@ -23,10 +23,10 @@ const PAGE_TITLES: Array<[string, string | ((params: Params) => string)]> = [
   ['/forms/createpublisher/new/:userId', 'Add a Publisher'],
   ['/forms/createpublisherProfile/new/:userId', 'Add a Publisher'],
   ['/forms/:userId/createpublisher/edit/:id', 'Edit Publisher'],
-  ['/forms/:userId/:pubId/:publisherName/comicbooklisttitle/new', ({ publisherName }) => `Add a ${publisherName} Title`],
+  ['/forms/:userId/:pubId/:publisherName/comicbooklisttitle/new', ({ publisherName }) => `Add a Title to ${publisherName}`],
   ['/forms/:userId/:pubId/:publisherName/comicbooklisttitle/edit/:id', 'Edit Title'],
-  ['/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new', ({ cbTitle }) => `Add a ${cbTitle} Comic`],
-  ['/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id', ({ cbTitle }) => `Edit ${cbTitle} Comic`],
+  ['/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/new', ({ cbTitle }) => `Add an Issue to ${cbTitle}`],
+  ['/forms/:userId/:pubId/:publisherName/:coboTitleId/:cbTitle/comicbook/edit/:id', ({ cbTitle }) => `Edit ${cbTitle} Issue`],
 
   ['/intel/:userId', 'Collection Insights'],
   ['/search/:userId', 'Search the Multiverse'],
@@ -85,6 +85,19 @@ const DocumentTitle = () => {
   }, [pathname]);
 
   return null;
+};
+
+/**
+ * For pages that know more than their address, like an edit form that has
+ * loaded the comic's name: names the tab with the same words as the page's
+ * heading, so the two always match. Use the same string for the h1.
+ */
+export const usePageTitle = (title: string) => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (title) document.title = `${title} · ${SITE_NAME}`;
+  }, [title, pathname]);
 };
 
 export default DocumentTitle;

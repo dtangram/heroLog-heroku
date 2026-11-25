@@ -112,7 +112,11 @@ const Profile = ({
           />
         </h1>
         <article className={styles.cbList}>
-          <Empty />
+          <Empty
+            title="We couldn't find your profile"
+            message="Try signing in again."
+            action={{ label: 'Sign in', to: '/signin' }}
+          />
         </article>
       </article>
     );
@@ -171,7 +175,7 @@ const Profile = ({
                   <li>
                     <RRLink className={cardStyles.action} to={`/forms/profileform/edit/${profileId}`}>
                       <EditIcon fontSize="inherit" aria-hidden="true" />
-                      <span className={cardStyles.label}>Update Profile</span>
+                      <span className={cardStyles.label}>Edit Profile</span>
                     </RRLink>
                   </li>
                   <li>

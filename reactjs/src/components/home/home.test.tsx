@@ -80,12 +80,12 @@ describe('Home page', () => {
     expect(screen.getByRole('heading', { name: 'Superman #25' })).toBeInTheDocument();
   });
 
-  it('gives the welcome a next step: dashboard, collection intel, or comics for sale', () => {
+  it('gives the welcome a next step: dashboard, collection insights, or comics for sale', () => {
     renderHome([sale('a', 25, 'dtangram')]);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Welcome, Douglas' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open your dashboard' })).toHaveAttribute('href', '/dashboard/me');
-    expect(screen.getByRole('link', { name: 'See your collection intel' })).toHaveAttribute('href', '/intel/me');
+    expect(screen.getByRole('link', { name: 'See your collection insights' })).toHaveAttribute('href', '/intel/me');
     expect(screen.getByRole('link', { name: 'Browse comics for sale' })).toHaveAttribute('href', '#forSale');
   });
 

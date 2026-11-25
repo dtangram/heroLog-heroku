@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
 import { loadTitleSummaries } from '../services/collectionSummary';
+import { findDuplicateTitle, sendDuplicate } from '../services/duplicates';
 
 // Properly typed model interface
 interface ComicBookTitleModel {
@@ -308,6 +309,10 @@ export const createComicBookTitle = async (
   console.log('✅ All validations passed, attempting to create...');
   
   try {
+    // One title per name under a publisher
+    const duplicate = await findDuplicateTitle(collectpubId, cbTitle);
+    if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+
     const newComicBookTitle = await ComicBookTitles.create({
       cbTitle: cbTitle.trim(),
       collectpubId: collectpubId,
@@ -392,6 +397,15 @@ export const updateComicBookTitle = async (
   }
   
   try {
+    // Renaming (or moving) a title onto one the publisher already has would make two of them
+    if (updateData.cbTitle || updateData.collectpubId) {
+      const current = (await ComicBookTitles.findByPk(id))?.toJSON();
+      const publisherId = updateData.collectpubId || current?.collectpubId;
+      const name = updateData.cbTitle || current?.cbTitle;
+      const duplicate = publisherId && name ? await findDuplicateTitle(publisherId, name, id) : null;
+      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+    }
+
     const [rowsUpdated, updatedRecords] = await ComicBookTitles.update(
       updateData,
       {

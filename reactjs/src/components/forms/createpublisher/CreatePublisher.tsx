@@ -7,6 +7,8 @@ import { ContainerProps } from './container';
 import { getAnonymousUserId } from '../../../utils/anonymousUser';
 import { APICallResult } from '../../../store/helpers/callAPIMiddleware';
 import styles from './styles.module.css';
+import Breadcrumbs from '../../breadcrumbs';
+import { usePageTitle } from '../../documentTitle';
 
 interface FormErrorsState {
   publisherName: string;
@@ -89,7 +91,8 @@ const CreatePublisher = ({
 
     if (outcome && !outcome.ok) {
       setIsSaving(false);
-      setFormErrors({ publisherName: `Couldn't save ${name}: ${outcome.error}` });
+      // "You already have a publisher called DC Comics." says it all on its own
+      setFormErrors({ publisherName: outcome.duplicate ? outcome.error : `Couldn't save ${name}: ${outcome.error}` });
       return;
     }
 
@@ -107,11 +110,15 @@ const CreatePublisher = ({
   };
 
   const showSuccess = !formErrors.publisherName && Boolean(successMessage);
+  // The same words for the heading and the browser tab
+  const pageTitle = id ? `Edit ${publisher?.publisherName || 'Publisher'}` : 'Add a Publisher';
+  usePageTitle(pageTitle);
 
   return (
     <article id="cbCreate" className={styles.cbWrapper}>
+      <Breadcrumbs items={[{ label: 'Dashboard', to: `/dashboard/${userId}` }, { label: pageTitle }]} />
       <h1>
-        {id ? `Edit ${publisher?.publisherName || 'Publisher'}` : 'Add a Publisher'}
+        {pageTitle}
         <span className={styles.graphic} aria-hidden="true" />
       </h1>
 

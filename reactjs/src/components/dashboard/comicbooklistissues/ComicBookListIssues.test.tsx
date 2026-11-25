@@ -48,3 +48,9 @@ describe('Issues page', () => {
     expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('DashboardDCBatman');
   });
 });
+describe('Issues page heading', () => {
+  it('says "Your List of Batman Comics" for a title without "Comics"', () => {
+    show();
+    expect(screen.getByRole('heading', { level: 1, name: /^Your List of Batman Comics/ })).toBeInTheDocument();
+  });
+});

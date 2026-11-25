@@ -27,6 +27,7 @@ interface AxiosError extends Error {
       error?: string;
       errors?: Array<{ field: string; message: string }> | string[];
       message?: string;
+      duplicate?: DuplicateMatch;
     };
     status?: number;
   };
@@ -39,7 +40,21 @@ interface AxiosError extends Error {
  */
 export type APICallResult =
   | { ok: true; data: DispatchAction['data'] }
-  | { ok: false; error: string };
+  | { ok: false; error: string; status?: number; duplicate?: DuplicateMatch };
+
+/** Sent by the API with a 409 when the user already has this publisher, title or issue. */
+export interface DuplicateMatch {
+  kind: 'publisher' | 'title' | 'issue';
+  id: string;
+  name: string;
+  /** Issues only: the user may confirm and save a second copy */
+  canSaveAnyway: boolean;
+}
+
+const duplicateFrom = (error: unknown): DuplicateMatch | undefined => {
+  const data = (error as AxiosError)?.response?.data;
+  return data && typeof data === 'object' && data.duplicate ? data.duplicate : undefined;
+};
 
 /** Turn the middleware's error (a string or a list of field errors) into one message. */
 const toErrorMessage = (err: DispatchAction['err']): string =>
@@ -201,7 +216,12 @@ const callAPIMiddleware = (store: { dispatch: (action: ReduxAction) => void; get
           type: failureType,
           err: errorData,  // ✅ Can be string OR array of { field, message }
         } as DispatchAction);
-        return { ok: false, error: toErrorMessage(errorData) };
+        return {
+          ok: false,
+          error: toErrorMessage(errorData),
+          status: (error as AxiosError)?.response?.status,
+          duplicate: duplicateFrom(error),
+        };
       });
   };
 
