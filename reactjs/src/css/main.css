@@ -1,4 +1,4 @@
-.graphic, .logo_graphic, button, form, #main, #root > section:nth-child(2) h1 .graphic, section:nth-child(3):not(:where([data-landing])) .container .row .card button, section[data-landing="plans"] .container .row .card button, .cbWrapper .cbList > .wrapper form, #cbDash > .wrapper form, #cbComicForm .cbList > .wrapper form {
+.graphic, .logo_graphic, button, form, #main, #root > section:nth-child(2) h1 .graphic, section:nth-child(3):not(:where([data-landing])) .container .row .card button, section[data-landing="plans"] .container .row .card button, section[data-landing="plans"] .card .planLink, .cbWrapper .cbList > .wrapper form, #cbDash > .wrapper form, #cbComicForm .cbList > .wrapper form {
   margin: 0 auto; }
 
 * {
@@ -33,6 +33,11 @@ footer :focus-visible {
 /* The page content gets focus from the skip link; no ring needed there */
 #content:focus {
   outline: 0 !important; }
+
+/* MENU LABELS ================================= */
+/* Two-word labels (SIGN UP, SIGN IN, SIGN OUT) stay on one line */
+header nav a {
+  white-space: nowrap; }
 
 /* SKIP LINK =================================== */
 /* Hidden until a keyboard user tabs to it, then shown top left */
@@ -531,7 +536,7 @@ section:nth-child(3):not(:where([data-landing])) , section[data-landing="plans"]
         @media (max-width: 1199px) {
           section:nth-child(3):not(:where([data-landing])) .container .row .card p , section[data-landing="plans"] .container .row .card p {
             margin-bottom: 12px; } }
-      section:nth-child(3):not(:where([data-landing])) .container .row .card button , section[data-landing="plans"] .container .row .card button {
+      section:nth-child(3):not(:where([data-landing])) .container .row .card button , section[data-landing="plans"] .container .row .card button, section[data-landing="plans"] .card .planLink {
         background: #AECEAB;
         bottom: 30px;
         color: #770422;
@@ -543,6 +548,16 @@ section:nth-child(3):not(:where([data-landing])) , section[data-landing="plans"]
         right: 0;
         text-transform: uppercase;
         width: 90%; }
+
+      /* The plan buttons are links to Sign Up: shaped like the old buttons */
+      section[data-landing="plans"] .card .planLink {
+        display: block;
+        min-height: 44px;
+        text-align: center;
+        text-decoration: none; }
+        section[data-landing="plans"] .card .planLink:hover {
+          background: #c3dcc0;
+          color: #4E0216; }
 
 section:nth-child(4):not(:where([data-landing])) , section[data-landing="features"] {
   background: url(../img/neven-krcmarek-Tm6RYZmBsH8-unsplash.jpg) no-repeat 0 0/cover;

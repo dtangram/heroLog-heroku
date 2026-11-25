@@ -21,7 +21,7 @@ describe('Password reset link states', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Checking your reset link…');
     expect(screen.queryByText(/doesn't work/)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('New Password')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^New Password/)).not.toBeInTheDocument();
   });
 
   it('shows only the problem and a way to get a new link when the link has expired', async () => {
@@ -37,7 +37,7 @@ describe('Password reset link states', () => {
     (API.get as jest.Mock).mockResolvedValue({ data: { username: 'douglas' } });
     show();
 
-    expect(await screen.findByLabelText('New Password')).toBeInTheDocument();
+    expect(await screen.findByLabelText(/^New Password/)).toBeInTheDocument();
     expect(screen.queryByText(/Checking your reset link/)).not.toBeInTheDocument();
     expect(screen.queryByText(/doesn't work/)).not.toBeInTheDocument();
   });
