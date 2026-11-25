@@ -64,21 +64,21 @@ const Landing = () => {
 
   return (
     <>
-      <section className={styles.digitizeCollection}>
+      <section className={styles.digitizeCollection} data-landing="intro">
         <h1>
           Digitize Your
           <br />
           Comic Book Collection
           <figure 
             className="graphic" 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
         </h1>
 
         <figure id="bck" aria-label="Collage of X-Men Comic Books" />
       </section>
 
-      <section>
+      <section data-landing="plans">
         <figure className="logo_graphic">
           <img src={logo} alt="Hero-Log logo" />
         </figure>
@@ -86,7 +86,7 @@ const Landing = () => {
         <h2>Subscription Options</h2>
         <figure 
           className="graphic" 
-          aria-label="Small burgundy rectangle graphic" 
+          aria-hidden="true" 
         />
 
         <article className="container">
@@ -126,15 +126,15 @@ const Landing = () => {
         </article>
       </section>
 
-      <section>
-        <div className="logo_graphic">
+      <section data-landing="features">
+        <figure className="logo_graphic">
           <img src={logo} alt="Hero-Log logo" />
-        </div>
+        </figure>
 
         <h2>What We Offer</h2>
         <figure 
           className="graphic" 
-          aria-label="Small burgundy rectangle graphic" 
+          aria-hidden="true" 
         />
 
         <article className="container">

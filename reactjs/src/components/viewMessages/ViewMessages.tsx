@@ -75,7 +75,7 @@ const ViewMessages = ({
       <article id="cbVeiwMessage">
         <h1>
           Your Messages
-          <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <span className="graphic" aria-hidden="true" />
         </h1>
 
         <article className={styles.viewMess}>
@@ -111,7 +111,7 @@ const ViewMessages = ({
       <article id="cbVeiwMessage">
         <h1>
           Your Messages
-          <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <span className="graphic" aria-hidden="true" />
         </h1>
 
         <article className={styles.viewMess}>
@@ -141,7 +141,7 @@ const ViewMessages = ({
     <article id="cbVeiwMessage">
       <h1>
         Your Messages
-        <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+        <span className="graphic" aria-hidden="true" />
       </h1>
 
       <article className={styles.viewMess}>

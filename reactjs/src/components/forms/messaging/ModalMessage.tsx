@@ -142,7 +142,7 @@ const ModalMessage = ({
           {comicBookTitle} #{comicIssue}
           <figure 
             className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
         </h1>
       ) : (
@@ -152,7 +152,7 @@ const ModalMessage = ({
           {comicBookTitle}
           <figure 
             className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
         </h1>
       )}

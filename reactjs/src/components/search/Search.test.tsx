@@ -212,7 +212,7 @@ describe('Search results and the Wish List', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Find Missing' }));
     await act(async () => search('Batman'));
 
-    expect(screen.getByRole('button', { name: 'Add Detective Comics #27 to your Wish List' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add to Wish List: Detective Comics #27' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add batman #497/i })).not.toBeInTheDocument();
   });
 });

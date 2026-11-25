@@ -208,7 +208,7 @@ const ProfileForm = ({ signup, fetchUser, updateUser }: ProfileFormProps) => {
         <Breadcrumbs items={[{ label: 'Profile', to: `/profile/${userId}` }, { label: pageTitle }]} />
         <h1>
           {pageTitle}
-          <figure className={styles.graphic} aria-label="Small burgundy, rectangle graphic." />
+          <figure className={styles.graphic} aria-hidden="true" />
         </h1>
 
         <article className={styles.cbList}>

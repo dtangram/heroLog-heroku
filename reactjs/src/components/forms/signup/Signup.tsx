@@ -169,10 +169,10 @@ const Signup = ({
 
   return (
     <>
-      <main id="signup" className={styles.signupMain}>
+      <article id="signup" className={styles.signupMain}>
         <h1>
           Sign Up
-          <div className={styles.graphic} aria-label="Small burgundy, rectangle graphic." />
+          <span className={styles.graphic} aria-hidden="true" />
         </h1>
 
         <section className={styles.wrapper}>
@@ -258,7 +258,7 @@ const Signup = ({
         </section>
 
         <figure className={styles.signBCK} />
-      </main>
+      </article>
     </>
   );
 };

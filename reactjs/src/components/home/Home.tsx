@@ -85,7 +85,7 @@ const Home = ({
           <h2>Comics for Sale</h2>
           <figure 
             className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
 
           <article className={styles.viewMess}>
@@ -132,7 +132,7 @@ const Home = ({
           <h2>Comics for Sale</h2>
           <figure 
             className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
 
           <article className={styles.viewMess}>
@@ -169,7 +169,7 @@ const Home = ({
         <h2>Comics for Sale</h2>
         <figure 
           className={styles.graphic} 
-          aria-label="Small burgundy rectangle graphic" 
+          aria-hidden="true" 
         />
 
         <article className={styles.viewMess}>
@@ -218,14 +218,14 @@ const Home = ({
                       to={`/forms/saleform/edit/${id}`}
                       icon={<EditIcon fontSize="inherit" aria-hidden="true" />}
                       label="Edit listing"
-                      ariaLabel={`Edit your listing for ${name}`}
+                      ariaLabel={`Edit listing for ${name}`}
                     />
                   ) : user ? (
                     <CardActionLink
                       to={`/forms/messaging/${saleUsersId}/${comicBookTitle}/${comicIssue ?? ''}/${user.id}/${user.username}/${user.email}`}
                       icon={<QuestionAnswerIcon fontSize="inherit" aria-hidden="true" />}
                       label="Message seller"
-                      ariaLabel={`Message the seller of ${name}`}
+                      ariaLabel={`Message seller of ${name}`}
                     />
                   ) : null
                 }

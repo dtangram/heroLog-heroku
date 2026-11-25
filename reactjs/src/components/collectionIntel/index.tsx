@@ -79,7 +79,7 @@ const PageTitle = () => (
   <>
     <h1>
       Collection Insights
-      <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
+      <figure className={styles.graphic} aria-hidden="true" />
     </h1>
     <p className={styles.intro}>
       What your collection says about you: your totals, standout issues, gaps in your runs,

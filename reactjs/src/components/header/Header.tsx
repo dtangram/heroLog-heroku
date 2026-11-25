@@ -76,7 +76,7 @@ useEffect(() => {
               <figure>
                 <img src={logo} title="Hero-Log Home" alt="Hero-Log Logo" />
               </figure>
-              <h1>Hero-Log</h1>
+              <p className="logoText">Hero-Log</p>
             </section>
           </NavLink>
         </article>
@@ -163,7 +163,7 @@ useEffect(() => {
             <figure>
               <img src={logo} title="Hero-Log Home" alt="Hero-Log Logo" />
             </figure>
-            <h1>Hero-Log</h1>
+            <p className="logoText">Hero-Log</p>
           </section>
         </NavLink>
       </article>

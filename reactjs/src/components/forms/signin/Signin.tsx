@@ -339,13 +339,13 @@ const handleSubmit = useCallback(
   }
 
   return (
-    <main id="signin" className={styles.signupMain}>
+    <article id="signin" className={styles.signupMain}>
       <section className={styles.wrapper}>
         <h1>
           Sign In
-          <div 
+          <span 
             className={styles.graphic} 
-            aria-label="Small burgundy, rectangle graphic." 
+            aria-hidden="true" 
           />
         </h1>
 
@@ -412,7 +412,7 @@ const handleSubmit = useCallback(
       </section>
 
       <figure className={styles.signBCK} />
-    </main>
+    </article>
   );
 };
 

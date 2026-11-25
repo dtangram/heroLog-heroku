@@ -80,7 +80,7 @@ describe('Profile', () => {
     showProfile();
 
     expect(screen.getByRole('link', { name: 'Edit Profile' })).toHaveAttribute('href', `/forms/profileform/edit/${USER_ID}`);
-    expect(screen.getByRole('button', { name: 'Delete the account for dtangram' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete account for dtangram' })).toBeInTheDocument();
   });
 
   it('sums up your collection, sale list and wish list, each linking to its page', () => {
@@ -168,7 +168,7 @@ describe('Deleting your account', () => {
     deleteUser.mockResolvedValue({ ok: true, data: {} });
     showProfile();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete the account for dtangram' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account for dtangram' }));
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/landing'));
     expect((showConfirm as jest.Mock).mock.calls[0][0]).toMatch(/collection, sale listings, wish list and messages/);
@@ -184,7 +184,7 @@ describe('Deleting your account', () => {
     deleteUser.mockResolvedValue({ ok: false, error: 'Server error' });
     showProfile();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete the account for dtangram' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account for dtangram' }));
 
     await waitFor(() =>
       expect(showAlert).toHaveBeenCalledWith(expect.stringMatching(/Nothing was deleted/), {
@@ -199,7 +199,7 @@ describe('Deleting your account', () => {
     (showConfirm as jest.Mock).mockResolvedValue(false);
     showProfile();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete the account for dtangram' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account for dtangram' }));
 
     await waitFor(() => expect(showConfirm).toHaveBeenCalled());
     expect(deleteUser).not.toHaveBeenCalled();

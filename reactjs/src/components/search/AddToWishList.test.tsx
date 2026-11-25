@@ -69,7 +69,7 @@ describe('AddToWishList', () => {
     (API.post as jest.Mock).mockResolvedValue({ success: true, data: { id: 'server-1' } });
     setup();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Detective Comics #27 to your Wish List' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Wish List: Detective Comics #27' }));
 
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Added Detective Comics #27 to your Wish List.'));
     expect(API.post).toHaveBeenCalledWith(
@@ -126,7 +126,7 @@ describe('AddToWishList', () => {
     (API.post as jest.Mock).mockResolvedValue({ success: true, data: { id: 'server-1' } });
     setup({ result: result({ year: 'Golden Age' }) });
 
-    fireEvent.click(screen.getByRole('button', { name: /add detective comics #27/i }));
+    fireEvent.click(screen.getByRole('button', { name: /add to wish list: detective comics #27/i }));
 
     await waitFor(() => expect(API.post).toHaveBeenCalled());
     expect((API.post as jest.Mock).mock.calls[0][1].comicBookYear).toBe('');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import API from '../../../API';
 import FormErrors from '../../../formErrors';
 import styles from './styles.module.css';
@@ -28,7 +28,8 @@ const PasswordReset: React.FC<ContainerProps> = () => {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [tokenValid, setTokenValid] = useState(false);
+  // One state at a time: checking the link, the link works, or it doesn't
+  const [linkStatus, setLinkStatus] = useState<'checking' | 'valid' | 'invalid'>('checking');
   const [formErrors, setFormErrors] = useState<FormErrorsState>({
     password: '',
   });
@@ -40,6 +41,7 @@ const PasswordReset: React.FC<ContainerProps> = () => {
     if (!token) {
       console.log('❌ No token found');
       setFormErrors({ password: '', general: 'Invalid reset link' });
+      setLinkStatus('invalid');
       return;
     }
     
@@ -54,15 +56,17 @@ const PasswordReset: React.FC<ContainerProps> = () => {
       if (response.data && response.data.username) {
         console.log('✅ Setting username:', response.data.username);
         setUsername(response.data.username);
-        setTokenValid(true);
+        setLinkStatus('valid');
       } else {
         console.log('❌ No username in response');
         setFormErrors({ password: '', general: 'Invalid or expired reset link' });
+        setLinkStatus('invalid');
       }
     } catch (error: any) {
       console.error('❌ Token validation error:', error);
       const errorMessage = error.response?.data?.error || 'Invalid or expired reset link';
       setFormErrors({ password: '', general: errorMessage });
+      setLinkStatus('invalid');
     }
   };
   
@@ -131,22 +135,36 @@ const PasswordReset: React.FC<ContainerProps> = () => {
   };
 
   return (
-    <main id="signin" className={styles.signupMain}>
+    <article id="signin" className={styles.signupMain}>
       <section className={styles.wrapper}>
         <h1>
           Reset Your Password
-          <div 
+          <span 
             className={styles.graphic} 
-            aria-label="Small burgundy rectangle graphic" 
+            aria-hidden="true" 
           />
         </h1>
         
-        {!tokenValid ? (
-          <section className={styles.resetExpired}>
-            <FormErrors formErrors={formErrors} />
-            <p>Validating reset link...</p>
+        {linkStatus === 'checking' && (
+          <section className={styles.resetExpired} role="status">
+            <p>Checking your reset link…</p>
           </section>
-        ) : (
+        )}
+
+        {linkStatus === 'invalid' && (
+          <section className={styles.resetExpired}>
+            <h2 className={styles.expiredHeading}>This link doesn't work</h2>
+            <p>
+              {formErrors.general || 'Invalid or expired reset link'}. Reset links only work once and expire after a
+              while, so ask for a new one.
+            </p>
+            <Link className={styles.newLink} to="/forms/emailpasswordreset">
+              Send me a new link
+            </Link>
+          </section>
+        )}
+
+        {linkStatus === 'valid' && (
           <form method="POST" onSubmit={handleSubmit}>
             <FormErrors formErrors={formErrors} />
             
@@ -195,7 +213,7 @@ const PasswordReset: React.FC<ContainerProps> = () => {
         )}
       </section>
       <figure className={styles.signBCK} />
-    </main>
+    </article>
   );
 };
 

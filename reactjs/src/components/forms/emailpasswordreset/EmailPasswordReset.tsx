@@ -76,13 +76,13 @@ const EmailPasswordReset = ({
   const showSuccess = !formErrors.email && successMessage === 'success';
 
   return (
-    <main id="emailpassReset" className={styles.signupMain}>
+    <article id="emailpassReset" className={styles.signupMain}>
       <section className={styles.wrapper}>
         <h1>
           Forgot Your Password?
-          <div
+          <span
             className={styles.graphic}
-            aria-label="Small burgundy rectangle graphic"
+            aria-hidden="true"
           />
         </h1>
 
@@ -119,7 +119,7 @@ const EmailPasswordReset = ({
       </section>
 
       <figure className={styles.signBCK} />
-    </main>
+    </article>
   );
 };
 

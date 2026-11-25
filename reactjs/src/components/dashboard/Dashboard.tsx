@@ -85,7 +85,7 @@ const Dashboard = ({
         Your Collection
         <figure
           className={styles.graphic}
-          aria-label="Small burgundy rectangle graphic"
+          aria-hidden="true"
         />
       </h1>
 

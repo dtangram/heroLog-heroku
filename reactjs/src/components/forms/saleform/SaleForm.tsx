@@ -242,7 +242,7 @@ const SaleForm = ({ salesById, fetchSale, createSale, updateSale }: SaleFormProp
 
       <h1>
         {pageTitle}
-        <figure className={styles.graphic} aria-label="Small burgundy rectangle graphic" />
+        <figure className={styles.graphic} aria-hidden="true" />
       </h1>
 
       <article className={styles.cbList}>

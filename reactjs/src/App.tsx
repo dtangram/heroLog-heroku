@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { MouseEvent, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import PrivateRouteHandler from './privateRoute';
@@ -37,6 +37,15 @@ import ScrollToTop from './components/ScrollToTop';
 import DialogHost from './components/dialog';
 import DocumentTitle from './components/documentTitle';
 import Search from './components/search';
+import NotFound from './components/notFound';
+
+/** Moves focus to the page content without changing the address */
+const skipToContent = (event: MouseEvent<HTMLAnchorElement>) => {
+  event.preventDefault();
+  const content = document.getElementById('content');
+  content?.focus();
+  content?.scrollIntoView?.();
+};
 
 const App = () => {
   useEffect(() => {
@@ -72,8 +81,12 @@ const App = () => {
         <ScrollToTop />
         <DocumentTitle />
         <DialogHost />
-        <div id="main">
-          <Header />
+        {/* First thing a keyboard user reaches: jumps past the header menu to the page */}
+        <a className="skipLink" href="#content" onClick={skipToContent}>
+          Skip to content
+        </a>
+        <Header />
+        <main id="content" tabIndex={-1}>
           <Routes>
             {/* Public Routes */}
             <Route path="/landing" element={<Landing />} />
@@ -123,9 +136,12 @@ const App = () => {
               path="/forms/profileform/edit/:id" 
               element={<PrivateRouteHandler><ProfileForm /></PrivateRouteHandler>} 
             />
+
+            {/* Any address the app doesn't know: a helpful page instead of a blank one */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
-          <Footer />
-        </div>
+        </main>
+        <Footer />
       </Router>
     </Provider>
   );

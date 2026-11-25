@@ -170,8 +170,9 @@
 .suggestionTag {
   background: #770422;
   border-radius: 25px;
-  font-size: 1.2rem;
-  padding: 8px 16px;
+  font-size: 1.4rem; /* was 12px: too small to read comfortably */
+  min-height: 44px;  /* easy to tap */
+  padding: 8px 14px;
   transition: background 0.3s ease;
   width: auto;
 }

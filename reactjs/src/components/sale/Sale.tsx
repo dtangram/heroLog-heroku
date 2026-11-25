@@ -107,7 +107,7 @@ const Sale = ({
       <div id="cbSale">
         <h1>
           Your Comics for Sale
-          <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <span className="graphic" aria-hidden="true" />
         </h1>
 
         <h2>
@@ -145,7 +145,7 @@ const Sale = ({
       <div id="cbSale">
         <h1>
           Your Comics for Sale
-          <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+          <span className="graphic" aria-hidden="true" />
         </h1>
 
         <h2>
@@ -177,7 +177,7 @@ const Sale = ({
     <div id="cbSale">
       <h1>
         Your Comics for Sale
-        <div className="graphic" aria-label="Small burgundy rectangle graphic" />
+        <span className="graphic" aria-hidden="true" />
       </h1>
 
       <h2>

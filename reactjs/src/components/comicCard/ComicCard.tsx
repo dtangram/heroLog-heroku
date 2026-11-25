@@ -161,7 +161,11 @@ interface CardActionLinkProps {
   to: string;
   icon: ReactNode;
   label: string;
-  /** Fuller name for screen readers, e.g. "Message the seller of Batman #497" */
+  /**
+   * Fuller name for screen readers. Start it with the visible label, e.g.
+   * "Message seller of Batman #497" for "Message seller", so people using
+   * voice control can say what they see.
+   */
   ariaLabel?: string;
 }
 

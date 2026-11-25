@@ -206,3 +206,35 @@
   width: 100%;
   z-index: -1;
 }
+
+/* "This link doesn't work": a heading, why, and the way forward */
+.resetExpired p {
+  color: #2B2B2B;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.expiredHeading {
+  color: #770422;
+  font-size: 2.2rem;
+  margin: 0 0 12px;
+}
+
+.newLink {
+  align-items: center;
+  background: #770422;
+  border-radius: 4px;
+  color: #FFF;
+  display: inline-flex;
+  font-size: 1.6rem;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 8px 20px;
+  text-decoration: none;
+}
+
+.newLink:hover {
+  background: #4E0216;
+  color: #FFF;
+}
