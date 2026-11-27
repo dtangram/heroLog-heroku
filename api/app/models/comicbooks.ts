@@ -1,19 +1,42 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from 'sequelize';
+import { Sequelize, DataTypes, Model, ModelStatic, Optional } from 'sequelize';
+import type { Models } from '.';
 
-// Type for the models object passed to associate
-interface Models {
-  ComicBookTitles?: ModelStatic<Model>;
-  [key: string]: ModelStatic<Model> | undefined;
+export type ComicBookType = 'regular' | 'variant';
+
+export interface ComicBookAttributes {
+  id: string;
+  title: string;
+  comicIssue: string | null;
+  author: string | null;
+  penciler: string | null;
+  coverartist: string | null;
+  inker: string | null;
+  volume: string | null;
+  year: number | null;
+  comicBookCover: string | null;
+  type: ComicBookType;
+  comicbooktitlerelId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Extended model type that includes the associate method
-interface ComicBooksModel extends ModelStatic<Model> {
+export type ComicBookCreationAttributes = Optional<
+  ComicBookAttributes,
+  'id' | 'comicIssue' | 'author' | 'penciler' | 'coverartist' | 'inker' | 'volume' | 'year' | 'comicBookCover' | 'type' | 'createdAt' | 'updatedAt'
+>;
+
+/** A saved row as the API sends it */
+export type ComicBookJson = ComicBookAttributes;
+
+export interface ComicBookInstance extends Model<ComicBookAttributes, ComicBookCreationAttributes>, ComicBookAttributes {}
+
+export interface ComicBooksModel extends ModelStatic<ComicBookInstance> {
   associate: (models: Models) => void;
 }
 
 // The actual model factory function
 const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): ComicBooksModel => {
-  const ComicBooks = sequelize.define('ComicBooks', {
+  const ComicBooks = sequelize.define<ComicBookInstance>('ComicBooks', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
@@ -73,14 +96,23 @@ const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
       type: dataTypes.UUID,
       allowNull: false,
     },
+    // Sequelize sets these itself; they're listed so their types are known
+    createdAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
   }, {
     tableName: 'ComicBooks',
     timestamps: true,
     underscored: false,  // CRITICAL: Set to false to match migration columns
     freezeTableName: true,  // CRITICAL: Prevent table name pluralization
-  }) as ComicBooksModel;
+  });
  
-  ComicBooks.associate = (models: Models) => {
+  const associate = (models: Models): void => {
     if (models.ComicBookTitles) {
       ComicBooks.belongsTo(models.ComicBookTitles, {
         foreignKey: 'comicbooktitlerelId',
@@ -89,8 +121,7 @@ const createComicBooksModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
     }
   };
  
-  return ComicBooks;
+  return Object.assign(ComicBooks, { associate });
 };
 
-// CHANGED: Use export default instead of export =
 export default createComicBooksModel;

@@ -1,20 +1,28 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from 'sequelize';
+import { Sequelize, DataTypes, Model, ModelStatic, Optional } from 'sequelize';
+import type { Models } from '.';
 
-// Type for the models object passed to associate
-interface Models {
-  Users?: ModelStatic<Model>;
-  ComicBookTitles?: ModelStatic<Model>;
-  [key: string]: ModelStatic<Model> | undefined;
+export interface CollectionPublisherAttributes {
+  id: string;
+  publisherName: string;
+  collectpubUsersId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Extended model type that includes the associate method
-interface CollectionPublishersModel extends ModelStatic<Model> {
+export type CollectionPublisherCreationAttributes = Optional<CollectionPublisherAttributes, 'id' | 'collectpubUsersId' | 'createdAt' | 'updatedAt'>;
+
+/** A saved row as the API sends it */
+export type CollectionPublisherJson = CollectionPublisherAttributes;
+
+export interface CollectionPublisherInstance extends Model<CollectionPublisherAttributes, CollectionPublisherCreationAttributes>, CollectionPublisherAttributes {}
+
+export interface CollectionPublishersModel extends ModelStatic<CollectionPublisherInstance> {
   associate: (models: Models) => void;
 }
 
 // The actual model factory function
 const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): CollectionPublishersModel => {
-  const CollectionPublishers = sequelize.define('CollectionPublishers', {
+  const CollectionPublishers = sequelize.define<CollectionPublisherInstance>('CollectionPublishers', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
@@ -31,14 +39,23 @@ const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof
       type: dataTypes.UUID,
       allowNull: true,
     },
+    // Sequelize sets these itself; they're listed so their types are known
+    createdAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
   }, {
     tableName: 'CollectionPublishers',
     timestamps: true,
     underscored: false,  // CRITICAL: Set to false to match migration columns
     freezeTableName: true,  // CRITICAL: Prevent table name pluralization
-  }) as CollectionPublishersModel;
+  });
  
-  CollectionPublishers.associate = (models: Models) => {
+  const associate = (models: Models): void => {
     if (models.Users) {
       CollectionPublishers.belongsTo(models.Users, {
         foreignKey: 'collectpubUsersId',
@@ -53,8 +70,7 @@ const createCollectionPublishersModel = (sequelize: Sequelize, dataTypes: typeof
     }
   };
  
-  return CollectionPublishers;
+  return Object.assign(CollectionPublishers, { associate });
 };
 
-// CHANGED: Use export default instead of export =
 export default createCollectionPublishersModel;

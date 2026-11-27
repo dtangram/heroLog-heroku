@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import type { SaleListAttributes, SaleListCreationAttributes, SaleListInstance, SaleListsModel, SaleListType } from '../models/salelists';
+import type { ApiResult, IdResult, SaleListResult, SaleListsResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 import { clientId } from '../utils/clientId';
-
-type SaleListType = 'regular' | 'variant';
 
 /** Standard comic grades, best to worst. The sale form offers the same list. */
 export const SALE_CONDITIONS = ['Mint', 'Near Mint', 'Very Fine', 'Fine', 'Very Good', 'Good', 'Fair', 'Poor'] as const;
@@ -11,96 +12,31 @@ type SaleCondition = typeof SALE_CONDITIONS[number];
 
 const MAX_PRICE = 99999.99;
 
-interface SaleListModel {
-  findAll: (options: { where: WhereOptions<SaleListAttributes> }) => Promise<SaleListInstance[]>;
-  findByPk: (id: string) => Promise<SaleListInstance | null>;
-  create: (data: SaleListCreationAttributes) => Promise<SaleListInstance>;
-  update: (
-    data: Partial<SaleListAttributes>, 
-    options: { where: WhereOptions<SaleListAttributes>; returning: boolean }
-  ) => Promise<[number, SaleListInstance[]]>;
-  destroy: (options: { where: WhereOptions<SaleListAttributes> }) => Promise<number>;
-}
+/** A number as a form sends it: text ("25", or "" when blank), a number, or nothing */
+type FormNumber = string | number | null;
 
-interface SaleListInstance {
-  id: string;
-  comicBookTitle: string;
-  comicIssue: number | null;
-  comicBookVolume: number | null;
-  comicBookYear: number | null;
-  comicBookPublisher: string;
-  comicBookCover: string | null;
-  type: SaleListType;
-  /** Dollars; Postgres DECIMAL comes back as a string, e.g. "12.50" */
-  price: string | number | null;
-  comicCondition: SaleCondition | null;
-  saleUsersId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => SaleListAttributes;
-}
-
-interface SaleListAttributes {
-  id: string;
-  comicBookTitle: string;
-  comicIssue: number | null;
-  comicBookVolume: number | null;
-  comicBookYear: number | null;
-  comicBookPublisher: string;
-  comicBookCover: string | null;
-  type: SaleListType;
-  price: string | number | null;
-  comicCondition: SaleCondition | null;
-  saleUsersId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface SaleListCreationAttributes {
-  comicBookTitle: string;
-  comicIssue?: number | null;
-  comicBookVolume?: number | null;
-  comicBookYear?: number | null;
-  comicBookPublisher: string;
+/** What the sale form sends. On an update, fields left out stay as they are. */
+export type SaleListBody = {
+  /** The ID the app chose for a new listing (see utils/clientId.ts) */
+  id?: string;
+  comicBookTitle?: string;
+  comicIssue?: FormNumber;
+  comicBookVolume?: FormNumber;
+  comicBookYear?: FormNumber;
+  comicBookPublisher?: string;
   comicBookCover?: string | null;
-  type: SaleListType;
-  price: number;
-  comicCondition: SaleCondition;
-  saleUsersId: string;
-}
-
-interface ApiResponse<T = SaleListAttributes | SaleListAttributes[]> {
-  success: boolean;
-  data?: T;
-  count?: number;
-  message?: string;
-  error?: string;
-  errors?: string[];
-}
+  type?: string;
+  price?: FormNumber;
+  comicCondition?: string | null;
+  saleUsersId?: string;
+};
 
 interface ValidationResult {
   isValid: boolean;
   message?: string;
 }
 
-interface SequelizeError {
-  errors: Array<{ message: string }>;
-}
-
-const getSaleListModel = (): SaleListModel => {
-  const SaleList = (db as any).SaleLists || (db as any).SaleList || (db as any).Salelist || (db as any).salelist;
-  
-  if (!SaleList) {
-    console.error('❌ SaleList model not found. Available models:', Object.keys(db));
-    throw new Error('SaleList model not loaded');
-  }
-  
-  return SaleList as SaleListModel;
-};
-
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
+const getSaleListModel = (): SaleListsModel => db.SaleLists;
 
 const isValidUUID = (value: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -116,30 +52,14 @@ const isValidSaleListType = (type: string): type is SaleListType => {
   return type === 'regular' || type === 'variant';
 };
 
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
+// Centralized error reply. A catch can receive anything, so it's turned into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 const validateParams = (
-  params: Record<string, string>,
+  params: Partial<Record<string, string | number | boolean | Date | null>>,
   requiredFields: string[]
 ): ValidationResult => {
   const missing = requiredFields.filter(field => !params[field]);
@@ -202,7 +122,7 @@ const validateNumber = (value: number, fieldName: string, min?: number, max?: nu
  * validating: "" → null (clears the field), "25" → 25, "25A" → NaN so
  * validation rejects it. undefined means the field wasn't sent.
  */
-const toNumberOrNull = (value: unknown): number | null | undefined => {
+const toNumberOrNull = (value: FormNumber | undefined): number | null | undefined => {
   if (value === undefined) return undefined;
   if (value === null) return null;
   if (typeof value === 'number') return value;
@@ -227,7 +147,7 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
  * Blank means no price (null). Anything else must be dollars and up to two
  * cents digits, between $0.01 and $99,999.99.
  */
-const parsePrice = (value: unknown): { price: number | null } | { error: string } => {
+const parsePrice = (value: FormNumber | undefined): { price: number | null } | { error: string } => {
   if (value === undefined || value === null || String(value).trim() === '') {
     return { price: null };
   }
@@ -246,7 +166,7 @@ const parsePrice = (value: unknown): { price: number | null } | { error: string 
 };
 
 /** Matches a condition to the standard grade names, ignoring case. Blank means none (null). */
-const parseCondition = (value: unknown): { condition: SaleCondition | null } | { error: string } => {
+const parseCondition = (value: string | null | undefined): { condition: SaleCondition | null } | { error: string } => {
   if (value === undefined || value === null || String(value).trim() === '') {
     return { condition: null };
   }
@@ -258,7 +178,7 @@ const parseCondition = (value: unknown): { condition: SaleCondition | null } | {
 };
 
 const validateType = (type: string): ValidationResult => {
-  if (!isValidSaleListType(type.toLowerCase() as SaleListType)) {
+  if (!isValidSaleListType(type.toLowerCase())) {
     return {
       isValid: false,
       message: `Type must be either 'regular' or 'variant'`
@@ -281,8 +201,8 @@ const findSaleLists = async (
 
 export const getSaleLists = async (
   req: Request<{ userId: string }>,
-  res: Response<ApiResponse<SaleListAttributes[]>>
-): Promise<Response> => {
+  res: Response<SaleListsResult>
+): Promise<Response<SaleListsResult>> => {
   const { userId } = req.params;
   
   const paramValidation = validateParams(req.params, ['userId']);
@@ -314,14 +234,14 @@ export const getSaleLists = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getSaleLists');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getSaleLists'));
   }
 };
 
 export const getRegular = async (
   _req: Request,
-  res: Response<ApiResponse<SaleListAttributes[]>>
-): Promise<Response> => {
+  res: Response<SaleListsResult>
+): Promise<Response<SaleListsResult>> => {
   try {
     const regularSaleLists = await findSaleLists({ type: 'regular' });
     
@@ -333,14 +253,14 @@ export const getRegular = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getRegular');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getRegular'));
   }
 };
 
 export const getVariant = async (
   _req: Request,
-  res: Response<ApiResponse<SaleListAttributes[]>>
-): Promise<Response> => {
+  res: Response<SaleListsResult>
+): Promise<Response<SaleListsResult>> => {
   try {
     const variantSaleLists = await findSaleLists({ type: 'variant' });
     
@@ -352,14 +272,14 @@ export const getVariant = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getVariant');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getVariant'));
   }
 };
 
 export const getOneById = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<SaleListAttributes>>
-): Promise<Response> => {
+  res: Response<SaleListResult>
+): Promise<Response<SaleListResult>> => {
   const { id } = req.params;
   
   const paramValidation = validateParams(req.params, ['id']);
@@ -394,14 +314,14 @@ export const getOneById = async (
       data: salelist.toJSON()
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getOneById');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getOneById'));
   }
 };
 
 export const createSaleList = async (
-  req: Request<{}, {}, Partial<SaleListCreationAttributes>>,
-  res: Response<ApiResponse<Pick<SaleListAttributes, 'id'>>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, IdResult, SaleListBody>,
+  res: Response<IdResult>
+): Promise<Response<IdResult>> => {
   const {
     comicBookTitle,
     comicIssue,
@@ -418,7 +338,7 @@ export const createSaleList = async (
   console.log('📝 CREATE SALELIST - Received data:', req.body);
   
   // Validate required fields
-  const validation = validateParams(req.body as Record<string, string>, [
+  const validation = validateParams(req.body, [
     'comicBookTitle',
     'comicBookPublisher',
     'type',
@@ -462,6 +382,7 @@ export const createSaleList = async (
     console.log('❌ Type validation failed:', typeValidation.message);
     return res.status(400).json({ success: false, error: typeValidation.message });
   }
+  const saleType: SaleListType = type.toLowerCase() === 'variant' ? 'variant' : 'regular';
   
   // Validate saleUsersId
   if (!saleUsersId) {
@@ -474,9 +395,9 @@ export const createSaleList = async (
   }
   
   // ✅ Convert string numbers to actual numbers
-  const comicIssueNum = comicIssue ? parseInt(comicIssue as any, 10) : null;
-  const comicBookVolumeNum = comicBookVolume ? parseInt(comicBookVolume as any, 10) : null;
-  const comicBookYearNum = comicBookYear ? parseInt(comicBookYear as any, 10) : null;
+  const comicIssueNum = comicIssue ? parseInt(String(comicIssue), 10) : null;
+  const comicBookVolumeNum = comicBookVolume ? parseInt(String(comicBookVolume), 10) : null;
+  const comicBookYearNum = comicBookYear ? parseInt(String(comicBookYear), 10) : null;
   
   // Validate optional numeric fields
   if (comicIssueNum !== null && !isNaN(comicIssueNum)) {
@@ -507,7 +428,7 @@ export const createSaleList = async (
   
   // Validate optional cover
   if (comicBookCover !== undefined && comicBookCover) {
-    const coverValidation = validateString(comicBookCover as string, 'Comic book cover');
+    const coverValidation = validateString(comicBookCover, 'Comic book cover');
     if (!coverValidation.isValid) {
       console.log('❌ Cover validation failed:', coverValidation.message);
       return res.status(400).json({ success: false, error: coverValidation.message });
@@ -536,14 +457,14 @@ export const createSaleList = async (
     
     console.log('✅ Creating sale list...');
     const newSaleList = await SaleLists.create({
-      ...clientId((req.body as { id?: unknown })?.id),
+      ...clientId(req.body.id),
       comicBookTitle: comicBookTitle.trim(),
       comicIssue: comicIssueNum,
       comicBookVolume: comicBookVolumeNum,
       comicBookYear: comicBookYearNum,
       comicBookPublisher: comicBookPublisher.trim(),
       comicBookCover: comicBookCover?.trim() || null,
-      type: type.toLowerCase() as SaleListType,
+      type: saleType,
       price: priceResult.price,
       comicCondition: conditionResult.condition,
       saleUsersId: saleUsersId,
@@ -558,14 +479,14 @@ export const createSaleList = async (
     });
   } catch (error) {
     console.error('❌ Create sale list error:', error);
-    return handleError(res, error as Error, 400, 'createSaleList');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'createSaleList'));
   }
 };
 
 export const updateSaleList = async (
-  req: Request<{ id: string }, {}, Partial<SaleListAttributes>>,
-  res: Response<ApiResponse<SaleListAttributes>>
-): Promise<Response> => {
+  req: Request<{ id: string }, SaleListResult, SaleListBody>,
+  res: Response<SaleListResult>
+): Promise<Response<SaleListResult>> => {
   const { id } = req.params;
   
   const paramValidation = validateParams(req.params, ['id']);
@@ -591,38 +512,41 @@ export const updateSaleList = async (
     });
   }
   
-  const updateData: Partial<SaleListAttributes> = { ...req.body };
+  const body = req.body;
+  const updateData: Partial<SaleListCreationAttributes> = {};
 
   // Convert issue, volume and year from form strings, as createSaleList does
   (['comicIssue', 'comicBookVolume', 'comicBookYear'] as const).forEach(field => {
-    const value = toNumberOrNull(req.body[field]);
+    const value = toNumberOrNull(body[field]);
     if (value !== undefined) {
       updateData[field] = value;
     }
   });
   
-  if (updateData.comicBookTitle !== undefined) {
-    const titleValidation = validateString(updateData.comicBookTitle, 'Comic book title');
+  if (body.comicBookTitle !== undefined) {
+    const titleValidation = validateString(body.comicBookTitle, 'Comic book title');
     if (!titleValidation.isValid) {
       return res.status(400).json({ success: false, error: titleValidation.message });
     }
-    updateData.comicBookTitle = updateData.comicBookTitle.trim();
+    updateData.comicBookTitle = body.comicBookTitle.trim();
   }
   
-  if (updateData.comicBookPublisher !== undefined) {
-    const publisherValidation = validateString(updateData.comicBookPublisher, 'Comic book publisher');
+  if (body.comicBookPublisher !== undefined) {
+    const publisherValidation = validateString(body.comicBookPublisher, 'Comic book publisher');
     if (!publisherValidation.isValid) {
       return res.status(400).json({ success: false, error: publisherValidation.message });
     }
-    updateData.comicBookPublisher = updateData.comicBookPublisher.trim();
+    updateData.comicBookPublisher = body.comicBookPublisher.trim();
   }
   
-  if (updateData.comicBookCover !== undefined && updateData.comicBookCover !== null) {
-    const coverValidation = validateString(updateData.comicBookCover, 'Comic book cover');
+  if (body.comicBookCover === null) {
+    updateData.comicBookCover = null;
+  } else if (body.comicBookCover !== undefined) {
+    const coverValidation = validateString(body.comicBookCover, 'Comic book cover');
     if (!coverValidation.isValid) {
       return res.status(400).json({ success: false, error: coverValidation.message });
     }
-    updateData.comicBookCover = updateData.comicBookCover.trim();
+    updateData.comicBookCover = body.comicBookCover.trim();
   }
   
   if (updateData.comicIssue !== undefined && updateData.comicIssue !== null) {
@@ -672,19 +596,20 @@ export const updateSaleList = async (
     updateData.comicCondition = conditionResult.condition;
   }
   
-  if (updateData.type !== undefined) {
-    const typeValidation = validateType(updateData.type);
+  if (body.type !== undefined) {
+    const typeValidation = validateType(body.type);
     if (!typeValidation.isValid) {
       return res.status(400).json({ success: false, error: typeValidation.message });
     }
-    updateData.type = updateData.type.toLowerCase() as SaleListType;
+    updateData.type = body.type.toLowerCase() === 'variant' ? 'variant' : 'regular';
   }
   
-  if (updateData.saleUsersId !== undefined && updateData.saleUsersId !== null) {
-    const userIdValidation = validateUUID(updateData.saleUsersId, 'Sale Users ID');
+  if (body.saleUsersId !== undefined) {
+    const userIdValidation = validateUUID(body.saleUsersId, 'Sale Users ID');
     if (!userIdValidation.isValid) {
       return res.status(400).json({ success: false, error: userIdValidation.message });
     }
+    updateData.saleUsersId = body.saleUsersId;
   }
   
   try {
@@ -725,14 +650,14 @@ export const updateSaleList = async (
       message: 'Sale list updated successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'updateSaleList');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'updateSaleList'));
   }
 };
 
 export const removeSaleList = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  res: Response<ApiResult>
+): Promise<Response<ApiResult>> => {
   const { id } = req.params;
   
   const paramValidation = validateParams(req.params, ['id']);
@@ -778,6 +703,6 @@ export const removeSaleList = async (
       message: 'Sale list deleted successfully' 
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'removeSaleList');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'removeSaleList'));
   }
 };

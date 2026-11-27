@@ -12,18 +12,21 @@ import {
   replyText,
 } from '../search';
 
+/** An error with the fields OpenAI's errors carry */
+const openAIError = (fields: { status?: number; code?: string; error?: { type: string } }): Error =>
+  Object.assign(new Error('OpenAI request failed'), fields);
+
 describe('isOpenAIUnavailable', () => {
   it('recognizes an account out of credits and a rate limit', () => {
     // The error from the Heroku log: 429, insufficient_quota, credit_balance_exhausted
-    expect(isOpenAIUnavailable({ status: 429, code: 'credit_balance_exhausted', error: { type: 'insufficient_quota' } })).toBe(true);
-    expect(isOpenAIUnavailable({ status: 429, code: 'rate_limit_exceeded' })).toBe(true);
-    expect(isOpenAIUnavailable({ code: 'insufficient_quota' })).toBe(true);
+    expect(isOpenAIUnavailable(openAIError({ status: 429, code: 'credit_balance_exhausted', error: { type: 'insufficient_quota' } }))).toBe(true);
+    expect(isOpenAIUnavailable(openAIError({ status: 429, code: 'rate_limit_exceeded' }))).toBe(true);
+    expect(isOpenAIUnavailable(openAIError({ code: 'insufficient_quota' }))).toBe(true);
   });
 
   it('leaves other failures alone', () => {
     expect(isOpenAIUnavailable(new Error('connection refused'))).toBe(false);
-    expect(isOpenAIUnavailable({ status: 500 })).toBe(false);
-    expect(isOpenAIUnavailable(undefined)).toBe(false);
+    expect(isOpenAIUnavailable(openAIError({ status: 500 }))).toBe(false);
   });
 });
 describe('search settings', () => {
@@ -76,7 +79,7 @@ describe('matching owned comics', () => {
 describe('My Collection: only matches close to the best one', () => {
   // The scores from the "Knightfall saga" search on the live site
   const scores = [0.47, 0.46, 0.45, 0.44, 0.44, 0.42, 0.42, 0.42, 0.36, 0.32, 0.31, 0.30, 0.29, 0.25];
-  const rows = scores.map((similarity_score, i) => ({ comic_id: `c${i}`, similarity_score }));
+  const rows = scores.map((similarity_score, i) => ({ comic_id: `c${i}`, title: `Comic ${i}`, description: '', similarity_score }));
 
   it('keeps the Knightfall issues and drops the unrelated Batman and Spider-Man issues', () => {
     const kept = closeMatches(rows).map(r => r.similarity_score);

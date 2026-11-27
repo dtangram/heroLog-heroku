@@ -4,10 +4,6 @@ import * as validationCtrl from '../controllers/validation';
 import { requireIdentity } from '../middleware/auth';
 import { comicOwner, ownsBodyField, ownsRecord, titleOwner } from '../middleware/ownership';
 
-// ============================================================================
-// ROUTER CONFIGURATION
-// ============================================================================
-
 const router = Router();
 
 // Comics belong to the owner of their title's publisher (a signed-in user or a guest).
@@ -28,7 +24,7 @@ router.post(
   '/',
   ownsBodyField('titleID', titleOwner),
   validationCtrl.validate('createComicBook'),
-  comicbookCtrl.createComicBook as any  // Type cast to fix Express typing issue
+  comicbookCtrl.createComicBook
 );
 
 // GET /comicbook/:id
@@ -46,7 +42,7 @@ router.put(
   ownsRecord(comicOwner),
   ownsBodyField('comicbooktitlerelId', titleOwner, false),
   validationCtrl.validate('editComicBook'),
-  comicbookCtrl.updateComicBook as any  // Type cast to fix Express typing issue
+  comicbookCtrl.updateComicBook
 );
 
 // DELETE /comicbook/:id
@@ -57,9 +53,5 @@ router.delete(
   validationCtrl.validate('deleteComicBook'),
   comicbookCtrl.removeComicBook
 );
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default router;

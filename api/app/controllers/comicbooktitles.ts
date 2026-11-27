@@ -1,58 +1,16 @@
 import { Request, Response } from 'express';
-import { WhereOptions } from 'sequelize';
 import db from '../models';
+import type { ComicBookTitleAttributes } from '../models/comicbooktitles';
+import type { ApiResult, TitleResult, TitlesResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 import { loadTitleSummaries } from '../services/collectionSummary';
-import { findDuplicateTitle, sendDuplicate } from '../services/duplicates';
+import { findDuplicateTitle, duplicateResult } from '../services/duplicates';
 
-// Properly typed model interface
-interface ComicBookTitleModel {
-  findAll: (options: { 
-    where?: WhereOptions<ComicBookTitleAttributes>;
-    order?: Array<[string, string]>;
-  }) => Promise<ComicBookTitleInstance[]>;
-  findByPk: (id: string) => Promise<ComicBookTitleInstance | null>;
-  create: (data: ComicBookTitleCreationAttributes) => Promise<ComicBookTitleInstance>;
-  update: (
-    data: Partial<ComicBookTitleAttributes>, 
-    options: { where: WhereOptions<ComicBookTitleAttributes>; returning: boolean }
-  ) => Promise<[number, ComicBookTitleInstance[]]>;
-  destroy: (options: { where: WhereOptions<ComicBookTitleAttributes> }) => Promise<number>;
-}
-
-// Model instance interface
-interface ComicBookTitleInstance {
-  id: string;
-  cbTitle: string;
-  collectpubId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => ComicBookTitleAttributes;
-}
-
-// Fixed interface to match actual model structure (UUIDs, not numbers)
-interface ComicBookTitleAttributes {
-  id: string;  // UUID string
-  cbTitle: string;
-  collectpubId: string | null;  // UUID string
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Creation interface
-interface ComicBookTitleCreationAttributes {
-  cbTitle: string;
-  collectpubId: string;
-}
-
-// API response interface
-interface ApiResponse<T = ComicBookTitleAttributes | ComicBookTitleAttributes[]> {
-  success: boolean;
-  data?: T;
-  count?: number;
-  message?: string;
-  error?: string;
-  errors?: string[];
-}
+// What the title form sends; on an update, fields left out stay as they are
+type TitleBody = {
+  cbTitle?: string;
+  collectpubId?: string;
+};
 
 // Validation result interface
 interface ValidationResult {
@@ -60,18 +18,8 @@ interface ValidationResult {
   message?: string;
 }
 
-// Sequelize error interface
-interface SequelizeError {
-  errors: Array<{ message: string }>;
-}
-
 // Import models with proper typing
-const ComicBookTitles = db.ComicBookTitles as ComicBookTitleModel;
-
-// Type guard for Sequelize errors
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
+const ComicBookTitles = db.ComicBookTitles;
 
 // UUID validation - Updated to accept all UUID versions
 const isValidUUID = (value: string): boolean => {
@@ -79,32 +27,15 @@ const isValidUUID = (value: string): boolean => {
   return uuidRegex.test(value);
 };
 
-// Centralized error handler
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
+// Centralized error reply. A catch can receive anything, so it's turned into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 // Parameter validation
 const validateParams = (
-  params: Record<string, string>,
+  params: Partial<Record<string, string | number | boolean | Date | null>>,
   requiredFields: string[]
 ): ValidationResult => {
   const missing = requiredFields.filter(field => !params[field]);
@@ -153,8 +84,8 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
 // Get all comic book titles for a specific publisher
 export const getCollectPublisherComicBookTitles = async (
   req: Request<{ pubId: string }>,
-  res: Response<ApiResponse<ComicBookTitleAttributes[]>>
-): Promise<Response> => {
+  res: Response<TitlesResult>
+): Promise<Response<TitlesResult>> => {
   const { pubId } = req.params;
   
   console.log('📨 GET /comicbooktitles/publishers/:pubId');
@@ -199,15 +130,15 @@ export const getCollectPublisherComicBookTitles = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getCollectPublisherComicBookTitles');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getCollectPublisherComicBookTitles'));
   }
 };
 
 // Get one comic book title by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<ComicBookTitleAttributes>>
-): Promise<Response> => {
+  res: Response<TitleResult>
+): Promise<Response<TitleResult>> => {
   const { id } = req.params;
   
   console.log('📨 GET /comicbooktitles/:id');
@@ -249,22 +180,22 @@ export const getOneById = async (
       data: comicbooktitle.toJSON()
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getOneById');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getOneById'));
   }
 };
 
 // Create a new comic book title
 export const createComicBookTitle = async (
-  req: Request<{}, {}, Partial<ComicBookTitleCreationAttributes>>,
-  res: Response<ApiResponse<ComicBookTitleAttributes>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, TitleResult, TitleBody>,
+  res: Response<TitleResult>
+): Promise<Response<TitleResult>> => {
   console.log('📨 POST /comicbooktitles');
   console.log('📨 Body:', req.body);
   
   const { cbTitle, collectpubId } = req.body;
   
   // Validate required fields
-  const validation = validateParams(req.body as Record<string, string>, ['cbTitle', 'collectpubId']);
+  const validation = validateParams(req.body, ['cbTitle', 'collectpubId']);
   if (!validation.isValid) {
     console.log('❌ Validation failed:', validation.message);
     return res.status(400).json({ 
@@ -311,7 +242,7 @@ export const createComicBookTitle = async (
   try {
     // One title per name under a publisher
     const duplicate = await findDuplicateTitle(collectpubId, cbTitle);
-    if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+    if (duplicate) return res.status(409).json(duplicateResult(duplicate));
 
     const newComicBookTitle = await ComicBookTitles.create({
       cbTitle: cbTitle.trim(),
@@ -330,15 +261,15 @@ export const createComicBookTitle = async (
     });
   } catch (error) {
     console.log('❌ ERROR IN CREATE:', error);
-    return handleError(res, error as Error, 400, 'createComicBookTitle');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'createComicBookTitle'));
   }
 };
 
 // Update an existing comic book title
 export const updateComicBookTitle = async (
-  req: Request<{ id: string }, {}, Partial<ComicBookTitleAttributes>>,
-  res: Response<ApiResponse<ComicBookTitleAttributes>>
-): Promise<Response> => {
+  req: Request<{ id: string }, TitleResult, TitleBody>,
+  res: Response<TitleResult>
+): Promise<Response<TitleResult>> => {
   const { id } = req.params;
   
   console.log('📨 PUT /comicbooktitles/:id');
@@ -403,7 +334,7 @@ export const updateComicBookTitle = async (
       const publisherId = updateData.collectpubId || current?.collectpubId;
       const name = updateData.cbTitle || current?.cbTitle;
       const duplicate = publisherId && name ? await findDuplicateTitle(publisherId, name, id) : null;
-      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+      if (duplicate) return res.status(409).json(duplicateResult(duplicate));
     }
 
     const [rowsUpdated, updatedRecords] = await ComicBookTitles.update(
@@ -446,15 +377,15 @@ export const updateComicBookTitle = async (
       message: 'Comic book title updated successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'updateComicBookTitle');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'updateComicBookTitle'));
   }
 };
 
 // Delete a comic book title
 export const removeComicBookTitle = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  res: Response<ApiResult>
+): Promise<Response<ApiResult>> => {
   const { id } = req.params;
   
   console.log('📨 DELETE /comicbooktitles/:id');
@@ -508,6 +439,6 @@ export const removeComicBookTitle = async (
       message: 'Comic book title deleted successfully' 
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'removeComicBookTitle');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'removeComicBookTitle'));
   }
 };

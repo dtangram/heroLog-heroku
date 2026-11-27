@@ -1,20 +1,28 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from 'sequelize';
+import { Sequelize, DataTypes, Model, ModelStatic, Optional } from 'sequelize';
+import type { Models } from '.';
 
-// Type for the models object passed to associate
-interface Models {
-  CollectionPublishers?: ModelStatic<Model>;
-  ComicBooks?: ModelStatic<Model>;
-  [key: string]: ModelStatic<Model> | undefined;
+export interface ComicBookTitleAttributes {
+  id: string;
+  cbTitle: string;
+  collectpubId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Extended model type that includes the associate method
-interface ComicBookTitlesModel extends ModelStatic<Model> {
+export type ComicBookTitleCreationAttributes = Optional<ComicBookTitleAttributes, 'id' | 'collectpubId' | 'createdAt' | 'updatedAt'>;
+
+/** A saved row as the API sends it */
+export type ComicBookTitleJson = ComicBookTitleAttributes;
+
+export interface ComicBookTitleInstance extends Model<ComicBookTitleAttributes, ComicBookTitleCreationAttributes>, ComicBookTitleAttributes {}
+
+export interface ComicBookTitlesModel extends ModelStatic<ComicBookTitleInstance> {
   associate: (models: Models) => void;
 }
 
 // The actual model factory function
 const createComicBookTitlesModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): ComicBookTitlesModel => {
-  const ComicBookTitles = sequelize.define('ComicBookTitles', {
+  const ComicBookTitles = sequelize.define<ComicBookTitleInstance>('ComicBookTitles', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
@@ -31,14 +39,23 @@ const createComicBookTitlesModel = (sequelize: Sequelize, dataTypes: typeof Data
       type: dataTypes.UUID,
       allowNull: true,
     },
+    // Sequelize sets these itself; they're listed so their types are known
+    createdAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
   }, {
     tableName: 'ComicBookTitles',
     timestamps: true,
     underscored: false,  // CRITICAL: Set to false to match migration columns
     freezeTableName: true,  // CRITICAL: Prevent table name pluralization
-  }) as ComicBookTitlesModel;
+  });
  
-  ComicBookTitles.associate = (models: Models) => {
+  const associate = (models: Models): void => {
     if (models.CollectionPublishers) {
       ComicBookTitles.belongsTo(models.CollectionPublishers, {
         foreignKey: 'collectpubId',
@@ -53,8 +70,7 @@ const createComicBookTitlesModel = (sequelize: Sequelize, dataTypes: typeof Data
     }
   };
  
-  return ComicBookTitles;
+  return Object.assign(ComicBookTitles, { associate });
 };
 
-// CHANGED: Use export default instead of export =
 export default createComicBookTitlesModel;

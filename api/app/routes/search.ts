@@ -4,17 +4,108 @@ import { ownsParam } from '../middleware/ownership';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { Pool } from 'pg';
+import { z } from 'zod';
+import type { ApiResult } from '../types/api';
 
 const router = express.Router();
 
-// Every search needs a session (signed in or guest). Searching a collection,
-// or preparing it for search, is limited to its owner.
 router.use(requireIdentity);
 
+/** A comic Claude suggests (All Comics and Find Missing) */
+export interface SuggestedComic {
+  title: string;
+  description?: string;
+  publisher?: string;
+  year?: string | number;
+  group?: string;
+}
+
+/** A row of the collection, with what Search needs to show and link to it */
+interface OwnedComicRow {
+  id: string;
+  cbTitle: string;
+  comicIssue: string | null;
+  comicBookCover: string | null;
+  titleId: string;
+  publisherId: string;
+  publisherName: string;
+}
+
+/** A comic to describe for My Collection search */
+interface ComicToDescribeRow {
+  id: string;
+  title: string;
+  author: string | null;
+  penciler: string | null;
+  year: number | null;
+  comicIssue: string | null;
+  volume: string | null;
+  cbTitle: string;
+}
+
+/** A comic's prepared search data */
+interface PreparedRow {
+  comic_id: string;
+  title: string;
+  unfinished: boolean;
+}
+
+/** Search data still waiting for its embedding */
+interface UnembeddedRow {
+  id: number;
+  title: string;
+  description: string;
+}
+
+/** A My Collection match; Postgres may send the score as text */
+interface MatchRow {
+  comic_id: string;
+  title: string;
+  description: string;
+  similarity: number | string;
+}
+
+interface Match {
+  comic_id: string;
+  title: string;
+  description: string;
+  similarity_score: number;
+}
+
+interface EnrichmentJobRow {
+  id: number;
+  user_id: string;
+  total_comics: number;
+  processed_comics: number;
+  status: string;
+  started_at: Date;
+  completed_at: Date | null;
+}
+
+/** Every Search reply. Ownership checks reply with ApiResult's fields instead. */
+interface SearchReply extends Partial<ApiResult> {
+  status?: 'Success' | 'Failed' | 'Unavailable' | 'Empty' | 'Complete' | 'Running';
+  query?: string;
+  results?: object[];
+  owned_counts?: Partial<Record<ResultGroup, number>>;
+  job_id?: number;
+  total_comics?: number;
+  job?: Omit<EnrichmentJobRow, 'user_id'> & { percentage: number };
+  stored_count?: number;
+  comics?: Array<{ comic_id: string; title: string; description: string }>;
+  embeddings_generated?: number;
+}
+
+/** ?q= as text; anything else (missing, repeated) is no search text */
+const queryText = (value: Request['query'][string]): string => (typeof value === 'string' ? value : '');
+
 /** An enrichment job (by :jobId) must belong to the requester */
-const ownsJob = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+const ownsJob = async (req: AuthRequest, res: Response<SearchReply>, next: NextFunction): Promise<void> => {
   try {
-    const result = await getVectorDb().query('SELECT user_id FROM enrichment_jobs WHERE id = $1;', [req.params.jobId]);
+    const result = await getVectorDb().query<Pick<EnrichmentJobRow, 'user_id'>>(
+      'SELECT user_id FROM enrichment_jobs WHERE id = $1;',
+      [req.params.jobId]
+    );
     if (String(result.rows[0]?.user_id ?? '').toLowerCase() !== String(req.user?.id ?? '').toLowerCase()) {
       res.status(404).json({ status: 'Failed', error: 'Job not found' });
       return;
@@ -130,7 +221,7 @@ export const COLLECTION_MIN_SIMILARITY = 0.25;
 export const COLLECTION_MAX_GAP = 0.12;
 
 /** The matches close enough to the best one (rows arrive best first) */
-export const closeMatches = <T extends { similarity_score: number }>(rows: T[]): T[] => {
+export const closeMatches = (rows: Match[]): Match[] => {
   if (rows.length === 0) return rows;
   const best = rows[0].similarity_score;
   return rows.filter(row => row.similarity_score >= best - COLLECTION_MAX_GAP);
@@ -150,17 +241,30 @@ export const replyText = (content: Array<{ type: string; text?: string }>): stri
  * The comics in Claude's reply. Takes the list from between the first [ and
  * the last ], so a sentence or a code fence around it doesn't matter.
  */
-export const parseComicList = (text: string): any[] => {
+const suggestedComicSchema = z.looseObject({
+  title: z.string(),
+  // A field of the wrong kind is dropped rather than losing the comic
+  description: z.string().optional().catch(undefined),
+  publisher: z.string().optional().catch(undefined),
+  year: z.union([z.string(), z.number()]).optional().catch(undefined),
+  group: z.string().optional().catch(undefined),
+});
+
+export const parseComicList = (text: string): SuggestedComic[] => {
   const start = text.indexOf('[');
   const end = text.lastIndexOf(']');
   if (start === -1 || end < start) {
     throw new Error(`No comic list in Claude's reply: ${text.slice(0, 200)}`);
   }
-  const list = JSON.parse(text.slice(start, end + 1));
-  if (!Array.isArray(list)) {
+  const list = z.array(z.json()).safeParse(JSON.parse(text.slice(start, end + 1)));
+  if (!list.success) {
     throw new Error('Claude\'s reply was not a list of comics');
   }
-  return list.filter(item => item && typeof item.title === 'string');
+  // Items without a title can't be shown, so they're left out
+  return list.data.flatMap(item => {
+    const comic = suggestedComicSchema.safeParse(item);
+    return comic.success ? [comic.data] : [];
+  });
 };
 
 /**
@@ -197,21 +301,21 @@ export const summarizeOwned = (titles: string[]): string => {
 export const RESULT_GROUPS = ['Main story', 'Tie-in', 'Related'] as const;
 export type ResultGroup = typeof RESULT_GROUPS[number];
 
-export const normalizeGroup = (group: unknown): ResultGroup => {
+export const normalizeGroup = (group: string | null | undefined): ResultGroup => {
   const found = RESULT_GROUPS.find(g => g.toLowerCase() === String(group ?? '').trim().toLowerCase());
   return found ?? 'Related';
 };
 
 /** A comic's title written the way the search data writes it */
-const comicTitle = (row: { cbTitle: string; comicIssue: unknown }): string =>
+const comicTitle = (row: { cbTitle: string; comicIssue: string | null }): string =>
   row.comicIssue == null || row.comicIssue === '' ? String(row.cbTitle) : `${row.cbTitle} #${row.comicIssue}`;
 
 /**
  * The collector's comics, straight from the collection, with what Search needs
  * to show and link to each one.
  */
-const getOwnedComics = async (userId: string, limit?: number) => {
-  const result = await getHerokuDb().query(`
+const getOwnedComics = async (userId: string, limit?: number): Promise<OwnedComicRow[]> => {
+  const result = await getHerokuDb().query<OwnedComicRow>(`
     SELECT cb.id::text AS id, cbt."cbTitle", cb."comicIssue", cb."comicBookCover",
            cbt.id::text AS "titleId", cp.id::text AS "publisherId", cp."publisherName"
     FROM "ComicBooks" cb
@@ -221,14 +325,15 @@ const getOwnedComics = async (userId: string, limit?: number) => {
     ORDER BY cbt."cbTitle", cb."comicIssue"
     ${limit ? 'LIMIT $2' : ''};
   `, limit ? [userId, limit] : [userId]);
-  return result.rows as Array<{
-    id: string; cbTitle: string; comicIssue: unknown; comicBookCover: string | null;
-    titleId: string; publisherId: string; publisherName: string;
-  }>;
+  return result.rows;
 };
 
 /** Ask Claude for comics, and log why if none come back */
-const askClaudeForComics = async (q: string, prompt = comicPrompt(q), maxTokens = SEARCH_MAX_TOKENS): Promise<any[]> => {
+const askClaudeForComics = async (
+  q: string,
+  prompt = comicPrompt(q),
+  maxTokens = SEARCH_MAX_TOKENS
+): Promise<SuggestedComic[]> => {
   const message = await getAnthropic().messages.create({
     model: SEARCH_MODEL,
     max_tokens: maxTokens,
@@ -276,10 +381,10 @@ Example of exact format to return:
  * Find Missing: keeps the comics the collector doesn't own (each once), and
  * counts the owned ones by group instead of showing them.
  */
-export const splitMissing = <T extends { title: string; group?: string }>(suggestions: T[], owned: Set<string>) => {
+export const splitMissing = (suggestions: SuggestedComic[], owned: Set<string>) => {
   const seen = new Set<string>();
   const ownedCounts: Partial<Record<ResultGroup, number>> = {};
-  const results: Array<T & { already_owned: false; source: 'claude' }> = [];
+  const results: Array<SuggestedComic & { already_owned: false; source: 'claude' }> = [];
 
   for (const result of suggestions) {
     const key = normalizeTitle(result.title);
@@ -330,9 +435,13 @@ Aim for ${MISSING_RESULT_COUNT} comics they're missing, plus any they own; retur
  * ("insufficient_quota") or busy. Retrying the rest of a batch then only
  * fails again, so a job stops and the next visit to Search starts over.
  */
-export const isOpenAIUnavailable = (error: unknown): boolean => {
-  const e = error as { status?: number; code?: string; error?: { type?: string } } | undefined;
-  return e?.status === 429 || e?.code === 'insufficient_quota' || e?.error?.type === 'insufficient_quota';
+export const isOpenAIUnavailable = (error: Error): boolean => {
+  // OpenAI's errors (OpenAI.APIError) carry these fields
+  const status = 'status' in error ? error.status : undefined;
+  const code = 'code' in error ? error.code : undefined;
+  const detail = 'error' in error && typeof error.error === 'object' && error.error !== null ? error.error : undefined;
+  const type = detail && 'type' in detail ? detail.type : undefined;
+  return status === 429 || code === 'insufficient_quota' || type === 'insufficient_quota';
 };
 
 /**
@@ -343,21 +452,20 @@ export const isOpenAIUnavailable = (error: unknown): boolean => {
 export const findComicsMissingSearchData = async (
   userId: string
 ): Promise<{ total: number; missingIds: string[] }> => {
-  const owned = await getHerokuDb().query(`
+  const owned = await getHerokuDb().query<Pick<OwnedComicRow, 'id' | 'cbTitle' | 'comicIssue'>>(`
     SELECT cb.id::text AS id, cbt."cbTitle", cb."comicIssue"
     FROM "ComicBooks" cb
     JOIN "ComicBookTitles" cbt ON cb."comicbooktitlerelId" = cbt.id
     JOIN "CollectionPublishers" cp ON cbt."collectpubId" = cp.id
     WHERE cp."collectpubUsersId" = $1;
   `, [userId]);
-  const ownedIds = owned.rows.map((row: { id: string }) => row.id);
+  const ownedIds = owned.rows.map(row => row.id);
   // Written exactly as the search data writes it
   const currentTitle = new Map<string, string>(
-    owned.rows.map((row: { id: string; cbTitle: string; comicIssue: unknown }) =>
-      [row.id, normalizeTitle(`${row.cbTitle} #${row.comicIssue}`)])
+    owned.rows.map(row => [row.id, normalizeTitle(`${row.cbTitle} #${row.comicIssue}`)])
   );
 
-  const prepared = await getVectorDb().query(
+  const prepared = await getVectorDb().query<PreparedRow>(
     'SELECT comic_id, title, embedding IS NULL AS unfinished FROM comic_embeddings WHERE user_id = $1;',
     [userId]
   );
@@ -367,7 +475,7 @@ export const findComicsMissingSearchData = async (
   // Either way the comic can't be found, so it's prepared again.
   const preparedIds = new Set<string>();
   const staleIds: string[] = [];
-  for (const row of prepared.rows as Array<{ comic_id: string; title: string; unfinished: boolean }>) {
+  for (const row of prepared.rows) {
     const id = String(row.comic_id);
     const title = currentTitle.get(id);
     if (title === undefined || row.unfinished || normalizeTitle(row.title) !== title) {
@@ -403,13 +511,16 @@ const processEnrichmentJob = async (userId: string, jobId: number, comicIds: str
 
   try {
     for (let start = 0; start < comicIds.length; start += BATCH_SIZE) {
-      const jobCheck = await getVectorDb().query('SELECT status FROM enrichment_jobs WHERE id = $1;', [jobId]);
+      const jobCheck = await getVectorDb().query<Pick<EnrichmentJobRow, 'status'>>(
+        'SELECT status FROM enrichment_jobs WHERE id = $1;',
+        [jobId]
+      );
       if (jobCheck.rows[0]?.status === 'cancelled') {
         console.log(`🛑 Job ${jobId} cancelled`);
         return;
       }
 
-      const comicsResult = await getHerokuDb().query(`
+      const comicsResult = await getHerokuDb().query<ComicToDescribeRow>(`
         SELECT 
           cb.id,
           cb.title,
@@ -482,7 +593,7 @@ Return only the description, no additional text.`
 
           console.log(`✅ Enriched: ${cbTitle} #${comicIssue}`);
         } catch (comicError) {
-          if (isOpenAIUnavailable(comicError)) {
+          if (comicError instanceof Error && isOpenAIUnavailable(comicError)) {
             console.error(`🛑 Job ${jobId} stopped: OpenAI is unavailable (out of credits or rate limited)`);
             await setStatus('failed');
             return;
@@ -505,11 +616,11 @@ Return only the description, no additional text.`
 // ============================================================================
 
 // Enrich and store comics with Claude descriptions (legacy — limit 10)
-router.get('/enrich-and-store/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
+router.get('/enrich-and-store/:userId', ownsParam('userId'), async (req: AuthRequest, res: Response<SearchReply>) => {
   const { userId } = req.params;
 
   try {
-    const comicsResult = await getHerokuDb().query(`
+    const comicsResult = await getHerokuDb().query<ComicToDescribeRow>(`
       SELECT 
         cb.id,
         cb.title,
@@ -526,7 +637,7 @@ router.get('/enrich-and-store/:userId', ownsParam('userId'), async (req: Request
       LIMIT 10;
     `, [userId]);
 
-    const stored: any[] = [];
+    const stored: Array<{ comic_id: string; title: string; description: string }> = [];
 
     for (const comic of comicsResult.rows) {
       const { id, title, author, penciler, year, comicIssue, volume, cbTitle } = comic;
@@ -576,11 +687,11 @@ Return only the description, no additional text.`
 });
 
 // Generate embeddings for stored comics
-router.get('/generate-embeddings/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
+router.get('/generate-embeddings/:userId', ownsParam('userId'), async (req: AuthRequest, res: Response<SearchReply>) => {
   const { userId } = req.params;
 
   try {
-    const result = await getVectorDb().query(`
+    const result = await getVectorDb().query<UnembeddedRow>(`
       SELECT id, title, description
       FROM comic_embeddings
       WHERE user_id = $1
@@ -611,15 +722,15 @@ router.get('/generate-embeddings/:userId', ownsParam('userId'), async (req: Requ
 });
 
 // Semantic search within user's collection
-router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
+router.get('/search/:userId', ownsParam('userId'), async (req: AuthRequest, res: Response<SearchReply>) => {
   const { userId } = req.params;
-  const { q } = req.query as { q: string };
+  const q = queryText(req.query.q);
 
   try {
     const queryEmbedding = await generateEmbedding(q);
     const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-    const result = await getVectorDb().query(`
+    const result = await getVectorDb().query<MatchRow>(`
       SELECT 
         comic_id,
         title,
@@ -633,12 +744,11 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
       LIMIT $4;
     `, [embeddingStr, userId, COLLECTION_MIN_SIMILARITY, COLLECTION_RESULT_LIMIT]);
 
-    type Match = { comic_id: string; title: string; description: string; similarity_score: number };
-    const matches = closeMatches<Match>(result.rows.map((row: any) => ({
+    const matches = closeMatches(result.rows.map(row => ({
       comic_id: row.comic_id,
       title: row.title,
       description: row.description,
-      similarity_score: parseFloat(parseFloat(row.similarity).toFixed(4))
+      similarity_score: parseFloat(parseFloat(String(row.similarity)).toFixed(4))
     })));
 
     // The cover and where each comic lives, so a result can show and link to it
@@ -659,7 +769,7 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
 
   } catch (error) {
     console.error('❌ Search error:', error);
-    if (isOpenAIUnavailable(error)) {
+    if (error instanceof Error && isOpenAIUnavailable(error)) {
       // Out of OpenAI credits or rate limited: not the visitor's fault, and temporary
       res.status(503).json({ status: 'Unavailable', error: 'Collection search is temporarily unavailable' });
       return;
@@ -669,9 +779,9 @@ router.get('/search/:userId', ownsParam('userId'), async (req: Request, res: Res
 });
 
 // Search all comics using Claude knowledge
-router.get('/search-all', async (req: Request, res: Response) => {
-  const { q } = req.query as { q: string };
-  const userId = (req as any).user?.id as string | undefined;
+router.get('/search-all', async (req: AuthRequest, res: Response<SearchReply>) => {
+  const q = queryText(req.query.q);
+  const userId = req.user?.id;
 
   try {
     // Asked at the same time as Claude, so marking owned comics adds no wait
@@ -696,9 +806,9 @@ router.get('/search-all', async (req: Request, res: Response) => {
 });
 
 // Find comics user doesn't own
-router.get('/search-missing/:userId', ownsParam('userId'), async (req: Request, res: Response) => {
+router.get('/search-missing/:userId', ownsParam('userId'), async (req: AuthRequest, res: Response<SearchReply>) => {
   const { userId } = req.params;
-  const { q } = req.query as { q: string };
+  const q = queryText(req.query.q);
 
   try {
     // From the collection itself, so a comic counts as owned even before it's
@@ -727,7 +837,7 @@ const RUNNING_JOB_WINDOW_MINUTES = 30;
 // Prepare any of the owner's comics that are missing search data.
 // The Search page calls this on every visit, so it's cheap when nothing is
 // missing and never starts a second job while one is running.
-router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res: Response): Promise<void> => {
+router.post('/enrich-all/:userId', ownsParam('userId'), async (req: AuthRequest, res: Response<SearchReply>): Promise<void> => {
   const { userId } = req.params;
 
   try {
@@ -743,7 +853,7 @@ router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res
       return;
     }
 
-    const running = await getVectorDb().query(`
+    const running = await getVectorDb().query<Pick<EnrichmentJobRow, 'id' | 'total_comics'>>(`
       SELECT id, total_comics FROM enrichment_jobs
       WHERE user_id = $1 AND status = 'running'
         AND started_at > NOW() - ($2 || ' minutes')::interval
@@ -761,7 +871,7 @@ router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res
       return;
     }
 
-    const jobResult = await getVectorDb().query(`
+    const jobResult = await getVectorDb().query<Pick<EnrichmentJobRow, 'id'>>(`
       INSERT INTO enrichment_jobs (user_id, total_comics, status)
       VALUES ($1, $2, 'running')
       RETURNING id;
@@ -787,11 +897,11 @@ router.post('/enrich-all/:userId', ownsParam('userId'), async (req: Request, res
 });
 
 // Check enrichment job progress
-router.get('/enrich-progress/:jobId', ownsJob, async (req: Request, res: Response): Promise<void> => {
+router.get('/enrich-progress/:jobId', ownsJob, async (req: AuthRequest, res: Response<SearchReply>): Promise<void> => {
   const { jobId } = req.params;
 
   try {
-    const result = await getVectorDb().query(`
+    const result = await getVectorDb().query<EnrichmentJobRow>(`
       SELECT 
         id,
         user_id,
@@ -834,7 +944,7 @@ router.get('/enrich-progress/:jobId', ownsJob, async (req: Request, res: Respons
 });
 
 // Cancel enrichment job
-router.post('/enrich-cancel/:jobId', ownsJob, async (req: Request, res: Response) => {
+router.post('/enrich-cancel/:jobId', ownsJob, async (req: AuthRequest, res: Response<SearchReply>) => {
   const { jobId } = req.params;
 
   try {

@@ -1,129 +1,22 @@
 import { Request, Response } from 'express';
-import db from '../models';  // ✅ Import db
+import db from '../models';
+import type { SaleListsModel } from '../models/salelists';
+import type { ApiResult, PublicSaleListing, PublicSaleListingsResult, SalePreviewResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 
-// Sale list type literal
-type SaleListType = 'regular' | 'variant';
+const getSaleListModel = (): SaleListsModel => db.SaleLists;
 
-// Properly typed model interface
-interface SaleListModel {
-  findAll: (options?: {
-    attributes?: string[];
-    order?: Array<[string, string]>;
-    limit?: number;
-  }) => Promise<SaleListInstance[]>;
-}
-
-interface UserModel {
-  findAll: (options: {
-    where: { id: string[] };
-    attributes: string[];
-  }) => Promise<Array<{ id: string; username: string }>>;
-}
-
-// Model instance interface
-interface SaleListInstance {
-  id: string;
-  comicBookTitle: string;
-  comicIssue: number | null;
-  comicBookVolume: number | null;
-  comicBookYear: number | null;
-  comicBookPublisher: string;
-  comicBookCover: string | null;
-  type: SaleListType;
-  /** Dollars; Postgres DECIMAL comes back as a string, e.g. "12.50" (null on older listings) */
-  price: string | number | null;
-  /** Standard comic grade, e.g. "Near Mint" (null on older listings) */
-  comicCondition: string | null;
-  saleUsersId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => SaleListAttributes;
-}
-
-// Fixed interface to match actual model structure
-interface SaleListAttributes {
-  id: string;
-  comicBookTitle: string;
-  comicIssue: number | null;
-  comicBookVolume: number | null;
-  comicBookYear: number | null;
-  comicBookPublisher: string;
-  comicBookCover: string | null;
-  type: SaleListType;
-  /** Dollars; Postgres DECIMAL comes back as a string, e.g. "12.50" (null on older listings) */
-  price: string | number | null;
-  /** Standard comic grade, e.g. "Near Mint" (null on older listings) */
-  comicCondition: string | null;
-  saleUsersId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// What the Home page receives: the listing plus the seller's public username
-interface PublicSaleListing extends SaleListAttributes {
-  sellerUsername: string | null;
-}
-
-// API response interface
-interface ApiResponse<T = SaleListAttributes[]> {
-  success: boolean;
-  data?: T;
-  count?: number;
-  message?: string;
-  error?: string;
-  errors?: string[];
-}
-
-// Sequelize error interface
-interface SequelizeError {
-  errors: Array<{ message: string }>;
-}
-
-// ✅ Model getter with error handling
-const getSaleListModel = (): SaleListModel => {
-  const SaleList = (db as any).SaleLists || (db as any).SaleList || (db as any).Salelist;
-  
-  if (!SaleList) {
-    console.error('❌ SaleList model not found. Available models:', Object.keys(db));
-    throw new Error('SaleList model not loaded');
-  }
-  
-  return SaleList as SaleListModel;
-};
-
-// Type guard for Sequelize errors
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
-
-// Centralized error handler
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({
-    success: false,
-    errors
-  });
+// Centralized error reply. A catch can receive anything, so it's turned into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 // Get all sale lists for public display
 export const getAllSaleLists = async (
   _req: Request,
-  res: Response<ApiResponse<PublicSaleListing[]>>
-): Promise<Response> => {
+  res: Response<PublicSaleListingsResult>
+): Promise<Response<PublicSaleListingsResult>> => {
   try {
     const SaleLists = getSaleListModel();  // ✅ Get model with error handling
     const saleListsInstances = await SaleLists.findAll();
@@ -136,9 +29,8 @@ export const getAllSaleLists = async (
     const sellerIds = Array.from(
       new Set(listings.map(listing => listing.saleUsersId).filter((id): id is string => Boolean(id)))
     );
-    const Users = (db as any).Users as UserModel | undefined;
-    const sellers = Users && sellerIds.length
-      ? await Users.findAll({ where: { id: sellerIds }, attributes: ['id', 'username'] })
+    const sellers = sellerIds.length
+      ? await db.Users.findAll({ where: { id: sellerIds }, attributes: ['id', 'username'] })
       : [];
     const usernameById = new Map(sellers.map(seller => [seller.id, seller.username]));
 
@@ -153,7 +45,7 @@ export const getAllSaleLists = async (
       count: saleLists.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getAllSaleLists');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getAllSaleLists'));
   }
 };
 
@@ -179,7 +71,7 @@ export const PREVIEW_DEFAULT = 8;
 export const PREVIEW_MAX = 12;
 
 /** ?limit= as a whole number from 1 to PREVIEW_MAX (default PREVIEW_DEFAULT) */
-export const previewLimit = (value: unknown): number => {
+export const previewLimit = (value: Request['query'][string]): number => {
   const n = Number.parseInt(String(value ?? ''), 10);
   return Number.isFinite(n) && n > 0 ? Math.min(n, PREVIEW_MAX) : PREVIEW_DEFAULT;
 };
@@ -188,8 +80,8 @@ export const previewLimit = (value: unknown): number => {
 // Public, so it leaves out seller usernames and account IDs.
 export const getSalePreview = async (
   req: Request,
-  res: Response<ApiResponse<Partial<SaleListAttributes>[]>>
-): Promise<Response> => {
+  res: Response<SalePreviewResult>
+): Promise<Response<SalePreviewResult>> => {
   try {
     const SaleLists = getSaleListModel();
     const instances = await SaleLists.findAll({
@@ -205,6 +97,6 @@ export const getSalePreview = async (
       count: listings.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getSalePreview');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getSalePreview'));
   }
 };

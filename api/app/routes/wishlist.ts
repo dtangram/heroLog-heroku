@@ -1,4 +1,4 @@
-import { Router, RequestHandler } from 'express';
+import { Router } from 'express';
 import {
   getWishLists,
   getOneById,
@@ -9,10 +9,6 @@ import {
 import { validate } from '../controllers/validation';
 import { requireAccount } from '../middleware/auth';
 import { ownsBodyField, ownsParam, ownsRecord, wishOwner } from '../middleware/ownership';
-
-// ============================================================================
-// ROUTER CONFIGURATION
-// ============================================================================
 
 const router = Router();
 
@@ -34,7 +30,7 @@ router.post(
   '/',
   ownsBodyField('wishUsersId'),
   validate('createWishList'),
-  createWishList as unknown as RequestHandler
+  createWishList
 );
 
 // GET /wishlist/:id
@@ -51,8 +47,8 @@ router.put(
   '/:id',
   ownsRecord(wishOwner),
   ownsBodyField('wishUsersId', undefined, false),
-  validate('editWishList') as unknown as RequestHandler,
-  updateWishList as unknown as RequestHandler
+  validate('editWishList'),
+  updateWishList
 );
 
 // DELETE /wishlist/:id
@@ -63,9 +59,5 @@ router.delete(
   validate('deleteWishList'),
   removeWishList
 );
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default router;

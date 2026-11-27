@@ -1,82 +1,14 @@
 import { Request, Response } from 'express';
-import { WhereOptions } from 'sequelize';
 import db from '../models';
+import type { ComicBookCreationAttributes, ComicBookJson, ComicBookType } from '../models/comicbooks';
+import type { ApiResult, ComicBookResult, ComicBooksResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 import { autoEnrichComic } from '../utils/autoEnrich';
 import { clearComicSearchData } from '../routes/search';
-import { findDuplicateIssue, allowsDuplicate, sendDuplicate } from '../services/duplicates';
-
-// Comic book type literal
-type ComicBookType = 'regular' | 'variant';
-
-// Model attributes interface
-interface ComicBookAttributes {
-  id: string;
-  title: string;
-  comicIssue: string | null;
-  author: string | null;
-  penciler: string | null;
-  coverartist: string | null;
-  inker: string | null;
-  volume: string | null;
-  year: number | null;
-  comicBookCover: string | null;
-  type: ComicBookType;
-  comicbooktitlerelId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Model instance interface
-interface ComicBookInstance {
-  id: string;
-  title: string;
-  comicIssue: string | null;
-  author: string | null;
-  penciler: string | null;
-  coverartist: string | null;
-  inker: string | null;
-  volume: string | null;
-  year: number | null;
-  comicBookCover: string | null;
-  type: ComicBookType;
-  comicbooktitlerelId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => ComicBookAttributes;
-}
-
-// Model interface
-interface ComicBookModel {
-  findAll: (options: { 
-    where?: WhereOptions<ComicBookAttributes>;
-    order?: Array<[string, string]>;
-  }) => Promise<ComicBookInstance[]>;
-  findByPk: (id: string) => Promise<ComicBookInstance | null>;
-  create: (data: ComicBookCreationAttributes) => Promise<ComicBookInstance>;
-  update: (
-    data: Partial<ComicBookAttributes>, 
-    options: { where: WhereOptions<ComicBookAttributes>; returning: boolean }
-  ) => Promise<[number, ComicBookInstance[]]>;
-  destroy: (options: { where: WhereOptions<ComicBookAttributes> }) => Promise<number>;
-}
-
-// Creation interface
-interface ComicBookCreationAttributes {
-  title: string;
-  comicIssue: string;
-  author?: string | null;
-  penciler?: string | null;
-  coverartist?: string | null;
-  inker?: string | null;
-  volume?: string | null;
-  year?: number | null;
-  comicBookCover?: string | null;
-  type: ComicBookType;
-  comicbooktitlerelId: string;
-}
+import { findDuplicateIssue, allowsDuplicate, duplicateResult } from '../services/duplicates';
 
 // Frontend request interface (accepts strings from forms)
-interface ComicBookCreateRequest {
+export type ComicBookCreateRequest = {
   title: string;
   comicIssue: string;
   author?: string;
@@ -88,10 +20,12 @@ interface ComicBookCreateRequest {
   comicBookCover?: string;
   type: ComicBookType;
   titleID: string;
-}
+  /** The user confirmed saving a second copy */
+  allowDuplicate?: boolean;
+};
 
 // Frontend update request interface
-interface ComicBookUpdateRequest {
+type ComicBookUpdateRequest = {
   title?: string;
   comicIssue?: string;
   author?: string;
@@ -103,17 +37,9 @@ interface ComicBookUpdateRequest {
   comicBookCover?: string;
   type?: ComicBookType;
   comicbooktitlerelId?: string;
-}
-
-// API response interface
-interface ApiResponse<T = ComicBookAttributes | ComicBookAttributes[]> {
-  success: boolean;
-  data?: T;
-  count?: number;
-  message?: string;
-  error?: string;
-  errors?: string[];
-}
+  /** The user confirmed saving a second copy */
+  allowDuplicate?: boolean;
+};
 
 // Validation result interface
 interface ValidationResult {
@@ -121,18 +47,8 @@ interface ValidationResult {
   message?: string;
 }
 
-// Sequelize error interface
-interface SequelizeError {
-  errors: Array<{ message: string }>;
-}
-
 // HELPERS
-const ComicBooks = db.ComicBooks as ComicBookModel;
-
-// Type guard for Sequelize errors
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
+const ComicBooks = db.ComicBooks;
 
 // UUID validation
 const isValidUUID = (value: string): boolean => {
@@ -151,28 +67,15 @@ const isValidComicBookType = (type: string): type is ComicBookType => {
   return type === 'regular' || type === 'variant';
 };
 
-// Centralized error handler
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  const errors: string[] = isSequelizeError(error)
-    ? error.errors.map(err => err.message)
-    : [error.message];
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
+// Centralized error reply. A catch can receive anything, so turn it into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 // Parameter validation
 const validateParams = (
-  params: Record<string, string>,
+  params: Partial<Record<string, string | number | boolean | Date | null>>,
   requiredFields: string[]
 ): ValidationResult => {
   const missing = requiredFields.filter(field => !params[field]);
@@ -225,8 +128,8 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
 // Get all comic books for a specific title
 export const getComicBooks = async (
   req: Request<{ coboTitleId: string }>,
-  res: Response<ApiResponse<ComicBookAttributes[]>>
-): Promise<Response> => {
+  res: Response<ComicBooksResult>
+): Promise<Response<ComicBooksResult>> => {
   const { coboTitleId } = req.params;
   
   console.log('GET /comicbook/titles/:coboTitleId');
@@ -264,15 +167,15 @@ export const getComicBooks = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getComicBooks');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getComicBooks'));
   }
 };
 
 // Get all regular comic books
 export const getComicBookRegular = async (
   _req: Request,
-  res: Response<ApiResponse<ComicBookAttributes[]>>
-): Promise<Response> => {
+  res: Response<ComicBooksResult>
+): Promise<Response<ComicBooksResult>> => {
   console.log('GET /comicbook/regular');
   
   try {
@@ -291,15 +194,15 @@ export const getComicBookRegular = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getComicBookRegular');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getComicBookRegular'));
   }
 };
 
 // Get all variant comic books
 export const getComicBookVariant = async (
   _req: Request,
-  res: Response<ApiResponse<ComicBookAttributes[]>>
-): Promise<Response> => {
+  res: Response<ComicBooksResult>
+): Promise<Response<ComicBooksResult>> => {
   console.log('GET /comicbook/variant');
   
   try {
@@ -318,15 +221,15 @@ export const getComicBookVariant = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getComicBookVariant');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getComicBookVariant'));
   }
 };
 
 // Get one comic book by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<ComicBookAttributes>>
-): Promise<Response> => {
+  res: Response<ComicBookResult>
+): Promise<Response<ComicBookResult>> => {
   const { id } = req.params;
   
   console.log('GET /comicbook/:id');
@@ -366,15 +269,15 @@ export const getOneById = async (
       data: comicbook.toJSON()
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getOneById');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getOneById'));
   }
 };
 
 // Create a new comic book
 export const createComicBook = async (
-  req: Request<Record<string, never>, Record<string, never>, ComicBookCreateRequest>,
-  res: Response<ApiResponse<ComicBookAttributes>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, ComicBookResult, ComicBookCreateRequest>,
+  res: Response<ComicBookResult>
+): Promise<Response<ComicBookResult>> => {
   console.log('POST /comicbook');
   console.log('Body:', req.body);
   
@@ -397,7 +300,7 @@ export const createComicBook = async (
   
   // Validate required fields
   const validation = validateParams(
-    { title, comicIssue, type, titleID } as Record<string, string>, 
+    { title, comicIssue, type, titleID }, 
     ['title', 'comicIssue', 'type', 'titleID']
   );
   if (!validation.isValid) {
@@ -505,7 +408,7 @@ export const createComicBook = async (
     // A second copy of an issue is allowed, but only after the user confirms it
     if (!allowsDuplicate(req.body)) {
       const duplicate = await findDuplicateIssue(comicbooktitlerelId, { comicIssue, volume, type });
-      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+      if (duplicate) return res.status(409).json(duplicateResult(duplicate));
     }
 
     const newComicBook = await ComicBooks.create({
@@ -576,15 +479,15 @@ export const createComicBook = async (
     });
   } catch (error) {
     console.log('ERROR IN CREATE:', error);
-    return handleError(res, error as Error, 400, 'createComicBook');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'createComicBook'));
   }
 };
 
 // Update an existing comic book
 export const updateComicBook = async (
-  req: Request<{ id: string }, Record<string, never>, ComicBookUpdateRequest>,
-  res: Response<ApiResponse<ComicBookAttributes>>
-): Promise<Response> => {
+  req: Request<{ id: string }, ComicBookResult, ComicBookUpdateRequest>,
+  res: Response<ComicBookResult>
+): Promise<Response<ComicBookResult>> => {
   const { id } = req.params;
   
   console.log('PUT /comicbook/:id');
@@ -643,22 +546,23 @@ export const updateComicBook = async (
   }
   
   // Build properly typed update data
-  const updateData: Partial<ComicBookAttributes> = {};
+  const updateData: Partial<ComicBookCreationAttributes> = {};
   
   // Handle string fields
-  const stringFields: Array<keyof ComicBookUpdateRequest> = [
-    'title', 'comicIssue', 'author', 'penciler', 'coverartist', 'inker', 'volume', 'comicBookCover'
-  ];
-  
-  stringFields.forEach(field => {
+  // A blank title can't be saved (the column is required); other blank fields are cleared
+  if (typeof req.body.title === 'string' && !req.body.title.trim()) {
+    return res.status(400).json({ success: false, error: 'Title cannot be empty' });
+  }
+
+  const optionalFields = ['comicIssue', 'author', 'penciler', 'coverartist', 'inker', 'volume', 'comicBookCover'] as const;
+
+  if (typeof req.body.title === 'string') {
+    updateData.title = req.body.title.trim();
+  }
+  optionalFields.forEach(field => {
     const value = req.body[field];
-    if (value !== undefined && typeof value === 'string') {
-      const trimmed = value.trim();
-      if (trimmed.length > 0) {
-        (updateData as Record<string, string>)[field] = trimmed;
-      } else {
-        (updateData as Record<string, null>)[field] = null;
-      }
+    if (typeof value === 'string') {
+      updateData[field] = value.trim() || null;
     }
   });
   
@@ -694,7 +598,7 @@ export const updateComicBook = async (
       const duplicate = merged.comicbooktitlerelId
         ? await findDuplicateIssue(merged.comicbooktitlerelId, merged, id)
         : null;
-      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+      if (duplicate) return res.status(409).json(duplicateResult(duplicate));
     }
 
     const [rowsUpdated, updatedRecords] = await ComicBooks.update(
@@ -713,7 +617,7 @@ export const updateComicBook = async (
       });
     }
     
-    let updatedComicBook: ComicBookAttributes;
+    let updatedComicBook: ComicBookJson;
     
     if (updatedRecords && updatedRecords.length > 0) {
       updatedComicBook = updatedRecords[0].toJSON();
@@ -740,15 +644,15 @@ export const updateComicBook = async (
     });
   } catch (error) {
     console.log('ERROR IN UPDATE:', error);
-    return handleError(res, error as Error, 400, 'updateComicBook');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'updateComicBook'));
   }
 };
 
 // Delete a comic book
 export const removeComicBook = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  res: Response<ApiResult>
+): Promise<Response<ApiResult>> => {
   const { id } = req.params;
   
   console.log('DELETE /comicbook/:id');
@@ -799,6 +703,6 @@ export const removeComicBook = async (
       message: 'Comic book deleted successfully' 
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'removeComicBook');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'removeComicBook'));
   }
 };

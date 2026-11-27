@@ -1,18 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import debug from 'debug';
-
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
+import { verifySessionToken } from './tokens';
 const log = debug('api:auth');
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-interface JwtPayload {
-  id: string;
-  iat?: number;
-  exp?: number;
-}
 
 interface AuthErrorResponse {
   loggedIn: false;
@@ -35,18 +25,10 @@ declare global {
   }
 }
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
 const ENV = {
   jwtSecret: process.env.JWT_SECRET || '',
   nodeEnv: process.env.NODE_ENV || 'development',
 };
-
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
 
 const validateJwtSecret = (): StringValidationResult => {
   if (!ENV.jwtSecret) {
@@ -110,14 +92,7 @@ const verifyToken = (
   secret: string
 ): StringValidationResult => {
   try {
-    const decoded = jwt.verify(token, secret) as JwtPayload;
-
-    if (!decoded.id) {
-      return {
-        isValid: false,
-        error: 'Invalid token payload'
-      };
-    }
+    const decoded = verifySessionToken(token, secret);
 
     return {
       isValid: true,
@@ -161,9 +136,9 @@ const buildAuthErrorResponse = (error: string): AuthErrorResponse => ({
 
 const protectedRoute = (
   req: Request,
-  res: Response,
+  res: Response<AuthErrorResponse>,
   next: NextFunction
-): Response | void => {
+): Response<AuthErrorResponse> | void => {
   try {
     // Validate JWT secret configuration
     const secretValidation = validateJwtSecret();
@@ -214,9 +189,5 @@ const protectedRoute = (
     );
   }
 };
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default protectedRoute;

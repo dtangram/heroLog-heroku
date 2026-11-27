@@ -1,20 +1,21 @@
 import { Response, NextFunction } from 'express';
 import db from '../models';
 import { AuthRequest } from './auth';
+import type { ApiResult } from '../types/api';
 
 /**
  * Ownership checks for sale listings. Use after authenticateToken, which
  * puts the signed-in user's id on req.user.
  */
 
-const getSaleListModel = () => (db as any).SaleLists || (db as any).SaleList;
+const getSaleListModel = () => db.SaleLists;
 
 /**
  * POST /salelist: a new listing always belongs to the signed-in user.
  * Rejects a request that tries to list a comic under someone else's account.
  * Runs before validation, so saleUsersId is always present.
  */
-export const assignSaleListOwner = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const assignSaleListOwner = (req: AuthRequest, res: Response<ApiResult>, next: NextFunction): void => {
   const userId = req.user?.id;
 
   if (!userId) {
@@ -38,7 +39,7 @@ export const assignSaleListOwner = (req: AuthRequest, res: Response, next: NextF
  */
 export const requireSaleListOwner = async (
   req: AuthRequest,
-  res: Response,
+  res: Response<ApiResult>,
   next: NextFunction
 ): Promise<void> => {
   const userId = req.user?.id;
@@ -64,7 +65,7 @@ export const requireSaleListOwner = async (
     }
 
     // Ownership never changes through an update
-    if (req.body && typeof req.body === 'object') {
+    if (req.body) {
       delete req.body.saleUsersId;
     }
 

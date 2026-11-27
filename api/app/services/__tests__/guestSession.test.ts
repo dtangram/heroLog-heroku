@@ -1,12 +1,22 @@
 /// <reference types="jest" />
 import jwt from 'jsonwebtoken';
 
-const query = jest.fn();
-const transaction = jest.fn(async (fn: any) => fn('tx'));
+import { QueryTypes } from 'sequelize';
+
+const mockQuery = jest.fn();
+/** Runs the work straight away, as if inside a transaction */
+const mockTransaction = jest.fn(async (work: (transaction: string) => Promise<object>) => work('tx'));
 jest.mock('../../models', () => ({
   __esModule: true,
-  default: { sequelize: { query: (...args: any[]) => query(...args), transaction: (fn: any) => transaction(fn) } },
+  default: { sequelize: { query: mockQuery, transaction: mockTransaction } },
 }));
+
+const query = mockQuery;
+
+interface QueryOptions {
+  replacements?: { id?: string };
+  type?: QueryTypes;
+}
 
 import { claimGuestCollection, readGuestToken, startGuestSession } from '../guestSession';
 
@@ -22,15 +32,17 @@ beforeEach(() => query.mockReset());
 
 /** Simulates the database: which ids are accounts, which are already handed out */
 const database = ({ accounts = [] as string[], reserved = [] as string[] } = {}) =>
-  query.mockImplementation(async (sql: string, options: any) => {
-    const id = options?.replacements?.id;
+  query.mockImplementation(async (sql: string, options?: QueryOptions) => {
+    const id = options?.replacements?.id ?? '';
     if (sql.includes('FROM "Users"')) return accounts.includes(id) ? [{ 1: 1 }] : [];
     if (sql.includes('INSERT INTO "GuestSessions"')) {
       if (reserved.includes(id)) return [];
       reserved.push(id);
       return [{ id }];
     }
-    return [[], { rowCount: 2 }];
+    // A BULKDELETE or BULKUPDATE query answers with how many rows it changed
+    if (options?.type === QueryTypes.BULKDELETE || options?.type === QueryTypes.BULKUPDATE) return 2;
+    return [[], 0];
   });
 
 describe('startGuestSession', () => {

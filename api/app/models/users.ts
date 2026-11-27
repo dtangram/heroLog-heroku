@@ -1,22 +1,39 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from 'sequelize';
+import { Sequelize, DataTypes, Model, ModelStatic, Optional } from 'sequelize';
+import type { Models } from '.';
 
-// Type for the models object passed to associate
-interface Models {
-  CollectionPublishers?: ModelStatic<Model>;
-  SaleLists?: ModelStatic<Model>;
-  Messagings?: ModelStatic<Model>;
-  WishLists?: ModelStatic<Model>;
-  [key: string]: ModelStatic<Model> | undefined;
+export type UserType = 'regular' | 'fixer';
+
+export interface UserAttributes {
+  id: string;
+  username: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  accesstoken: string | null;
+  password: string | null;
+  profilePic: string | null;
+  type: UserType;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Extended model type that includes the associate method
-interface UsersModel extends ModelStatic<Model> {
+export type UserCreationAttributes = Optional<
+  UserAttributes,
+  'id' | 'accesstoken' | 'password' | 'profilePic' | 'type' | 'createdAt' | 'updatedAt'
+>;
+
+/** A saved row as the API sends it */
+export type UserJson = UserAttributes;
+
+export interface UserInstance extends Model<UserAttributes, UserCreationAttributes>, UserAttributes {}
+
+export interface UsersModel extends ModelStatic<UserInstance> {
   associate: (models: Models) => void;
 }
 
 // The actual model factory function - direct TypeScript conversion
 const createUsersModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): UsersModel => {
-  const Users = sequelize.define('Users', {
+  const Users = sequelize.define<UserInstance>('Users', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
@@ -79,9 +96,18 @@ const createUsersModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): Us
         },
       },
     },
-  }, {}) as UsersModel;
+    // Sequelize sets these itself; they're listed so their types are known
+    createdAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+  }, {});
   
-  Users.associate = (models: Models) => {
+  const associate = (models: Models): void => {
     if (models.CollectionPublishers) {
       Users.hasMany(models.CollectionPublishers, { 
         foreignKey: 'collectpubUsersId' 
@@ -104,7 +130,7 @@ const createUsersModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): Us
     }
   };
   
-  return Users;
+  return Object.assign(Users, { associate });
 };
 
-export = createUsersModel;
+export default createUsersModel;

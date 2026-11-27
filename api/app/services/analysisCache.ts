@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { CollectionFacts } from './collectionFacts';
+import db from '../models';
 import {
   ANALYSIS_MODEL,
   ANALYSIS_VERSION,
@@ -8,14 +9,24 @@ import {
 } from './collectionAnalysis';
 
 /** The subset of the CollectionAnalyses model this module uses (easy to mock). */
-export interface AnalysisStore {
-  findOne: (options: { where: { analysisUsersId: string } }) => Promise<any>;
-  upsert: (values: {
-    analysisUsersId: string;
-    factsHash: string;
-    analysis: CollectionAnalysis;
-  }) => Promise<unknown>;
+export interface SavedAnalysis {
+  analysisUsersId: string;
+  factsHash: string;
+  analysis: CollectionAnalysis;
 }
+
+export interface AnalysisStore {
+  findOne: (options: { where: { analysisUsersId: string } }) => Promise<SavedAnalysis | null>;
+  upsert: (values: SavedAnalysis) => Promise<void>;
+}
+
+/** The CollectionAnalyses table as an AnalysisStore */
+export const databaseAnalysisStore: AnalysisStore = {
+  findOne: options => db.CollectionAnalyses.findOne(options),
+  upsert: async values => {
+    await db.CollectionAnalyses.upsert(values);
+  },
+};
 
 /**
  * Identifies a collection as the AI sees it. Changes when the collector adds,
@@ -37,8 +48,7 @@ export const getSavedAnalysis = async (
   factsHash: string
 ): Promise<CollectionAnalysis | null> => {
   try {
-    const row = await store.findOne({ where: { analysisUsersId: userId } });
-    const saved = row?.get ? row.get({ plain: true }) : row;
+    const saved = await store.findOne({ where: { analysisUsersId: userId } });
     return saved && saved.factsHash === factsHash ? saved.analysis : null;
   } catch (error) {
     // A cache problem should never break the page; just ask Claude instead

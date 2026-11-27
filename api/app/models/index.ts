@@ -1,16 +1,30 @@
-import fs from 'fs';
-import path from 'path';
 import { Sequelize, DataTypes } from 'sequelize';
+import createUsersModel, { UsersModel } from './users';
+import createCollectionPublishersModel, { CollectionPublishersModel } from './collectionpublishers';
+import createComicBookTitlesModel, { ComicBookTitlesModel } from './comicbooktitles';
+import createComicBooksModel, { ComicBooksModel } from './comicbooks';
+import createSaleListsModel, { SaleListsModel } from './salelists';
+import createWishListsModel, { WishListsModel } from './wishlists';
+import createMessagingsModel, { MessagingsModel } from './messagings';
+import createCollectionAnalysesModel, { CollectionAnalysesModel } from './collectionanalyses';
 
-const basename = path.basename(__filename);
+/** Every model, by name; passed to each model's associate() */
+export interface Models {
+  Users: UsersModel;
+  CollectionPublishers: CollectionPublishersModel;
+  ComicBookTitles: ComicBookTitlesModel;
+  ComicBooks: ComicBooksModel;
+  SaleLists: SaleListsModel;
+  WishLists: WishListsModel;
+  Messagings: MessagingsModel;
+  CollectionAnalyses: CollectionAnalysesModel;
+}
 
-interface DbInterface {
-  [key: string]: any;
+export interface Db extends Models {
   sequelize: Sequelize;
   Sequelize: typeof Sequelize;
 }
 
-const db: DbInterface = {} as DbInterface;
 let sequelize: Sequelize;
 
 console.log('🔧 Initializing Sequelize...');
@@ -45,55 +59,30 @@ if (process.env.DATABASE_URL) {
   });
 }
 
-console.log('📂 Loading models from:', __dirname);
-console.log('📄 Basename:', basename);
-
-// Load all models
-const files = fs.readdirSync(__dirname);
-console.log('📋 Files in models directory:', files);
-
-files
-  .filter(file => {
-    const isNotIndex = file !== basename;
-    const isNotDeclaration = !file.endsWith('.d.ts');
-    const isJsOrTs = file.slice(-3) === '.js' || file.slice(-3) === '.ts';
-    const isNotHidden = file.indexOf('.') !== 0;
-    
-    return isNotHidden && isNotIndex && isNotDeclaration && isJsOrTs;
-  })
-  .forEach((file) => {
-    try {
-      console.log(`🔄 Loading model from file: ${file}`); // ✅ Fixed
-      const modelPath = path.join(__dirname, file);
-      const modelModule = require(modelPath);
-      const modelFactory = modelModule.default || modelModule;
-      
-      if (typeof modelFactory !== 'function') {
-        console.error(`❌ ${file} does not export a function`); // ✅ Fixed
-        return;
-      }
-      
-      const initializedModel = modelFactory(sequelize, DataTypes);
-      db[initializedModel.name] = initializedModel;
-      console.log(`✅ Loaded model: ${initializedModel.name}`); // ✅ Fixed
-    } catch (error) {
-      console.error(`❌ Error loading model from ${file}:`, error); // ✅ Fixed
-    }
-  });
+// Each model is listed here so its exact type is known everywhere it's used.
+// To add a model, import its factory above and add it to Models and below.
+const models: Models = {
+  Users: createUsersModel(sequelize, DataTypes),
+  CollectionPublishers: createCollectionPublishersModel(sequelize, DataTypes),
+  ComicBookTitles: createComicBookTitlesModel(sequelize, DataTypes),
+  ComicBooks: createComicBooksModel(sequelize, DataTypes),
+  SaleLists: createSaleListsModel(sequelize, DataTypes),
+  WishLists: createWishListsModel(sequelize, DataTypes),
+  Messagings: createMessagingsModel(sequelize, DataTypes),
+  CollectionAnalyses: createCollectionAnalysesModel(sequelize, DataTypes),
+};
 
 // Set up associations
-console.log('🔗 Setting up associations...');
-Object.keys(db).forEach((modelName) => {
-  if (db[modelName].associate) {
-    console.log(`🔗 Setting up associations for: ${modelName}`); // ✅ Fixed
-    db[modelName].associate(db);
-  }
-});
+models.Users.associate(models);
+models.CollectionPublishers.associate(models);
+models.ComicBookTitles.associate(models);
+models.ComicBooks.associate(models);
+models.SaleLists.associate(models);
+models.WishLists.associate(models);
+models.Messagings.associate(models);
 
-const modelNames = Object.keys(db).filter(k => k !== 'sequelize' && k !== 'Sequelize');
-console.log(`📦 Total models loaded: ${modelNames.length}`, modelNames); // ✅ Fixed
+const db: Db = { ...models, sequelize, Sequelize };
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+console.log(`📦 Total models loaded: ${Object.keys(models).length}`, Object.keys(models));
 
 export default db;

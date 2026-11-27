@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { z } from 'zod';
 import { CoverQuery, CoverSource } from './types';
 
 /**
@@ -19,11 +20,20 @@ const API_URL = 'https://comicvine.gamespot.com/api/issues/';
 const TIMEOUT_MS = 8000;
 
 interface ComicVineIssue {
-  issue_number?: string;
+  issue_number?: string | null;
   cover_date?: string | null;
-  image?: { medium_url?: string; original_url?: string } | null;
-  volume?: { name?: string } | null;
+  image?: { medium_url?: string | null; original_url?: string | null } | null;
+  volume?: { name?: string | null } | null;
 }
+
+/** The part of Comic Vine's reply Hero-Log reads; anything else in it is ignored */
+const issueSchema = z.object({
+  issue_number: z.string().nullish(),
+  cover_date: z.string().nullish(),
+  image: z.object({ medium_url: z.string().nullish(), original_url: z.string().nullish() }).nullish(),
+  volume: z.object({ name: z.string().nullish() }).nullish(),
+});
+const replySchema = z.object({ results: z.array(issueSchema).catch([]) });
 
 /** A series name in one form: "The Amazing Spider-Man" and "amazing spider-man" match */
 export const normalizeSeries = (name: string): string =>
@@ -80,7 +90,8 @@ const find = async (query: CoverQuery): Promise<string | null> => {
       timeout: TIMEOUT_MS,
     });
 
-    const results: ComicVineIssue[] = response.data?.results ?? [];
+    const reply = replySchema.safeParse(response.data);
+    const results: ComicVineIssue[] = reply.success ? reply.data.results : [];
     const cover = pickCover(results, query);
 
     if (!cover) {
@@ -98,7 +109,9 @@ const find = async (query: CoverQuery): Promise<string | null> => {
     return cover;
   } catch (error) {
     // The API key is in the request URL, so log only the status, never the request
-    const status = (error as any)?.response?.status ?? (error as Error).message;
+    const status = axios.isAxiosError(error)
+      ? error.response?.status ?? error.message
+      : error instanceof Error ? error.message : String(error);
     console.warn(`Comic Vine cover lookup failed for ${query.series} #${issue}: ${status}`);
     return null;
   }

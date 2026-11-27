@@ -10,6 +10,8 @@ import { randomUUID } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { QueryTypes, Transaction } from 'sequelize';
 import db from '../models';
+import type { JsonValue } from '../types/json';
+import { verifySessionToken } from '../utils/tokens';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -55,7 +57,7 @@ const isAccountId = async (id: string): Promise<boolean> => {
  * anonymous ID their browser already has, and keeps their collection if
  * that ID hasn't been handed out yet. Anyone else gets a new, empty one.
  */
-export const startGuestSession = async (requestedId?: unknown): Promise<GuestSession> => {
+export const startGuestSession = async (requestedId?: JsonValue): Promise<GuestSession> => {
   if (typeof requestedId === 'string' && UUID.test(requestedId)) {
     const id = requestedId.toLowerCase();
     if (!(await isAccountId(id)) && (await reserve(id))) {
@@ -69,11 +71,11 @@ export const startGuestSession = async (requestedId?: unknown): Promise<GuestSes
 };
 
 /** The guest id from a guest token, or null if it isn't a valid one. */
-export const readGuestToken = (token: unknown): string | null => {
+export const readGuestToken = (token: JsonValue | undefined): string | null => {
   if (typeof token !== 'string' || !token) return null;
   try {
-    const payload = jwt.verify(token, secret()) as { id?: string; guest?: boolean };
-    return payload?.guest && payload.id && UUID.test(payload.id) ? payload.id : null;
+    const payload = verifySessionToken(token, secret());
+    return payload.guest && UUID.test(payload.id) ? payload.id : null;
   } catch {
     return null;
   }
@@ -135,7 +137,7 @@ export type MoveEmbeddings = (fromId: string, toId: string) => Promise<void>;
  */
 export const claimGuestCollection = async (
   userId: string,
-  guestToken: unknown,
+  guestToken: JsonValue | undefined,
   moveEmbeddings?: MoveEmbeddings
 ): Promise<ClaimResult | null> => {
   const guestId = readGuestToken(guestToken);
@@ -149,16 +151,17 @@ export const claimGuestCollection = async (
     }
 
     // 4. The matching guest publishers are now empty
-    const [, merged] = await db.sequelize.query(
+    // BULKDELETE and BULKUPDATE queries return how many rows they changed
+    const merged = await db.sequelize.query(
       `DELETE FROM "CollectionPublishers" WHERE id IN (SELECT guest_pub FROM (${PUBLISHER_PAIRS}) pp)`,
-      options
+      { ...options, type: QueryTypes.BULKDELETE }
     );
 
     // 5. Publishers the account didn't have move over whole
-    const [, moved] = await db.sequelize.query(
+    const moved = await db.sequelize.query(
       `UPDATE "CollectionPublishers" SET "collectpubUsersId" = :userId, "updatedAt" = NOW()
         WHERE "collectpubUsersId" = :guestId`,
-      options
+      { ...options, type: QueryTypes.BULKUPDATE }
     );
 
     // Both collections changed, so their saved Intel analyses are out of date
@@ -172,8 +175,7 @@ export const claimGuestCollection = async (
       transaction,
     });
 
-    const rowCount = (result: unknown) => Number((result as any)?.rowCount ?? result ?? 0);
-    return { publishersMoved: rowCount(moved), publishersMerged: rowCount(merged) };
+    return { publishersMoved: moved, publishersMerged: merged };
   });
 
   if (moveEmbeddings) {

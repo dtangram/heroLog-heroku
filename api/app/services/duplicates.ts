@@ -1,15 +1,6 @@
-import type { Response } from 'express';
 import db from '../models';
-
-/**
- * Finds a publisher, title or issue the user already has, so a save can warn
- * before adding a second one.
- *
- * - Publishers and titles: a second one with the same name is never wanted,
- *   so the save is refused ("DC" and "DC Comics" count as the same publisher).
- * - Issues: some collectors keep a second copy on purpose, so the save is
- *   refused only until the user confirms with `allowDuplicate: true`.
- */
+import type { ApiResult } from '../types/api';
+import type { JsonValue } from '../types/json';
 
 export type DuplicateKind = 'publisher' | 'title' | 'issue';
 
@@ -28,7 +19,10 @@ export interface DuplicateMatch {
 const PUBLISHER_SUFFIXES = /\b(comics?|publishing|publications|entertainment|press|group|inc|llc|ltd|co)\b/g;
 
 /** Lower case, no punctuation, single spaces: "  Detective  Comics. " -> "detective comics" */
-export const normalizeName = (value: unknown): string =>
+/** Text, numbers or nothing: what names, issue numbers and volumes arrive as */
+export type MatchValue = string | number | null | undefined;
+
+export const normalizeName = (value: MatchValue): string =>
   String(value ?? '')
     .toLowerCase()
     .replace(/&/g, ' and ')
@@ -37,7 +31,7 @@ export const normalizeName = (value: unknown): string =>
     .trim();
 
 /** "DC", "DC Comics" and "D.C. Comics, Inc." all become "d c" or "dc"; compare with spaces removed. */
-export const normalizePublisher = (value: unknown): string => {
+export const normalizePublisher = (value: MatchValue): string => {
   const name = normalizeName(value);
   const core = name.replace(PUBLISHER_SUFFIXES, ' ').replace(/\s+/g, '');
   // A publisher called just "Comics" keeps its name
@@ -45,12 +39,12 @@ export const normalizePublisher = (value: unknown): string => {
 };
 
 /** "#0659", "659" and " 659 " are the same issue number. */
-export const normalizeIssue = (value: unknown): string => {
+export const normalizeIssue = (value: MatchValue): string => {
   const text = String(value ?? '').trim().replace(/^#/, '').toLowerCase();
   return /^\d+$/.test(text) ? String(Number(text)) : text;
 };
 
-const sameOptional = (a: unknown, b: unknown) => {
+const sameOptional = (a: MatchValue, b: MatchValue) => {
   const left = normalizeName(a);
   const right = normalizeName(b);
   // A blank volume matches any volume, so "#659" and "#659 vol 1" still match
@@ -59,7 +53,14 @@ const sameOptional = (a: unknown, b: unknown) => {
 
 interface PublisherRow { id: string; publisherName: string }
 interface TitleRow { id: string; cbTitle: string }
-interface IssueRow { id: string; title: string; comicIssue: string | number; volume?: string | null; type?: string | null }
+/** What makes two issues the same: number, volume and cover type */
+export interface IssueIdentity {
+  comicIssue?: MatchValue;
+  volume?: MatchValue;
+  type?: string | null;
+}
+
+interface IssueRow { id: string; title: string; comicIssue: MatchValue; volume?: MatchValue; type?: string | null }
 
 /** Pure matchers, so the rules can be tested without a database. */
 export const matchPublisher = (rows: PublisherRow[], name: string, excludeId?: string): DuplicateMatch | null => {
@@ -76,7 +77,7 @@ export const matchTitle = (rows: TitleRow[], name: string, excludeId?: string): 
 
 export const matchIssue = (
   rows: IssueRow[],
-  issue: { comicIssue?: unknown; volume?: unknown; type?: unknown },
+  issue: IssueIdentity,
   excludeId?: string
 ): DuplicateMatch | null => {
   const wanted = normalizeIssue(issue.comicIssue);
@@ -109,43 +110,46 @@ export const duplicateMessage = (match: DuplicateMatch): string => {
 // Database lookups. Each reads only the user's own rows for one parent, so they stay small.
 
 export const findDuplicatePublisher = async (userId: string, name: string, excludeId?: string) => {
-  const rows = (await db.CollectionPublishers.findAll({
+  const rows = await db.CollectionPublishers.findAll({
     where: { collectpubUsersId: userId },
     attributes: ['id', 'publisherName'],
     raw: true,
-  })) as PublisherRow[];
+  });
   return matchPublisher(rows, name, excludeId);
 };
 
 export const findDuplicateTitle = async (publisherId: string, name: string, excludeId?: string) => {
-  const rows = (await db.ComicBookTitles.findAll({
+  const rows = await db.ComicBookTitles.findAll({
     where: { collectpubId: publisherId },
     attributes: ['id', 'cbTitle'],
     raw: true,
-  })) as TitleRow[];
+  });
   return matchTitle(rows, name, excludeId);
 };
 
 export const findDuplicateIssue = async (
   titleId: string,
-  issue: { comicIssue?: unknown; volume?: unknown; type?: unknown },
+  issue: IssueIdentity,
   excludeId?: string
 ) => {
   const wanted = normalizeIssue(issue.comicIssue);
   if (!wanted) return null;
-  const rows = (await db.ComicBooks.findAll({
+  const rows = await db.ComicBooks.findAll({
     // One title's issues: a few hundred rows at most, and this catches "#0659" as well as "659"
     where: { comicbooktitlerelId: titleId },
     attributes: ['id', 'title', 'comicIssue', 'volume', 'type'],
     raw: true,
-  })) as IssueRow[];
+  });
   return matchIssue(rows, issue, excludeId);
 };
 
 /** True when the request says the user has already confirmed saving a second copy. */
-export const allowsDuplicate = (body: unknown): boolean =>
-  Boolean(body && typeof body === 'object' && (body as { allowDuplicate?: unknown }).allowDuplicate === true);
+export const allowsDuplicate = (body: { allowDuplicate?: JsonValue } | undefined): boolean =>
+  body?.allowDuplicate === true;
 
-/** Refuse the save with 409 and say what already exists. */
-export const sendDuplicate = (res: Response, match: DuplicateMatch): Response =>
-  res.status(409).json({ success: false, error: duplicateMessage(match), duplicate: match });
+/** The 409 reply that refuses the save and says what already exists. */
+export const duplicateResult = (match: DuplicateMatch): ApiResult => ({
+  success: false,
+  error: duplicateMessage(match),
+  duplicate: match,
+});

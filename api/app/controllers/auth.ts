@@ -2,61 +2,28 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
-import { Model, ModelStatic } from 'sequelize';
 import db from '../models';
+import type { UsersModel } from '../models/users';
 
 /**
- * Interface for user attributes
+ * The Users model
  */
-interface UserAttributes {
-  id: string;
-  username?: string;
-  email: string;
-  password?: string;
-  name?: string;
-  googleId?: string;
-  profilePicture?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-/**
- * Interface for User model instance
- */
-interface UserInstance extends Model<UserAttributes>, UserAttributes {}
-
-/**
- * Type for User model
- */
-type UserModel = ModelStatic<UserInstance>;
-
-/**
- * Get User model with fallback
- */
-const getUserModel = (): UserModel => {
-  const model = (db as any).Users || (db as any).User;
-  
-  if (!model) {
-    throw new Error('User model not found in database models');
-  }
-  
-  return model;
-};
+const getUserModel = (): UsersModel => db.Users;
 
 /**
  * Interface for login request body
  */
-interface LoginRequestBody {
+type LoginRequestBody = {
   username: string;
   password: string;
-}
+};
 
 /**
  * Interface for Google login request body
  */
-interface GoogleLoginRequestBody {
+type GoogleLoginRequestBody = {
   credential: string;
-}
+};
 
 /**
  * Interface for JWT payload
@@ -161,7 +128,7 @@ const validateString = (
 export const login = async (
   req: Request<Record<string, never>, LoginResponse | ErrorResponse, LoginRequestBody>,
   res: Response<LoginResponse | ErrorResponse>
-): Promise<Response> => {
+): Promise<Response<LoginResponse | ErrorResponse>> => {
   const { username, password } = req.body;
 
   try {
@@ -239,7 +206,7 @@ export const login = async (
 export const googleLogin = async (
   req: Request<Record<string, never>, LoginResponse | ErrorResponse, GoogleLoginRequestBody>,
   res: Response<LoginResponse | ErrorResponse>
-): Promise<Response> => {
+): Promise<Response<LoginResponse | ErrorResponse>> => {
   const { credential } = req.body;
 
   try {
@@ -283,7 +250,8 @@ export const googleLogin = async (
     }
 
     // Extract user information
-    const { email, name, picture, sub: googleId } = googleUser;
+    // The Users table has no Google ID, name or picture columns, so only the email is used
+    const { email } = googleUser;
 
     // Validate email exists
     if (!email) {
@@ -295,7 +263,7 @@ export const googleLogin = async (
     console.log('📚 User model loaded successfully');
 
     // Find user by email (case-insensitive)
-    let user = await Users.findOne({ 
+    const user = await Users.findOne({ 
       where: { email: email.toLowerCase() } 
     });
     
@@ -308,33 +276,6 @@ export const googleLogin = async (
     }
 
     console.log('User found:', user.id);
-
-    // Update user's Google information if it has changed
-    const updates: Partial<UserAttributes> = {};
-    
-    if (user.googleId !== googleId) {
-      updates.googleId = googleId;
-    }
-    
-    if (name && user.name !== name) {
-      updates.name = name;
-    }
-    
-    if (picture && user.profilePicture !== picture) {
-      updates.profilePicture = picture;
-    }
-    
-    // Only update if there are changes
-    if (Object.keys(updates).length > 0) {
-      try {
-        await user.update(updates);
-        console.log('Updated user Google info');
-      } catch (updateError) {
-        const errMsg = updateError instanceof Error ? updateError.message : 'Unknown error';
-        console.error('Failed to update user Google info:', errMsg);
-        // Continue anyway - not critical
-      }
-    }
 
     // Validate JWT secret
     const secret = validateJwtSecret();
@@ -358,10 +299,6 @@ export const googleLogin = async (
       email: user.email,
     };
 
-    if (user.name) {
-      response.name = user.name;
-    }
-
     return res.status(200).json(response);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -376,7 +313,7 @@ export const googleLogin = async (
 export const logout = async (
   _req: Request,
   res: Response<LogoutResponse | ErrorResponse>
-): Promise<Response> => {
+): Promise<Response<LogoutResponse | ErrorResponse>> => {
   try {
     // In a stateless JWT system, logout is typically handled client-side
     // by removing the token. However, you could implement token blacklisting here.

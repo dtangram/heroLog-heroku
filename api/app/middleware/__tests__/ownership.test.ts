@@ -1,25 +1,37 @@
 /// <reference types="jest" />
 import jwt from 'jsonwebtoken';
+import { Response } from 'express';
+import { createRequest, createResponse, RequestOptions } from 'node-mocks-http';
+import type { ApiResult } from '../../types/api';
+import type { SessionToken } from '../../utils/tokens';
 
-const query = jest.fn();
-jest.mock('../../models', () => ({ __esModule: true, default: { sequelize: { query: (...args: any[]) => query(...args) } } }));
+const mockQuery = jest.fn();
+jest.mock('../../models', () => ({ __esModule: true, default: { sequelize: { query: mockQuery } } }));
 
 import { ownsBodyField, ownsParam, ownsRecord, publisherOwner } from '../ownership';
-import { requireAccount, requireIdentity } from '../auth';
+import { AuthRequest, requireAccount, requireIdentity } from '../auth';
+
+const query = mockQuery;
 
 const SECRET = 'test-secret-that-is-long-enough-for-hero-log';
 const OWNER = '11111111-2222-4333-8444-555555555555';
 const OTHER = '99999999-2222-4333-8444-555555555555';
 const PUB = 'aaaaaaaa-2222-4333-8444-555555555555';
 
+/** A real Express reply that records what was sent */
 const res = () => {
-  const r: any = {};
-  r.status = jest.fn(() => r);
-  r.json = jest.fn(() => r);
+  const r = createResponse<Response<ApiResult>>();
+  jest.spyOn(r, 'status');
+  jest.spyOn(r, 'json');
   return r;
 };
 
-const reqWith = (fields: object) => ({ params: {}, body: {}, headers: {}, ...fields }) as any;
+/** A request with these parts; user is who the token says is asking */
+const reqWith = ({ user, ...fields }: RequestOptions & { user?: SessionToken }) => {
+  const req = createRequest<AuthRequest>({ params: {}, body: {}, headers: {}, ...fields });
+  req.user = user;
+  return req;
+};
 
 beforeAll(() => {
   process.env.JWT_SECRET = SECRET;
@@ -36,7 +48,7 @@ describe('requireIdentity and requireAccount', () => {
       [bearer({ id: OWNER, guest: true }), false, true],
       [{}, false, false],
       [{ authorization: `Bearer ${jwt.sign({ id: OWNER }, 'some-other-secret')}` }, false, false],
-    ] as Array<[object, boolean, boolean]>) {
+    ] as Array<[Record<string, string>, boolean, boolean]>) {
       const nextA = jest.fn();
       requireAccount(reqWith({ headers }), res(), nextA);
       expect(nextA.mock.calls.length > 0).toBe(account);

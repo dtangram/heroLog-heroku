@@ -92,7 +92,7 @@ describe('filler and overclaims', () => {
   const facts = buildCollectionFacts([
     { title: 'Detective Comics', comicIssue: '659', type: 'regular' },
     { title: 'Detective Comics', comicIssue: '660', type: 'regular' },
-  ] as any);
+  ]);
 
   const analysis = {
     summary: 'You own a complete run of Detective Comics.',

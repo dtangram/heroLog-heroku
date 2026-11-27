@@ -1,17 +1,14 @@
 /// <reference types="jest" />
 import { Request, Response } from 'express';
+import { createRequest, createResponse } from 'node-mocks-http';
+import type { ComicBookResult } from '../../types/api';
 
 const mockCreate = jest.fn();
 const mockFindAll = jest.fn().mockResolvedValue([]);
 
 jest.mock('../../models', () => ({
   __esModule: true,
-  default: {
-    ComicBooks: {
-      create: (...args: unknown[]) => mockCreate(...args),
-      findAll: (...args: unknown[]) => mockFindAll(...args),
-    },
-  },
+  default: { ComicBooks: { create: mockCreate, findAll: mockFindAll } },
 }));
 jest.mock('../../utils/autoEnrich', () => ({ autoEnrichComic: jest.fn().mockResolvedValue(undefined) }));
 jest.mock('pg', () => ({
@@ -21,38 +18,33 @@ jest.mock('pg', () => ({
   })),
 }));
 
-import { createComicBook } from '../comicbook';
+import { ComicBookCreateRequest, createComicBook } from '../comicbook';
 
 const TITLE_ID = '11111111-2222-4333-8444-555555555555';
 
+/** A real Express reply that records what was sent */
 const mockRes = () => {
-  const res = {} as Response & { status: jest.Mock; json: jest.Mock };
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
+  const res = createResponse<Response<ComicBookResult>>();
+  jest.spyOn(res, 'status');
+  jest.spyOn(res, 'json');
   return res;
 };
 
-const create = async (year: unknown) => {
+const send = async (body: ComicBookCreateRequest) => {
   const res = mockRes();
-  const req = {
-    body: {
-      title: 'The Amazing Spider-Man',
-      comicIssue: '395',
-      type: 'regular',
-      titleID: TITLE_ID,
-      year,
-    },
-  } as unknown as Request<any, any, any>;
-  await createComicBook(req, res);
+  await createComicBook(createRequest<Request<Record<string, string>, ComicBookResult, ComicBookCreateRequest>>({ body }), res);
   return res;
 };
+
+const create = (year: ComicBookCreateRequest['year']) =>
+  send({ title: 'The Amazing Spider-Man', comicIssue: '395', type: 'regular', titleID: TITLE_ID, year });
 
 describe('createComicBook year validation', () => {
   beforeEach(() => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
     mockCreate.mockReset();
-    mockCreate.mockImplementation(async data => ({ toJSON: () => ({ id: 'new-id', ...data }) }));
+    mockCreate.mockImplementation(async (data: object) => ({ toJSON: () => ({ id: 'new-id', ...data }) }));
   });
   afterEach(() => jest.restoreAllMocks());
 
@@ -79,14 +71,8 @@ describe('createComicBook year validation', () => {
   });
 });
 describe('createComicBook duplicate check', () => {
-  const save = async (extra: Record<string, unknown> = {}) => {
-    const res = mockRes();
-    const req = {
-      body: { title: 'Detective Comics', comicIssue: '659', type: 'regular', titleID: TITLE_ID, ...extra },
-    } as unknown as Request<any, any, any>;
-    await createComicBook(req, res);
-    return res;
-  };
+  const save = (extra: Partial<ComicBookCreateRequest> = {}) =>
+    send({ title: 'Detective Comics', comicIssue: '659', type: 'regular', titleID: TITLE_ID, ...extra });
 
   beforeEach(() => {
     mockCreate.mockReset().mockResolvedValue({ toJSON: () => ({ id: 'new-id' }) });

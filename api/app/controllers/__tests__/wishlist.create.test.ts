@@ -1,36 +1,40 @@
 /// <reference types="jest" />
 import { Request, Response } from 'express';
+import { createRequest, createResponse } from 'node-mocks-http';
+import type { IdResult, WishListResult } from '../../types/api';
 
 const mockUpdate = jest.fn();
 const mockCreate = jest.fn();
 
 jest.mock('../../models', () => ({
   __esModule: true,
-  default: {
-    WishLists: {
-      update: (...args: unknown[]) => mockUpdate(...args),
-      create: (...args: unknown[]) => mockCreate(...args),
-    },
-  },
+  default: { WishLists: { update: mockUpdate, create: mockCreate } },
 }));
 
 const mockFindCover = jest.fn();
-jest.mock('../../services/covers', () => ({ findCover: (...args: unknown[]) => mockFindCover(...args) }));
+jest.mock('../../services/covers', () => ({ findCover: mockFindCover }));
 
-import { addCoverInBackground, createWishList, updateWishList } from '../wishlist';
+import { addCoverInBackground, createWishList, updateWishList, WishListBody } from '../wishlist';
 
 const WISH_ID = '185e2f4a-3816-4184-8340-e35ecdde5a22';
 const USER_ID = '11111111-2222-4333-8444-555555555555';
 
-const mockRes = () => {
-  const res = {} as Response & { status: jest.Mock; json: jest.Mock };
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
+/** A real Express reply that records what was sent */
+const updateRes = () => {
+  const res = createResponse<Response<WishListResult>>();
+  jest.spyOn(res, 'status');
+  jest.spyOn(res, 'json');
+  return res;
+};
+const createRes = () => {
+  const res = createResponse<Response<IdResult>>();
+  jest.spyOn(res, 'status');
+  jest.spyOn(res, 'json');
   return res;
 };
 
 // What the wishlist form sends: every field as a string, blanks as ""
-const formBody = (overrides: Record<string, unknown> = {}) => ({
+const formBody = (overrides: WishListBody = {}): WishListBody & { userId: string } => ({
   id: WISH_ID,
   comicBookTitle: 'Superman',
   comicIssue: '25',
@@ -43,9 +47,9 @@ const formBody = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const update = async (body: Record<string, unknown>) => {
-  const res = mockRes();
-  await updateWishList({ params: { id: WISH_ID }, body } as unknown as Request<any, any, any>, res);
+const update = async (body: WishListBody) => {
+  const res = updateRes();
+  await updateWishList(createRequest<Request<{ id: string }, WishListResult, WishListBody>>({ params: { id: WISH_ID }, body }), res);
   return res;
 };
 
@@ -92,14 +96,14 @@ describe('updateWishList number fields', () => {
   });
 });
 describe('covers for wish list items added without one', () => {
-  const create = async (body: Record<string, unknown>) => {
-    const res = mockRes();
-    await createWishList({ body } as unknown as Request<any, any, any>, res);
+  const create = async (body: WishListBody) => {
+    const res = createRes();
+    await createWishList(createRequest<Request<Record<string, string>, IdResult, WishListBody>>({ body }), res);
     return res;
   };
 
   // What Add to Wish List on the Search page sends: no cover
-  const fromSearch = {
+  const fromSearch: WishListBody = {
     comicBookTitle: 'Batman', comicIssue: '497', comicBookYear: '1993',
     comicBookPublisher: 'DC Comics', type: 'regular', wishUsersId: USER_ID,
   };

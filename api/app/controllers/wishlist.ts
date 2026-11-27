@@ -1,102 +1,40 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import type { WishListAttributes, WishListCreationAttributes, WishListsModel, WishListType } from '../models/wishlists';
+import type { ApiResult, IdResult, WishListResult, WishListsResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 import { findCover } from '../services/covers';
 import { clientId } from '../utils/clientId';
 
-interface WishListAttributes {
-  id?: string;  // ✅ Changed to UUID
-  comicBookTitle: string;
-  comicIssue: number | null;  // ✅ Changed to number
-  comicBookVolume: number | null;  // ✅ Changed to number
-  comicBookYear: number | null;  // ✅ Changed to number
-  comicBookPublisher: string;
-  comicBookCover: string | null;
-  type: 'regular' | 'variant';
-  wishUsersId: string;  // ✅ Changed to UUID
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+/** A number as a form sends it: text ("25", or "" when blank), a number, or nothing */
+type FormNumber = string | number | null;
 
-interface WishListInstance {
-  id?: string;  // ✅ Changed to UUID
-  comicBookTitle: string;
-  comicIssue: number | null;
-  comicBookVolume: number | null;
-  comicBookYear: number | null;
-  comicBookPublisher: string;
-  comicBookCover: string | null;
-  type: 'regular' | 'variant';
-  wishUsersId: string;  // ✅ Changed to UUID
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => WishListAttributes;
-}
-
-interface WishListModel {
-  findAll: (options: { where: WhereOptions<WishListAttributes> }) => Promise<WishListInstance[]>;
-  findByPk: (id: string) => Promise<WishListInstance | null>;  // ✅ Changed to UUID
-  create: (data: Partial<WishListAttributes>) => Promise<WishListInstance>;
-  update: (
-    data: Partial<WishListAttributes>,
-    options: { where: WhereOptions<WishListAttributes>; returning: boolean }
-  ) => Promise<[number, WishListInstance[]]>;
-  destroy: (options: { where: WhereOptions<WishListAttributes> }) => Promise<number>;
-}
-
-interface ApiResponse<T = null> {
-  success: boolean;
-  data?: T;
-  count?: number;
-  message?: string;
-  error?: string;
-  errors?: string[];
-}
+/** What the wish list form (and Search's Add to Wish List) sends. On an update, fields left out stay as they are. */
+export type WishListBody = {
+  /** The ID the app chose for a new item (see utils/clientId.ts) */
+  id?: string;
+  comicBookTitle?: string;
+  comicIssue?: FormNumber;
+  comicBookVolume?: FormNumber;
+  comicBookYear?: FormNumber;
+  comicBookPublisher?: string;
+  comicBookCover?: string | null;
+  type?: string;
+  wishUsersId?: string;
+};
 
 interface ValidationResult {
   isValid: boolean;
   message?: string;
 }
 
-interface SequelizeValidationError extends Error {
-  errors: Array<{ message: string }>;
-}
+const getWishListModel = (): WishListsModel => db.WishLists;
 
-const getWishListModel = (): WishListModel => {
-  const WishList = (db as any).WishLists || (db as any).Wishlist || (db as any).wishlist;
-  
-  if (!WishList) {
-    console.error('❌ WishList model not found. Available models:', Object.keys(db));
-    throw new Error('WishList model not loaded');
-  }
-  
-  return WishList as WishListModel;
-};
-
-const isSequelizeError = (error: Error): error is SequelizeValidationError => {
-  return 'errors' in error && Array.isArray((error as SequelizeValidationError).errors);
-};
-
-const handleError = (
-  res: Response,
-  error: Error,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
+// Centralized error reply. A catch can receive anything, so it's turned into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 const validateParams = (
@@ -142,7 +80,7 @@ const validateString = (
  * saving: "" → null (clears the field), "25" → 25, "25A" → NaN so the check
  * below rejects it. undefined means the field wasn't sent.
  */
-const toNumberOrNull = (value: unknown): number | null | undefined => {
+const toNumberOrNull = (value: FormNumber | undefined): number | null | undefined => {
   if (value === undefined) return undefined;
   if (value === null) return null;
   if (typeof value === 'number') return value;
@@ -218,8 +156,8 @@ const findWishLists = async (
 
 export const getWishLists = async (
   req: Request<{ userId: string }>,
-  res: Response<ApiResponse<WishListAttributes[]>>
-): Promise<Response> => {
+  res: Response<WishListsResult>
+): Promise<Response<WishListsResult>> => {
   const { userId } = req.params;
   
   const paramValidation = validateParams(req.params, ['userId']);
@@ -250,14 +188,14 @@ export const getWishLists = async (
       count: wishLists.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getWishLists');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getWishLists'));
   }
 };
 
 export const getRegular = async (
   _req: Request,
-  res: Response<ApiResponse<WishListAttributes[]>>
-): Promise<Response> => {
+  res: Response<WishListsResult>
+): Promise<Response<WishListsResult>> => {
   try {
     const regularWishLists = await findWishLists({ type: 'regular' });
     
@@ -267,14 +205,14 @@ export const getRegular = async (
       count: regularWishLists.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getRegular');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getRegular'));
   }
 };
 
 export const getVariant = async (
   _req: Request,
-  res: Response<ApiResponse<WishListAttributes[]>>
-): Promise<Response> => {
+  res: Response<WishListsResult>
+): Promise<Response<WishListsResult>> => {
   try {
     const variantWishLists = await findWishLists({ type: 'variant' });
     
@@ -284,14 +222,14 @@ export const getVariant = async (
       count: variantWishLists.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getVariant');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getVariant'));
   }
 };
 
 export const getOneById = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<WishListAttributes>>
-): Promise<Response> => {
+  res: Response<WishListResult>
+): Promise<Response<WishListResult>> => {
   const { id } = req.params;
   
   const paramValidation = validateParams(req.params, ['id']);
@@ -327,7 +265,7 @@ export const getOneById = async (
       data: wishlist.toJSON()
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getOneById');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getOneById'));
   }
 };
 
@@ -352,9 +290,9 @@ export const addCoverInBackground = (
     .catch(error => console.warn('Could not save the cover for a wish list item:', error));
 
 export const createWishList = async (
-  req: Request<Record<string, never>, Record<string, never>, Partial<WishListAttributes>>,
-  res: Response<ApiResponse<{ id: string }>>  // ✅ Changed to string
-): Promise<Response> => {
+  req: Request<Record<string, string>, IdResult, WishListBody>,
+  res: Response<IdResult>
+): Promise<Response<IdResult>> => {
   const {
     comicBookTitle,
     comicIssue,
@@ -367,7 +305,7 @@ export const createWishList = async (
   } = req.body;
   
   // ✅ Only validate required fields
-  const validation = validateParams(req.body as Record<string, string | number>, [
+  const validation = validateParams(req.body, [
     'comicBookTitle',
     'comicBookPublisher',
     'type',
@@ -418,9 +356,10 @@ export const createWishList = async (
   }
   
   // ✅ Convert string numbers to integers
-  const comicIssueNum = comicIssue ? parseInt(comicIssue as any, 10) : null;
-  const comicBookVolumeNum = comicBookVolume ? parseInt(comicBookVolume as any, 10) : null;
-  const comicBookYearNum = comicBookYear ? parseInt(comicBookYear as any, 10) : null;
+  const comicIssueNum = comicIssue ? parseInt(String(comicIssue), 10) : null;
+  const comicBookVolumeNum = comicBookVolume ? parseInt(String(comicBookVolume), 10) : null;
+  const comicBookYearNum = comicBookYear ? parseInt(String(comicBookYear), 10) : null;
+  const wishType: WishListType = type!.toLowerCase() === 'variant' ? 'variant' : 'regular';
   
   try {
     const WishLists = getWishListModel();
@@ -432,30 +371,30 @@ export const createWishList = async (
       comicBookYear: comicBookYearNum,
       comicBookPublisher: comicBookPublisher!.trim(),
       comicBookCover: comicBookCover?.trim() || null,
-      type: type!.toLowerCase() as 'regular' | 'variant',
+      type: wishType,
       wishUsersId: wishUsersId!,  // ✅ UUID string
     });
     
     // No cover given (e.g. added from Search): look one up on Comic Vine.
     // Runs after the reply, so adding to the wish list stays instant.
     if (!newWishList.comicBookCover && comicIssueNum !== null) {
-      addCoverInBackground(newWishList.id!, comicBookTitle!.trim(), comicIssueNum, comicBookYearNum);
+      addCoverInBackground(newWishList.id, comicBookTitle!.trim(), comicIssueNum, comicBookYearNum);
     }
 
     return res.status(201).json({ 
       success: true,
-      data: { id: newWishList.id! },
+      data: { id: newWishList.id },
       message: 'Wish list created successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'createWishList');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'createWishList'));
   }
 };
 
 export const updateWishList = async (
-  req: Request<{ id: string }, Record<string, never>, Partial<WishListAttributes>>,
-  res: Response<ApiResponse<WishListAttributes>>
-): Promise<Response> => {
+  req: Request<{ id: string }, WishListResult, WishListBody>,
+  res: Response<WishListResult>
+): Promise<Response<WishListResult>> => {
   const { id } = req.params;
   
   const paramValidation = validateParams(req.params, ['id']);
@@ -482,12 +421,13 @@ export const updateWishList = async (
     });
   }
   
-  const updateData: Partial<WishListAttributes> = { ...req.body };
+  const body = req.body;
+  const updateData: Partial<WishListCreationAttributes> = {};
 
   // Convert issue, volume and year from form strings, so a blank field is
   // saved as empty instead of '' (which PostgreSQL rejects for INTEGER columns)
   for (const { field, label, min } of NUMBER_FIELDS) {
-    const value = toNumberOrNull((req.body as Record<string, unknown>)[field]);
+    const value = toNumberOrNull(body[field]);
     if (value === undefined) continue;
 
     if (value !== null) {
@@ -499,7 +439,7 @@ export const updateWishList = async (
         });
       }
     }
-    (updateData as Record<string, number | null>)[field] = value;
+    updateData[field] = value;
   }
   
   const stringFields = [
@@ -509,9 +449,12 @@ export const updateWishList = async (
   ] as const;
   
   for (const field of stringFields) {
-    if (updateData[field] !== undefined && updateData[field] !== null) {
+    const value = body[field];
+    if (value === null) {
+      updateData[field] = null;
+    } else if (value !== undefined) {
       const stringValidation = validateString(
-        updateData[field], 
+        value, 
         field.replace(/([A-Z])/g, ' $1').trim()
       );
       if (!stringValidation.isValid) {
@@ -520,30 +463,31 @@ export const updateWishList = async (
           error: stringValidation.message 
         });
       }
-      updateData[field] = (updateData[field] as string).trim() as any;
+      updateData[field] = value.trim();
     }
   }
   
-  if (updateData.type !== undefined) {
-    const typeValidation = validateType(updateData.type);
+  if (body.type !== undefined) {
+    const typeValidation = validateType(body.type);
     if (!typeValidation.isValid) {
       return res.status(400).json({ 
         success: false,
         error: typeValidation.message 
       });
     }
-    updateData.type = updateData.type.toLowerCase() as 'regular' | 'variant';
+    updateData.type = body.type.toLowerCase() === 'variant' ? 'variant' : 'regular';
   }
   
   // ✅ Validate UUID if provided
-  if (updateData.wishUsersId !== undefined) {
-    const userIdValidation = validateUUID(updateData.wishUsersId, 'Wish Users ID');
+  if (body.wishUsersId !== undefined) {
+    const userIdValidation = validateUUID(body.wishUsersId, 'Wish Users ID');
     if (!userIdValidation.isValid) {
       return res.status(400).json({ 
         success: false,
         error: userIdValidation.message 
       });
     }
+    updateData.wishUsersId = body.wishUsersId;
   }
   
   try {
@@ -584,14 +528,14 @@ export const updateWishList = async (
       message: 'Wish list updated successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'updateWishList');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'updateWishList'));
   }
 };
 
 export const removeWishList = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse>
-): Promise<Response> => {
+  res: Response<ApiResult>
+): Promise<Response<ApiResult>> => {
   const { id } = req.params;
   
   const paramValidation = validateParams(req.params, ['id']);
@@ -638,6 +582,6 @@ export const removeWishList = async (
       message: 'Wish list deleted successfully' 
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'removeWishList');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'removeWishList'));
   }
 };

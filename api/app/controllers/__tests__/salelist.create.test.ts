@@ -1,33 +1,37 @@
 /// <reference types="jest" />
 import { Request, Response } from 'express';
+import { createRequest, createResponse } from 'node-mocks-http';
+import type { IdResult, SaleListResult } from '../../types/api';
 
 const mockUpdate = jest.fn();
 const mockCreate = jest.fn();
 
 jest.mock('../../models', () => ({
   __esModule: true,
-  default: {
-    SaleLists: {
-      update: (...args: unknown[]) => mockUpdate(...args),
-      create: (...args: unknown[]) => mockCreate(...args),
-    },
-  },
+  default: { SaleLists: { update: mockUpdate, create: mockCreate } },
 }));
 
-import { createSaleList, updateSaleList } from '../salelist';
+import { createSaleList, SaleListBody, updateSaleList } from '../salelist';
 
 const SALE_ID = '185e2f4a-3816-4184-8340-e35ecdde5a22';
 const USER_ID = '11111111-2222-4333-8444-555555555555';
 
-const mockRes = () => {
-  const res = {} as Response & { status: jest.Mock; json: jest.Mock };
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
+/** A real Express reply that records what was sent */
+const updateRes = () => {
+  const res = createResponse<Response<SaleListResult>>();
+  jest.spyOn(res, 'status');
+  jest.spyOn(res, 'json');
+  return res;
+};
+const createRes = () => {
+  const res = createResponse<Response<IdResult>>();
+  jest.spyOn(res, 'status');
+  jest.spyOn(res, 'json');
   return res;
 };
 
 // What the sale form sends: every field as a string, blanks as ""
-const formBody = (overrides: Record<string, unknown> = {}) => ({
+const formBody = (overrides: SaleListBody = {}): SaleListBody & { userId: string } => ({
   id: SALE_ID,
   comicBookTitle: 'Superman',
   comicIssue: '25',
@@ -41,9 +45,9 @@ const formBody = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const update = async (body: Record<string, unknown>) => {
-  const res = mockRes();
-  await updateSaleList({ params: { id: SALE_ID }, body } as unknown as Request<any, any, any>, res);
+const update = async (body: SaleListBody) => {
+  const res = updateRes();
+  await updateSaleList(createRequest<Request<{ id: string }, SaleListResult, SaleListBody>>({ params: { id: SALE_ID }, body }), res);
   return res;
 };
 
@@ -91,14 +95,14 @@ describe('updateSaleList number fields', () => {
 });
 
 describe('sale price and condition', () => {
-  const create = async (body: Record<string, unknown>) => {
-    const res = mockRes();
-    await createSaleList({ body } as unknown as Request<any, any, any>, res);
+  const create = async (body: SaleListBody) => {
+    const res = createRes();
+    await createSaleList(createRequest<Request<Record<string, string>, IdResult, SaleListBody>>({ body }), res);
     return res;
   };
 
   // A new listing as the sale form sends it, now with a price and condition
-  const newListing = (overrides: Record<string, unknown> = {}) => {
+  const newListing = (overrides: SaleListBody = {}): SaleListBody => {
     const { id, userId, ...rest } = formBody({ price: '12.50', comicCondition: 'Near Mint', ...overrides });
     return rest;
   };

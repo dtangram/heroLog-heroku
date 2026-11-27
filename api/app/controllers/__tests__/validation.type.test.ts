@@ -1,36 +1,41 @@
 /// <reference types="jest" />
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
+import { createRequest, createResponse } from 'node-mocks-http';
+import type { FieldErrorsResult } from '../../types/api';
+import type { JsonObject } from '../../types/json';
 import { validate } from '../validation';
 
 const SALE_ID = '185e2f4a-3816-4184-8340-e35ecdde5a22';
 const USER_ID = '11111111-2222-4333-8444-555555555555';
 
+/** A real Express reply that records what was sent */
 const mockRes = () => {
-  const res = {} as Response & { status: jest.Mock; json: jest.Mock };
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
+  const res = createResponse<Response<FieldErrorsResult>>();
+  jest.spyOn(res, 'status');
+  jest.spyOn(res, 'json');
   return res;
 };
 
 /** Runs a route's checks the way Express would, and reports what happened */
-const runChecks = async (method: string, body: Record<string, unknown>, params: Record<string, string> = {}) => {
-  const req = { body, params, query: {}, headers: {}, cookies: {} } as unknown as Request;
+const runChecks = async (method: string, body: JsonObject, params: Record<string, string> = {}) => {
+  const req = createRequest<Request>({ body, params });
   const res = mockRes();
-  const next = jest.fn() as unknown as NextFunction & jest.Mock;
+  const next = jest.fn();
 
-  const steps = validate(method);
-  const chains = steps.slice(0, -1) as Array<{ run: (r: Request) => Promise<unknown> }>;
-  for (const chain of chains) {
-    await chain.run(req);
+  // The checks run first, then the step that reports what they found
+  for (const step of validate(method)) {
+    if ('run' in step) {
+      await step.run(req);
+    } else {
+      step(req, res, next);
+    }
   }
-  const checkForErrors = steps[steps.length - 1] as (r: Request, s: Response, n: NextFunction) => void;
-  checkForErrors(req, res, next);
 
   return { req, res, next };
 };
 
 // The three forms that send a cover type, with just enough fields to pass the other checks
-const forms: Array<[string, Record<string, unknown>, Record<string, string>?]> = [
+const forms: Array<[string, JsonObject, Record<string, string>?]> = [
   ['createComicBook', { title: 'Batman' }],
   ['editComicBook', { id: SALE_ID, title: 'Batman' }],
   ['createSaleList', { comicBookTitle: 'Batman', comicBookPublisher: 'DC Comics', saleUsersId: USER_ID }],

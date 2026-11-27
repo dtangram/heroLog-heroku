@@ -1,37 +1,17 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import debug from 'debug';
-import { Model, ModelStatic } from 'sequelize';
 import * as passwordResetCtrl from '../controllers/passwordreset';
 import * as validationCtrl from '../controllers/validation';
+import jwt from 'jsonwebtoken';
 import db from '../models';
+import type { UserInstance } from '../models/users';
+import { verifySessionToken } from '../utils/tokens';
 
-const jwt = require('jsonwebtoken');
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-interface UserAttributes {
-  id: string;
-  username: string;
-  email: string;
-  password: string | null;
-  firstname: string;
-  lastname: string;
-  type: 'regular' | 'fixer';
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface UserInstance extends Model<UserAttributes>, UserAttributes {}
-
-type UserModel = ModelStatic<UserInstance>;
-
-interface PasswordResetRequestBody {
+type PasswordResetRequestBody = {
   password: string;
   token?: string;
-}
+};
 
 interface PasswordResetSuccessResponse {
   type: 'success';
@@ -58,16 +38,6 @@ interface StringValidationResult {
   error?: string;
 }
 
-interface TokenPayload {
-  id: string;
-  iat?: number;
-  exp?: number;
-}
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
 const log = debug('api:logging');
 
 const ENV = {
@@ -78,16 +48,7 @@ const ENV = {
   bcryptRounds: 12,
 };
 
-// ============================================================================
-// MODELS
-// ============================================================================
-
-// models/index.ts uses `export default`; require('../models') returned { default: db }
-const Users = (db as any).Users as UserModel;
-
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
+const Users = db.Users;
 
 const validateJwtSecret = (): StringValidationResult => {
   if (!ENV.jwtSecret) {
@@ -158,14 +119,7 @@ const verifyResetToken = (
   secret: string
 ): StringValidationResult => {
   try {
-    const decoded = jwt.verify(token, secret) as TokenPayload;
-    
-    if (!decoded.id) {
-      return {
-        isValid: false,
-        error: 'Invalid token payload'
-      };
-    }
+    const decoded = verifySessionToken(token, secret);
 
     return {
       isValid: true,
@@ -237,7 +191,7 @@ const buildErrorResponse = (
 // ============================================================================
 
 const sendSuccess = (
-  res: Response,
+  res: Response<PasswordResetSuccessResponse | ErrorResponse>,
   message: string,
   data: PasswordResetResponseData
 ): void => {
@@ -245,7 +199,7 @@ const sendSuccess = (
 };
 
 const sendError = (
-  res: Response,
+  res: Response<PasswordResetSuccessResponse | ErrorResponse>,
   statusCode: number,
   message: string,
   stack?: string
@@ -265,10 +219,6 @@ const handleError = (error: Error): { message: string; stack?: string } => ({
 const logError = (context: string, error: Error): void => {
   log(`${context} error:`, error.message);
 };
-
-// ============================================================================
-// ROUTE HANDLERS
-// ============================================================================
 
 const passwordResetHandler = async (
   req: Request<Record<string, never>, PasswordResetSuccessResponse | ErrorResponse, PasswordResetRequestBody>,
@@ -343,10 +293,6 @@ const passwordResetHandler = async (
   }
 };
 
-// ============================================================================
-// ROUTER CONFIGURATION
-// ============================================================================
-
 const router = Router();
 
 // GET /passwordreset/:token
@@ -370,9 +316,5 @@ router.put(
   '/passwordResetUpdate',
   passwordResetCtrl.passwordResetUpdate
 );
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default router;

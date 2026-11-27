@@ -117,15 +117,11 @@ export const summarizePublishers = (
 // Loading from the database
 // ---------------------------------------------------------------------------
 
-interface FindAllModel<T> {
-  findAll: (options: { where: Record<string, unknown>; attributes: string[]; raw: boolean }) => Promise<T[]>;
-}
-
 const ISSUE_FIELDS = ['comicbooktitlerelId', 'comicIssue', 'comicBookCover', 'createdAt'];
 
 const loadIssues = (titleIds: string[]): Promise<IssueRow[]> => {
   if (!titleIds.length) return Promise.resolve([]);
-  return (db.ComicBooks as unknown as FindAllModel<IssueRow>).findAll({
+  return db.ComicBooks.findAll({
     where: { comicbooktitlerelId: { [Op.in]: titleIds } },
     attributes: ISSUE_FIELDS,
     raw: true,
@@ -135,7 +131,7 @@ const loadIssues = (titleIds: string[]): Promise<IssueRow[]> => {
 /** Looks up the titles and issues under these publishers and summarizes them */
 export const loadPublisherSummaries = async (publisherIds: string[]): Promise<Record<string, PublisherSummary>> => {
   if (!publisherIds.length) return {};
-  const titles = await (db.ComicBookTitles as unknown as FindAllModel<TitleRow>).findAll({
+  const titles = await db.ComicBookTitles.findAll({
     where: { collectpubId: { [Op.in]: publisherIds } },
     attributes: ['id', 'collectpubId'],
     raw: true,

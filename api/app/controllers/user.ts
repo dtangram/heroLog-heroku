@@ -1,83 +1,32 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { WhereOptions } from 'sequelize';
+import { QueryTypes, Transaction, WhereOptions } from 'sequelize';
 import db from '../models';
+import type { UserAttributes, UserInstance, UsersModel } from '../models/users';
+import type { ApiResult, FieldError, FieldErrorsResult, IdResult, SafeUser, UserResult, UsersResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 import { deleteSearchData } from '../routes/search';
 
-// Properly typed model interface
-interface UserModel {
-  findAll: (options: { where: WhereOptions<UserAttributes> }) => Promise<UserInstance[]>;
-  findByPk: (id: string) => Promise<UserInstance | null>;
-  findOne: (options: { where: WhereOptions<UserAttributes> }) => Promise<UserInstance | null>;
-  create: (data: UserCreationAttributes) => Promise<UserInstance>;
-  update: (
-    data: Partial<UserAttributes>, 
-    options: { where: WhereOptions<UserAttributes>; returning: boolean }
-  ) => Promise<[number, UserInstance[]]>;
-  destroy: (options: { where: WhereOptions<UserAttributes> }) => Promise<number>;
-}
+// What the sign-up form sends
+type CreateUserBody = {
+  username?: string;
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  password?: string;
+  accesstoken?: string;
+};
 
-// Model instance interface
-interface UserInstance {
-  id: string;
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  accesstoken: string | null;
-  password: string | null;
-  profilePic: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => UserAttributes;
-}
-
-// Fixed interface to match actual model structure (UUIDs, not numbers)
-interface UserAttributes {
-  id: string;  // UUID string
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  accesstoken: string | null;
-  password: string | null;
-  profilePic: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Creation interface
-interface UserCreationAttributes {
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  password: string;
+// What the profile form sends; fields left out stay as they are
+type UpdateUserBody = {
+  username?: string;
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  password?: string;
+  profilePic?: string | null;
   accesstoken?: string | null;
-  profilePic?: string;
-}
-
-// Sanitized user interface (without sensitive data)
-interface SanitizedUserAttributes {
-  id: string;
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  profilePic: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// API response interface
-interface ApiResponse<T = SanitizedUserAttributes | SanitizedUserAttributes[]> {
-  success: boolean;
-  data?: T;
-  count?: number;
-  message?: string;
-  error?: string;
-  errors?: string[];
-}
+};
 
 // Validation result interface
 interface ValidationResult {
@@ -85,24 +34,9 @@ interface ValidationResult {
   message?: string;
 }
 
-// Sequelize error interface
-interface SequelizeError {
-  errors: Array<{ message: string }>;
-}
-
-interface ErrorResponse {
-  success: false;
-  errors: Array<{ field: string; message: string }>;
-}
-
-// Type guard for Sequelize errors
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
-
 // Helper to get Users model
-const getUsersModel = (): UserModel => {
-  const Users = db.Users as UserModel;
+const getUsersModel = (): UsersModel => {
+  const Users = db.Users;
   if (!Users) {
     throw new Error('Users model not loaded');
   }
@@ -121,32 +55,15 @@ const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-// Centralized error handler
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
+// Centralized error reply. A catch can receive anything, so it's turned into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 // Parameter validation
 const validateParams = (
-  params: Record<string, string>,
+  params: Partial<Record<string, string | number | boolean | Date | null>>,
   requiredFields: string[]
 ): ValidationResult => {
   const missing = requiredFields.filter(field => !params[field]);
@@ -252,7 +169,7 @@ const findUsers = async (
 };
 
 // Sanitize user data by removing sensitive fields
-const sanitizeUser = (user: UserAttributes): SanitizedUserAttributes => {
+const sanitizeUser = (user: UserAttributes): SafeUser => {
   const { password, accesstoken, ...safeUser } = user;
   return safeUser;
 };
@@ -260,8 +177,8 @@ const sanitizeUser = (user: UserAttributes): SanitizedUserAttributes => {
 // Get user by user ID
 export const getUser = async (
   req: Request<{ userId: string }>,
-  res: Response<ApiResponse<SanitizedUserAttributes[]>>
-): Promise<Response> => {
+  res: Response<UsersResult>
+): Promise<Response<UsersResult>> => {
   const { userId } = req.params;
   
   // Validate required parameters
@@ -301,15 +218,15 @@ export const getUser = async (
       count: sanitizedUsers.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getUser');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getUser'));
   }
 };
 
 // Find one user by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<SanitizedUserAttributes>>
-): Promise<Response> => {
+  res: Response<UserResult>
+): Promise<Response<UserResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -350,15 +267,15 @@ export const getOneById = async (
       data: safeUser
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getOneById');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getOneById'));
   }
 };
 
 // Create a new user
 export const createUser = async (
-  req: Request<{}, {}, Partial<UserCreationAttributes & { password: string }>>,
-  res: Response<ApiResponse<Pick<UserAttributes, 'id'>> | ErrorResponse>
-): Promise<Response> => {
+  req: Request<Record<string, string>, IdResult | FieldErrorsResult, CreateUserBody>,
+  res: Response<IdResult | FieldErrorsResult>
+): Promise<Response<IdResult | FieldErrorsResult>> => {
   const {
     username,
     firstname,
@@ -369,7 +286,7 @@ export const createUser = async (
   } = req.body;
   
   // ✅ Collect ALL validation errors
-  const allValidationErrors: Array<{ field: string; message: string }> = [];
+  const allValidationErrors: FieldError[] = [];
   
   if (!username || !username.trim()) {
     allValidationErrors.push({ field: 'username', message: 'Username is required' });
@@ -408,7 +325,7 @@ export const createUser = async (
     return res.status(400).json({
       success: false,
       errors: allValidationErrors
-    } as ErrorResponse);
+    });
   }
   
   try {
@@ -419,7 +336,7 @@ export const createUser = async (
       Users.findOne({ where: { email: email!.trim().toLowerCase() } })
     ]);
     
-    const existenceErrors: Array<{ field: string; message: string }> = [];
+    const existenceErrors: FieldError[] = [];
     
     if (existingUser) {
       existenceErrors.push({ field: 'username', message: 'Username already exists' });
@@ -434,7 +351,7 @@ export const createUser = async (
       return res.status(409).json({
         success: false,
         errors: existenceErrors
-      } as ErrorResponse);
+      });
     }
     
     // Hash password
@@ -458,15 +375,15 @@ export const createUser = async (
       message: 'User created successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'createUser');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'createUser'));
   }
 };
 
 // Update an existing user
 export const updateUser = async (
-  req: Request<{ id: string }, {}, Partial<UserAttributes & { password?: string }>>,
-  res: Response<ApiResponse<SanitizedUserAttributes>>
-): Promise<Response> => {
+  req: Request<{ id: string }, UserResult, UpdateUserBody>,
+  res: Response<UserResult>
+): Promise<Response<UserResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -621,7 +538,7 @@ export const updateUser = async (
       message: 'User updated successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'updateUser');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'updateUser'));
   }
 };
 
@@ -642,21 +559,22 @@ const ACCOUNT_DATA_DELETES = [
 ];
 
 const deleteAccountAndData = async (id: string): Promise<number> =>
-  db.sequelize.transaction(async (transaction: any) => {
+  db.sequelize.transaction(async (transaction: Transaction) => {
     for (const sql of ACCOUNT_DATA_DELETES) {
       await db.sequelize.query(sql, { replacements: { id }, transaction });
     }
-    const [, result] = await db.sequelize.query(`DELETE FROM "Users" WHERE id = :id`, {
+    // A BULKDELETE query returns how many rows it deleted
+    return db.sequelize.query(`DELETE FROM "Users" WHERE id = :id`, {
       replacements: { id },
       transaction,
+      type: QueryTypes.BULKDELETE,
     });
-    return Number((result as any)?.rowCount ?? result ?? 0);
   });
 
 export const removeUser = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  res: Response<ApiResult>
+): Promise<Response<ApiResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -710,6 +628,6 @@ export const removeUser = async (
       message: 'User deleted successfully' 
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'removeUser');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'removeUser'));
   }
 };

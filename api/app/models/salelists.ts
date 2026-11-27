@@ -1,16 +1,42 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from 'sequelize';
+import { Sequelize, DataTypes, Model, ModelStatic, Optional } from 'sequelize';
+import type { Models } from '.';
 
-interface Models {
-  Users?: ModelStatic<Model>;
-  [key: string]: ModelStatic<Model> | undefined;
+export type SaleListType = 'regular' | 'variant';
+
+export interface SaleListAttributes {
+  id: string;
+  comicBookTitle: string | null;
+  comicIssue: number | null;
+  comicBookVolume: number | null;
+  comicBookYear: number | null;
+  comicBookPublisher: string | null;
+  comicBookCover: string | null;
+  type: SaleListType | null;
+  /** Postgres DECIMAL comes back as text, e.g. "12.50"; it's saved from a number */
+  price: string | number | null;
+  comicCondition: string | null;
+  saleUsersId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface SaleListsModel extends ModelStatic<Model> {
+export type SaleListCreationAttributes = Optional<
+  SaleListAttributes,
+  | 'id' | 'comicBookTitle' | 'comicIssue' | 'comicBookVolume' | 'comicBookYear' | 'comicBookPublisher'
+  | 'comicBookCover' | 'type' | 'price' | 'comicCondition' | 'saleUsersId' | 'createdAt' | 'updatedAt'
+>;
+
+/** A saved row as the API sends it */
+export type SaleListJson = SaleListAttributes;
+
+export interface SaleListInstance extends Model<SaleListAttributes, SaleListCreationAttributes>, SaleListAttributes {}
+
+export interface SaleListsModel extends ModelStatic<SaleListInstance> {
   associate: (models: Models) => void;
 }
 
 const createSaleListsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): SaleListsModel => {
-  const SaleLists = sequelize.define('SaleLists', {
+  const SaleLists = sequelize.define<SaleListInstance>('SaleLists', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
@@ -86,12 +112,21 @@ const createSaleListsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes)
         isUUID: { args: 4, msg: 'Invalid user ID' },
       },
     },
+    // Sequelize sets these itself; they're listed so their types are known
+    createdAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
   }, {
     timestamps: true,  // ✅ Keep timestamps
     tableName: 'SaleLists',  // ✅ Explicit table name
-  }) as SaleListsModel;
+  });
   
-  SaleLists.associate = (models: Models) => {
+  const associate = (models: Models): void => {
     if (models.Users) {
       SaleLists.belongsTo(models.Users, { 
         foreignKey: 'saleUsersId' 
@@ -99,7 +134,7 @@ const createSaleListsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes)
     }
   };
   
-  return SaleLists;
+  return Object.assign(SaleLists, { associate });
 };
 
-export = createSaleListsModel;
+export default createSaleListsModel;

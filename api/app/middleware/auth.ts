@@ -1,27 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import type { ParamsDictionary } from 'express-serve-static-core';
+import type { ApiResult } from '../types/api';
+import type { JsonObject } from '../types/json';
+import { SessionToken, verifySessionToken } from '../utils/tokens';
 
-// Extend Request interface
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    username?: string;
-    email?: string;
-    /** true for a guest session (no account), see services/guestSession.ts */
-    guest?: boolean;
-  };
-}
-
-interface JwtPayload {
-  id: string;
-  username?: string;
-  email?: string;
-  guest?: boolean;
+/**
+ * A request whose token has been read: who is asking, and the JSON body they
+ * sent. Its reply can be any JSON object, so the same middleware can guard
+ * routes that reply in different shapes.
+ */
+interface AuthRequest extends Request<ParamsDictionary, object, JsonObject | undefined> {
+  user?: SessionToken;
 }
 
 export const authenticateToken = (
   req: AuthRequest,
-  res: Response,
+  res: Response<ApiResult>,
   next: NextFunction
 ): void => {
   const authHeader = req.headers['authorization'];
@@ -46,7 +40,7 @@ export const authenticateToken = (
   }
 
   try {
-    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+    const decoded = verifySessionToken(token, jwtSecret);
     req.user = decoded;
     next();
   } catch (error) {
@@ -61,7 +55,7 @@ export const authenticateToken = (
 // ✅ Add optional authentication - allows requests without tokens
 export const optionalAuth = (
   req: AuthRequest,
-  _res: Response,
+  _res: Response<ApiResult>,
   next: NextFunction
 ): void => {
   const authHeader = req.headers['authorization'];
@@ -81,7 +75,7 @@ export const optionalAuth = (
   }
 
   try {
-    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+    const decoded = verifySessionToken(token, jwtSecret);
     req.user = decoded;
   } catch (error) {
     // Token invalid, continue without user
@@ -91,15 +85,15 @@ export const optionalAuth = (
   next();
 };
 
-const readToken = (req: Request): JwtPayload | null => {
+const readToken = (req: Request): SessionToken | null => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   const jwtSecret = process.env.JWT_SECRET;
   if (!token || !jwtSecret) return null;
 
   try {
-    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
-    return decoded?.id ? decoded : null;
+    const decoded = verifySessionToken(token, jwtSecret);
+    return decoded;
   } catch {
     return null;
   }
@@ -110,7 +104,7 @@ const readToken = (req: Request): JwtPayload | null => {
  * POST /auth/guest), so a collection can be limited to its owner without
  * making guests sign up. Collection routes check ownership after this.
  */
-export const requireIdentity = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const requireIdentity = (req: AuthRequest, res: Response<ApiResult>, next: NextFunction): void => {
   const identity = readToken(req);
 
   if (!identity) {
@@ -123,7 +117,7 @@ export const requireIdentity = (req: AuthRequest, res: Response, next: NextFunct
 };
 
 /** Like requireIdentity, but only for signed-in accounts (not guests). */
-export const requireAccount = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const requireAccount = (req: AuthRequest, res: Response<ApiResult>, next: NextFunction): void => {
   const identity = readToken(req);
 
   if (!identity || identity.guest) {

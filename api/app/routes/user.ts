@@ -1,7 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireAccount } from '../middleware/auth';
 import { ownsParam } from '../middleware/ownership';
-import { Model, ModelStatic } from 'sequelize';
 import { 
   getUser, 
   getOneById, 
@@ -11,31 +10,12 @@ import {
 } from '../controllers/user';
 import { validate } from '../controllers/validation';
 import db from '../models';
+import type { UserInstance } from '../models/users';
+import type { SafeUser } from '../types/api';
 
 // console.log('🔍 Available models:', Object.keys(db));
 // console.log('🔍 Users model:', db.Users);
 // console.log('🔍 Full db object:', db);
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-interface UserAttributes {
-  id: string;
-  username: string;
-  email: string;
-  password: string | null;
-  firstname: string;
-  lastname: string;
-  type: 'regular' | 'fixer';
-  profilePic?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface UserInstance extends Model<UserAttributes>, UserAttributes {}
-
-type UserModel = ModelStatic<UserInstance>;
 
 interface FindUserRequestBody {
   username: string;
@@ -44,7 +24,7 @@ interface FindUserRequestBody {
 interface UserSuccessResponse {
   type: 'success';
   message: string;
-  data: UserInstance;
+  data: SafeUser;
   timestamp: string;
 }
 
@@ -62,17 +42,9 @@ interface StringValidationResult {
   error?: string;
 }
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
 const ENV = {
   nodeEnv: process.env.NODE_ENV || 'development',
 };
-
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
 
 const validateUsername = (
   username: string | undefined | null
@@ -105,7 +77,7 @@ const findUserByUsername = async (
   username: string
 ): Promise<UserInstance | null> => {
   // ✅ Access directly from db instead
-  const Users = db.Users as UserModel;
+  const Users = db.Users;
   
   if (!Users) {
     throw new Error('Users model not loaded');
@@ -120,13 +92,19 @@ const findUserByUsername = async (
 // RESPONSE BUILDERS
 // ============================================================================
 
+/** Never the password hash or access token: this route needs no sign-in */
+const safeUser = (user: UserInstance): SafeUser => {
+  const { password, accesstoken, ...safe } = user.toJSON();
+  return safe;
+};
+
 const buildSuccessResponse = (
   message: string,
   data: UserInstance
 ): UserSuccessResponse => ({
   type: 'success',
   message,
-  data,
+  data: safeUser(data),
   timestamp: new Date().toISOString()
 });
 
@@ -147,7 +125,7 @@ const buildErrorResponse = (
 // ============================================================================
 
 const sendSuccess = (
-  res: Response,
+  res: Response<UserSuccessResponse | ErrorResponse>,
   message: string,
   data: UserInstance
 ): void => {
@@ -155,7 +133,7 @@ const sendSuccess = (
 };
 
 const sendError = (
-  res: Response,
+  res: Response<UserSuccessResponse | ErrorResponse>,
   statusCode: number,
   message: string,
   stack?: string
@@ -163,18 +141,10 @@ const sendError = (
   res.status(statusCode).json(buildErrorResponse(message, statusCode, stack));
 };
 
-// ============================================================================
-// ERROR HANDLING
-// ============================================================================
-
 const handleError = (error: Error): { message: string; stack?: string } => ({
   message: error.message || 'An unexpected error occurred',
   ...(ENV.nodeEnv === 'development' && { stack: error.stack })
 });
-
-// ============================================================================
-// ROUTE HANDLERS
-// ============================================================================
 
 const findUserHandler = async (
   req: Request<Record<string, never>, UserSuccessResponse | ErrorResponse, FindUserRequestBody>,
@@ -213,10 +183,6 @@ const findUserHandler = async (
     }
   }
 };
-
-// ============================================================================
-// ROUTER CONFIGURATION
-// ============================================================================
 
 const router = Router();
 
@@ -269,9 +235,5 @@ router.delete(
   ownsParam('id'),
   removeUser
 );
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default router;

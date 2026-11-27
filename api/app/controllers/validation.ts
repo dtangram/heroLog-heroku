@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { check, validationResult, ValidationChain, FieldValidationError, ValidationError } from 'express-validator';
+import type { FieldErrorsResult } from '../types/api';
 
 /**
  * Type guard to check if error is a FieldValidationError
@@ -177,9 +178,9 @@ const checks = {
  */
 const checkForErrors = (
   req: Request,
-  res: Response,
+  res: Response<FieldErrorsResult>,
   next: NextFunction
-): void | Response => {
+): void | Response<FieldErrorsResult> => {
   const errors = validationResult(req);
   
   // ADD LOGGING
@@ -192,7 +193,8 @@ const checkForErrors = (
   if (!errors.isEmpty()) {
     const formattedErrors = errors.array().map(error => ({
       field: isFieldValidationError(error) ? error.path : 'general',
-      message: error.msg
+      // express-validator types messages loosely; ours are all text
+      message: String(error.msg)
     }));
     
     console.log('❌ VALIDATION ERRORS:', JSON.stringify(formattedErrors, null, 2));

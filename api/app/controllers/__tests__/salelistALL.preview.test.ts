@@ -1,13 +1,20 @@
 /// <reference types="jest" />
-const findAll = jest.fn();
-jest.mock('../../models', () => ({ __esModule: true, default: { SaleLists: { findAll: (...args: any[]) => findAll(...args) } } }));
+import { Request, Response } from 'express';
+import { createRequest, createResponse } from 'node-mocks-http';
+import type { SalePreviewResult } from '../../types/api';
+
+const mockFindAll = jest.fn();
+jest.mock('../../models', () => ({ __esModule: true, default: { SaleLists: { findAll: mockFindAll } } }));
 
 import { getSalePreview, previewLimit, PREVIEW_FIELDS } from '../salelistALL';
 
+const findAll = mockFindAll;
+
+/** A real Express reply that records what was sent */
 const res = () => {
-  const r: any = {};
-  r.status = jest.fn(() => r);
-  r.json = jest.fn(() => r);
+  const r = createResponse<Response<SalePreviewResult>>();
+  jest.spyOn(r, 'status');
+  jest.spyOn(r, 'json');
   return r;
 };
 
@@ -33,7 +40,7 @@ describe('getSalePreview', () => {
     findAll.mockResolvedValue([{ toJSON: () => listing }]);
     const r = res();
 
-    await getSalePreview({ query: { limit: '4' } } as any, r);
+    await getSalePreview(createRequest<Request>({ query: { limit: '4' } }), r);
 
     expect(findAll).toHaveBeenCalledWith({
       attributes: PREVIEW_FIELDS,
@@ -50,7 +57,7 @@ describe('getSalePreview', () => {
     findAll.mockRejectedValue(new Error('down'));
     const r = res();
 
-    await getSalePreview({ query: {} } as any, r);
+    await getSalePreview(createRequest<Request>({ query: {} }), r);
 
     expect(r.status).toHaveBeenCalledWith(500);
   });

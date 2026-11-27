@@ -118,8 +118,26 @@ if (ENV.nodeEnv !== 'production') {
 // ============================================================================
 
 // Health check endpoint with database status
-app.get('/health', async (_req: Request, res: Response) => {
-  const healthCheck = {
+/** What /health replies */
+interface HealthCheck {
+  status: 'ok' | 'degraded';
+  timestamp: string;
+  environment: string;
+  allowedOrigins: string[];
+  database: { status: 'unknown' | 'connected' | 'disconnected'; message: string };
+}
+
+/** What the server's own error pages reply */
+interface ServerErrorReply {
+  error: string;
+  message: string;
+  timestamp: string;
+  stack?: string;
+  checkedPaths?: string[];
+}
+
+app.get('/health', async (_req: Request, res: Response<HealthCheck>) => {
+  const healthCheck: HealthCheck = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: ENV.nodeEnv,
@@ -232,7 +250,7 @@ if (ENV.nodeEnv === 'production') {
     }
     
     // Fallback error page
-    app.get('*', (_req: Request, res: Response) => {
+    app.get('*', (_req: Request, res: Response<ServerErrorReply>) => {
       res.status(500).json({
         error: 'Configuration Error',
         message: 'React build not found. Please check deployment configuration.',
@@ -249,7 +267,7 @@ if (ENV.nodeEnv === 'production') {
 
 if (ENV.nodeEnv !== 'production') {
   // 404 handler (only for development)
-  app.use((req: Request, res: Response) => {
+  app.use((req: Request, res: Response<ServerErrorReply>) => {
     res.status(404).json({
       error: 'Not Found',
       message: `Cannot ${req.method} ${req.url}`,
@@ -259,12 +277,12 @@ if (ENV.nodeEnv !== 'production') {
 }
 
 // Global error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response<ServerErrorReply>, _next: NextFunction) => {
   errorLog('ERROR:', err.message);
   errorLog('Stack:', err.stack);
 
   // Don't leak error details in production
-  const errorResponse = {
+  const errorResponse: ServerErrorReply = {
     error: 'Internal Server Error',
     message: ENV.nodeEnv === 'development' ? err.message : 'An error occurred',
     timestamp: new Date().toISOString(),
