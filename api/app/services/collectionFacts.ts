@@ -71,7 +71,7 @@ export const formatRanges = (sorted: number[]): string[] =>
  * Anything that isn't a plain positive whole number ("1A", "Annual 1", "1/2")
  * returns null and is counted as unnumbered rather than guessed at.
  */
-export const parseIssueNumber = (issue: unknown): number | null => {
+export const parseIssueNumber = (issue: ComicRecord['comicIssue']): number | null => {
   if (typeof issue === 'number') {
     return Number.isInteger(issue) && issue > 0 ? issue : null;
   }

@@ -1,43 +1,19 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { Model, ModelStatic } from 'sequelize';
 import * as messagingCtrl from '../controllers/messaging';
 import * as validationCtrl from '../controllers/validation';
 import { requireAccount } from '../middleware/auth';
 import { messageRecipient, ownsParam, ownsRecord } from '../middleware/ownership';
 import db from '../models';
+import type { MessagingInstance, MessagingJson } from '../models/messagings';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-interface MessagingAttributes {
-  id: string;
+type FindMessagingRequestBody = {
   name: string;
-  subject?: string;
-  message: string;
-  senderId: string;
-  recipientId: string;
-  messageUsersId: string;
-  isRead: boolean;
-  sentAt?: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface MessagingInstance 
-  extends Model<MessagingAttributes>, 
-  MessagingAttributes {}
-
-type MessagingModel = ModelStatic<MessagingInstance>;
-
-interface FindMessagingRequestBody {
-  name: string;
-}
+};
 
 interface MessagingSuccessResponse {
   type: 'success';
   message: string;
-  data: MessagingInstance;
+  data: MessagingJson;
   timestamp: string;
 }
 
@@ -55,24 +31,12 @@ interface ValidationResult {
   error?: string;
 }
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
 const ENV = {
   nodeEnv: process.env.NODE_ENV || 'development',
 };
 
-// ============================================================================
-// MODELS
-// ============================================================================
-
 // models/index.ts uses `export default`; require('../models') returned { default: db }
-const Messagings = (db as any).Messagings as MessagingModel;
-
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
+const Messagings = db.Messagings;
 
 const validateName = (
   name: string | undefined | null
@@ -111,7 +75,7 @@ const buildSuccessResponse = (
 ): MessagingSuccessResponse => ({
   type: 'success',
   message,
-  data,
+  data: data.toJSON(),
   timestamp: new Date().toISOString()
 });
 
@@ -132,7 +96,7 @@ const buildErrorResponse = (
 // ============================================================================
 
 const sendSuccess = (
-  res: Response,
+  res: Response<MessagingSuccessResponse | ErrorResponse>,
   message: string,
   data: MessagingInstance
 ): void => {
@@ -140,17 +104,13 @@ const sendSuccess = (
 };
 
 const sendError = (
-  res: Response,
+  res: Response<MessagingSuccessResponse | ErrorResponse>,
   statusCode: number,
   message: string,
   stack?: string
 ): void => {
   res.status(statusCode).json(buildErrorResponse(message, statusCode, stack));
 };
-
-// ============================================================================
-// ERROR HANDLING
-// ============================================================================
 
 const handleError = (error: Error): { message: string; stack?: string } => ({
   message: error.message || 'An unexpected error occurred',
@@ -197,10 +157,6 @@ const findMessagingHandler = async (
     }
   }
 };
-
-// ============================================================================
-// ROUTER CONFIGURATION
-// ============================================================================
 
 const router = Router();
 
@@ -256,9 +212,5 @@ router.delete(
   validationCtrl.validate('deleteMessagings'),
   messagingCtrl.removeMessaging
 );
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default router;

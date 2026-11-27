@@ -1,19 +1,40 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from 'sequelize';
+import { Sequelize, DataTypes, Model, ModelStatic, Optional } from 'sequelize';
+import type { Models } from '.';
 
-// Type for the models object passed to associate
-interface Models {
-  Users?: ModelStatic<Model>;
-  [key: string]: ModelStatic<Model> | undefined;
+export type WishListType = 'regular' | 'variant';
+
+export interface WishListAttributes {
+  id: string;
+  comicBookTitle: string | null;
+  comicIssue: number | null;
+  comicBookVolume: number | null;
+  comicBookYear: number | null;
+  comicBookPublisher: string | null;
+  comicBookCover: string | null;
+  type: WishListType;
+  wishUsersId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Extended model type that includes the associate method
-interface WishListsModel extends ModelStatic<Model> {
+export type WishListCreationAttributes = Optional<
+  WishListAttributes,
+  | 'id' | 'comicBookTitle' | 'comicIssue' | 'comicBookVolume' | 'comicBookYear' | 'comicBookPublisher'
+  | 'comicBookCover' | 'type' | 'wishUsersId' | 'createdAt' | 'updatedAt'
+>;
+
+/** A saved row as the API sends it */
+export type WishListJson = WishListAttributes;
+
+export interface WishListInstance extends Model<WishListAttributes, WishListCreationAttributes>, WishListAttributes {}
+
+export interface WishListsModel extends ModelStatic<WishListInstance> {
   associate: (models: Models) => void;
 }
 
 // The actual model factory function - direct TypeScript conversion
 const createWishListsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): WishListsModel => {
-  const WishLists = sequelize.define('WishLists', {
+  const WishLists = sequelize.define<WishListInstance>('WishLists', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
@@ -71,9 +92,18 @@ const createWishListsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes)
         isUUID: { args: 4, msg: 'Invalid user ID' },
       },
     },
-  }, {}) as WishListsModel;
+    // Sequelize sets these itself; they're listed so their types are known
+    createdAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+  }, {});
   
-  WishLists.associate = (models: Models) => {
+  const associate = (models: Models): void => {
     if (models.Users) {
       WishLists.belongsTo(models.Users, { 
         foreignKey: 'wishUsersId' 
@@ -81,7 +111,7 @@ const createWishListsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes)
     }
   };
   
-  return WishLists;
+  return Object.assign(WishLists, { associate });
 };
 
-export = createWishListsModel;
+export default createWishListsModel;

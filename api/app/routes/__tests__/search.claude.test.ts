@@ -1,6 +1,7 @@
 /// <reference types="jest" />
-import express from 'express';
+import express, { NextFunction, Response } from 'express';
 import request from 'supertest';
+import type { AuthRequest } from '../../middleware/auth';
 
 const create = jest.fn();
 jest.mock('@anthropic-ai/sdk', () => jest.fn().mockImplementation(() => ({ messages: { create } })));
@@ -13,9 +14,16 @@ jest.mock('openai', () => jest.fn().mockImplementation(() => ({ embeddings: { cr
 
 // Signed in as the owner of the collection being searched
 jest.mock('../../middleware/auth', () => ({
-  requireIdentity: (req: any, _res: any, next: any) => { req.user = { id: 'user-1' }; next(); },
+  requireIdentity: (req: AuthRequest, _res: Response, next: NextFunction) => { req.user = { id: 'user-1' }; next(); },
 }));
-jest.mock('../../middleware/ownership', () => ({ ownsParam: () => (_req: any, _res: any, next: any) => next() }));
+jest.mock('../../middleware/ownership', () => ({ ownsParam: () => (_req: AuthRequest, _res: Response, next: NextFunction) => next() }));
+
+/** A result as Search sends it */
+interface Result {
+  title: string;
+  already_owned?: boolean;
+  group?: string;
+}
 
 import searchRouter from '../search';
 
@@ -50,7 +58,7 @@ it('All Comics shows the comics when the reply starts with a thinking block', as
   const res = await request(app).get('/api/search/search-all').query({ q: 'Knightfall saga' });
 
   expect(res.status).toBe(200);
-  expect(res.body.results.map((r: any) => r.title)).toEqual(['Batman #492', 'Batman #497']);
+  expect(res.body.results.map((r: Result) => r.title)).toEqual(['Batman #492', 'Batman #497']);
   expect(create.mock.calls[0][0].model).toBe('claude-haiku-5-5');
 });
 
@@ -62,7 +70,7 @@ it('Find Missing tells Claude what is owned and shows only the comics that are m
 
   expect(res.status).toBe(200);
   // #497 is owned so it's left out; owning #49 doesn't hide #492
-  expect(res.body.results.map((r: any) => [r.title, r.already_owned])).toEqual([['Batman #492', false]]);
+  expect(res.body.results.map((r: Result) => [r.title, r.already_owned])).toEqual([['Batman #492', false]]);
 
   const prompt = create.mock.calls[0][0].messages[0].content;
   expect(prompt).toContain('Batman: #497, #49');
@@ -94,7 +102,7 @@ it('All Comics marks the comics already in the collection', async () => {
 
   const res = await request(app).get('/api/search/search-all').query({ q: 'Knightfall saga' });
 
-  expect(res.body.results.map((r: any) => [r.title, r.already_owned])).toEqual([
+  expect(res.body.results.map((r: Result) => [r.title, r.already_owned])).toEqual([
     ['Batman #492', false],
     ['Batman #497', true],
   ]);
@@ -113,7 +121,7 @@ it('puts each comic in a group, counting anything unexpected as Related', async 
 
   const res = await request(app).get('/api/search/search-all').query({ q: 'Knightfall saga' });
 
-  expect(res.body.results.map((r: any) => r.group)).toEqual(['Main story', 'Tie-in', 'Related', 'Related']);
+  expect(res.body.results.map((r: Result) => r.group)).toEqual(['Main story', 'Tie-in', 'Related', 'Related']);
 });
 
 it('My Collection gives each match its cover and where it lives in the collection', async () => {
@@ -150,6 +158,6 @@ it('Find Missing counts the owned issues by group instead of hiding them silentl
 
   const res = await request(app).get('/api/search/search-missing/user-1').query({ q: 'Knightfall saga' });
 
-  expect(res.body.results.map((r: any) => r.title)).toEqual(['Robin #1']);
+  expect(res.body.results.map((r: Result) => r.title)).toEqual(['Robin #1']);
   expect(res.body.owned_counts).toEqual({ 'Main story': 2 });
 });

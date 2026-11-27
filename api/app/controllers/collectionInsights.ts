@@ -16,7 +16,7 @@ import {
   CollectionAnalysis,
   generateCollectionAnalysis,
 } from '../services/collectionAnalysis';
-import { factsFingerprint, getSavedAnalysis, saveAnalysis } from '../services/analysisCache';
+import { databaseAnalysisStore, factsFingerprint, getSavedAnalysis, saveAnalysis } from '../services/analysisCache';
 
 interface CollectionInsights {
   totalComics: number;
@@ -46,14 +46,6 @@ const getAnthropicClient = (): Anthropic => {
   }
   
   return new Anthropic({ apiKey });
-};
-
-const getComicBookModel = () => {
-  return (db as any).ComicBooks || (db as any).ComicBook;
-};
-
-const getComicBookTitleModel = () => {
-  return (db as any).ComicBookTitles || (db as any).ComicBookTitle;
 };
 
 const emptyInsights = (summary: string): CollectionInsights => ({
@@ -90,7 +82,7 @@ const toInsights = (
 export const getCollectionInsights = async (
   req: Request<{ userId: string }>,
   res: Response<InsightsResponse>
-): Promise<Response> => {
+): Promise<Response<InsightsResponse>> => {
   const { userId } = req.params;
   
   console.log('Analyzing collection for user:', userId);
@@ -103,14 +95,8 @@ export const getCollectionInsights = async (
   }
   
   try {
-    const ComicBooks = getComicBookModel();
-    const ComicBookTitles = getComicBookTitleModel();
-    const CollectionPublishers = (db as any).CollectionPublishers || (db as any).CollectionPublisher;
-    
-    if (!ComicBooks || !ComicBookTitles || !CollectionPublishers) {
-      throw new Error('Comic book models not loaded');
-    }
-    
+    const { ComicBooks, ComicBookTitles, CollectionPublishers } = db;
+
     // Step 1: Get user's publishers
     const userPublishers = await CollectionPublishers.findAll({
       where: { collectpubUsersId: userId },
@@ -126,7 +112,7 @@ export const getCollectionInsights = async (
       });
     }
     
-    const publisherIds = userPublishers.map((p: any) => p.id);
+    const publisherIds = userPublishers.map(p => p.id);
     
     // Step 2: Get titles for those publishers
     const userTitles = await ComicBookTitles.findAll({
@@ -143,7 +129,7 @@ export const getCollectionInsights = async (
       });
     }
     
-    const titleIds = userTitles.map((t: any) => t.id);
+    const titleIds = userTitles.map(t => t.id);
     
     // Step 3: Get all comics for those titles
     const comicBooks = await ComicBooks.findAll({
@@ -163,12 +149,12 @@ export const getCollectionInsights = async (
     
     // Create a map of title IDs to title names
     const titleMap = new Map<string, string>();
-    userTitles.forEach((t: any) => {
+    userTitles.forEach(t => {
       titleMap.set(t.id, t.cbTitle);
     });
     
     // Convert to plain objects with proper title names
-    const comics: ComicRecord[] = comicBooks.map((cb: any) => ({
+    const comics: ComicRecord[] = comicBooks.map(cb => ({
       title: titleMap.get(cb.comicbooktitlerelId) || cb.title || 'Unknown',
       comicIssue: cb.comicIssue,
       type: cb.type,
@@ -179,9 +165,8 @@ export const getCollectionInsights = async (
     console.log(`Analyzed ${facts.uniqueSeries} unique series`);
     
     // Same collection as last time: show the analysis the collector already saw
-    const analysisStore = (db as any).CollectionAnalyses;
     const factsHash = factsFingerprint(facts);
-    const saved = analysisStore ? await getSavedAnalysis(analysisStore, userId, factsHash) : null;
+    const saved = await getSavedAnalysis(databaseAnalysisStore, userId, factsHash);
 
     if (saved) {
       console.log('Using saved AI analysis (collection unchanged)');
@@ -201,8 +186,8 @@ export const getCollectionInsights = async (
     );
 
     // Only a validated AI answer is saved; after a fallback, the next visit tries again
-    if (result.source === 'ai' && analysisStore) {
-      await saveAnalysis(analysisStore, userId, factsHash, result.analysis);
+    if (result.source === 'ai') {
+      await saveAnalysis(databaseAnalysisStore, userId, factsHash, result.analysis);
     }
     
     const insights = toInsights(facts, result.analysis, result.source);

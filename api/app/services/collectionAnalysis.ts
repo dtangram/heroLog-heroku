@@ -1,3 +1,5 @@
+import type Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
 import { CollectionFacts, SeriesAnalysis } from './collectionFacts';
 
 export interface Recommendation {
@@ -25,7 +27,7 @@ export interface AnalysisResult {
 
 /** The subset of the Anthropic client this module uses (easy to mock). */
 export interface MessagesClient {
-  messages: { create: (params: any) => Promise<any> };
+  messages: { create: (params: Anthropic.MessageCreateParamsNonStreaming) => Promise<Anthropic.Message> };
 }
 
 export const ANALYSIS_MODEL = 'claude-haiku-4-5-20251001';
@@ -38,7 +40,7 @@ const TOOL_NAME = 'record_collection_analysis';
 const MAX_SERIES_IN_PROMPT = 10;
 const MAX_MISSING_IN_PROMPT = 30;
 
-export const ANALYSIS_TOOL = {
+export const ANALYSIS_TOOL: Anthropic.Tool = {
   name: TOOL_NAME,
   description: "Record your analysis of the collector's comic collection.",
   input_schema: {
@@ -80,7 +82,7 @@ export const ANALYSIS_TOOL = {
     },
     required: ['summary', 'highlights', 'recommendations', 'observation'],
   },
-} as const;
+};
 
 export const SYSTEM_PROMPT = `You are a comic book collection advisor inside the Hero-Log app. You receive facts computed from the collector's database.
 
@@ -141,45 +143,49 @@ export const toPlainText = (text: string): string =>
     .join(' ')
     .trim();
 
-const isString = (v: unknown): v is string => typeof v === 'string';
+const recommendationSchema = z.object({
+  series: z.string(),
+  issues: z.array(z.number().int()),
+  reason: z.string(),
+});
 
-/** Check the tool input matches the schema; returns a cleaned copy or errors. */
+/**
+ * Check Claude's tool input matches the schema; returns a cleaned copy or
+ * the problems, which are sent back to Claude so it can correct them.
+ */
 export const parseAnalysis = (
-  input: any
+  toolUse: Anthropic.ToolUseBlock
 ): { analysis?: CollectionAnalysis; errors: string[] } => {
-  const errors: string[] = [];
-  if (!input || typeof input !== 'object') return { errors: ['Tool input was not an object.'] };
+  const input = z.looseObject({}).safeParse(toolUse.input);
+  if (!input.success) return { errors: ['Tool input was not an object.'] };
 
-  if (!isString(input.summary) || !input.summary.trim()) errors.push('summary must be a non-empty string.');
-  if (!isString(input.observation)) errors.push('observation must be a string.');
-  if (!Array.isArray(input.highlights) || !input.highlights.every(isString))
-    errors.push('highlights must be an array of strings.');
-  if (
-    !Array.isArray(input.recommendations) ||
-    !input.recommendations.every(
-      (r: any) =>
-        r &&
-        isString(r.series) &&
-        isString(r.reason) &&
-        Array.isArray(r.issues) &&
-        r.issues.every((n: unknown) => Number.isInteger(n))
-    )
-  )
+  const summary = z.string().safeParse(input.data.summary);
+  const observation = z.string().safeParse(input.data.observation);
+  const highlights = z.array(z.string()).safeParse(input.data.highlights);
+  const recommendations = z.array(recommendationSchema).safeParse(input.data.recommendations);
+
+  const errors: string[] = [];
+  if (!summary.success || !summary.data.trim()) errors.push('summary must be a non-empty string.');
+  if (!observation.success) errors.push('observation must be a string.');
+  if (!highlights.success) errors.push('highlights must be an array of strings.');
+  if (!recommendations.success)
     errors.push('recommendations must be an array of {series, issues: integer[], reason}.');
 
-  if (errors.length) return { errors };
+  if (!summary.success || !observation.success || !highlights.success || !recommendations.success || errors.length) {
+    return { errors };
+  }
 
   return {
     errors,
     analysis: {
-      summary: toPlainText(input.summary),
-      highlights: input.highlights.slice(0, 3).map(toPlainText).filter(Boolean),
-      recommendations: input.recommendations.slice(0, 4).map((r: Recommendation) => ({
+      summary: toPlainText(summary.data),
+      highlights: highlights.data.slice(0, 3).map(toPlainText).filter(Boolean),
+      recommendations: recommendations.data.slice(0, 4).map(r => ({
         series: toPlainText(r.series),
         issues: Array.from(new Set(r.issues)),
         reason: toPlainText(r.reason),
       })),
-      observation: toPlainText(input.observation),
+      observation: toPlainText(observation.data),
     },
   };
 };
@@ -379,10 +385,17 @@ export const buildFallbackAnalysis = (facts: CollectionFacts): CollectionAnalysi
 // ---------- Claude call with one corrective retry ----------
 
 /** Busy or briefly unavailable: worth one more try after a short wait */
-const isTemporary = (error: any): boolean =>
-  [429, 500, 502, 503, 529].includes(Number(error?.status));
+const statusOf = (error: Error): number | undefined =>
+  'status' in error && typeof error.status === 'number' ? error.status : undefined;
 
-const requestAnalysis = async (client: MessagesClient, model: string, messages: any[], waitMs = 1500): Promise<any> => {
+const isTemporary = (error: Error): boolean => [429, 500, 502, 503, 529].includes(Number(statusOf(error)));
+
+const requestAnalysis = async (
+  client: MessagesClient,
+  model: string,
+  messages: Anthropic.MessageParam[],
+  waitMs = 1500
+): Promise<Anthropic.Message> => {
   const ask = () => client.messages.create({
     model,
     max_tokens: 1024,
@@ -397,8 +410,8 @@ const requestAnalysis = async (client: MessagesClient, model: string, messages: 
   try {
     return await ask();
   } catch (error) {
-    if (!isTemporary(error)) throw error;
-    console.warn(`Collection analysis: Claude was busy (${(error as any).status}), trying once more.`);
+    if (!(error instanceof Error) || !isTemporary(error)) throw error;
+    console.warn(`Collection analysis: Claude was busy (${statusOf(error)}), trying once more.`);
     await new Promise(resolve => setTimeout(resolve, waitMs));
     return ask();
   }
@@ -412,7 +425,7 @@ export const generateCollectionAnalysis = async (
   const rejected: string[][] = [];
   /** The most recent well-formed answer, in case every attempt is rejected */
   let lastAnalysis: CollectionAnalysis | undefined;
-  const messages: any[] = [
+  const messages: Anthropic.MessageParam[] = [
     {
       role: 'user',
       content: `Collection facts:\n${JSON.stringify(buildFactsPayload(facts), null, 2)}`,
@@ -420,7 +433,7 @@ export const generateCollectionAnalysis = async (
   ];
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    let response: any;
+    let response: Anthropic.Message;
     try {
       response = await requestAnalysis(client, model, messages);
     } catch (error) {
@@ -428,15 +441,15 @@ export const generateCollectionAnalysis = async (
       break;
     }
 
-    const toolUse = response?.content?.find(
-      (block: any) => block.type === 'tool_use' && block.name === TOOL_NAME
+    const toolUse = response.content.find(
+      (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use' && block.name === TOOL_NAME
     );
     if (!toolUse) {
       rejected.push(['No tool call in response.']);
       continue;
     }
 
-    const { analysis, errors: shapeErrors } = parseAnalysis(toolUse.input);
+    const { analysis, errors: shapeErrors } = parseAnalysis(toolUse);
     const errors = analysis ? validateAnalysis(facts, analysis) : shapeErrors;
     if (analysis) lastAnalysis = analysis;
 

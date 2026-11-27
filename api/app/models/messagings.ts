@@ -1,16 +1,34 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from 'sequelize';
+import { Sequelize, DataTypes, Model, ModelStatic, Optional } from 'sequelize';
+import type { Models } from '.';
 
-interface Models {
-  Users?: ModelStatic<Model>;
-  [key: string]: ModelStatic<Model> | undefined;
+export interface MessagingAttributes {
+  id: string;
+  name: string | null;
+  email: string | null;
+  subject: string | null;
+  userSent: number | null;
+  message: string | null;
+  messageUsersId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface MessagingsModel extends ModelStatic<Model> {
+export type MessagingCreationAttributes = Optional<
+  MessagingAttributes,
+  'id' | 'name' | 'email' | 'subject' | 'userSent' | 'message' | 'messageUsersId' | 'createdAt' | 'updatedAt'
+>;
+
+/** A saved row as the API sends it */
+export type MessagingJson = MessagingAttributes;
+
+export interface MessagingInstance extends Model<MessagingAttributes, MessagingCreationAttributes>, MessagingAttributes {}
+
+export interface MessagingsModel extends ModelStatic<MessagingInstance> {
   associate: (models: Models) => void;
 }
 
 const createMessagingsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes): MessagingsModel => {
-  const Messagings = sequelize.define('Messagings', {
+  const Messagings = sequelize.define<MessagingInstance>('Messagings', {
     id: {
       defaultValue: dataTypes.UUIDV4,
       primaryKey: true,
@@ -50,9 +68,18 @@ const createMessagingsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
         isUUID: { args: 4, msg: 'Invalid user ID' },
       },
     },
-  }, {}) as MessagingsModel;
+    // Sequelize sets these itself; they're listed so their types are known
+    createdAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: dataTypes.DATE,
+      allowNull: false,
+    },
+  }, {});
   
-  Messagings.associate = (models: Models) => {
+  const associate = (models: Models): void => {
     if (models.Users) {
       Messagings.belongsTo(models.Users, {
         foreignKey: 'messageUsersId'
@@ -60,7 +87,7 @@ const createMessagingsModel = (sequelize: Sequelize, dataTypes: typeof DataTypes
     }
   };
   
-  return Messagings;
+  return Object.assign(Messagings, { associate });
 };
 
-export = createMessagingsModel;
+export default createMessagingsModel;

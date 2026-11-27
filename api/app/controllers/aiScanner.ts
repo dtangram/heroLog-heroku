@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import axios from 'axios';
+import { z } from 'zod';
 
-interface ScanRequest {
+type ScanRequest = {
   imageUrl: string;
-}
+};
 
 interface ComicMetadata {
   comicBookTitle: string;
@@ -40,11 +41,22 @@ const getAnthropicClient = (): Anthropic => {
 };
 
 // HELPER FUNCTIONS
-const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string; mediaType: string }> => {
+/** The image formats Claude accepts */
+type ImageMediaType = Anthropic.Base64ImageSource['media_type'];
+
+const imageMediaType = (contentType: string): ImageMediaType => {
+  if (contentType.includes('png')) return 'image/png';
+  if (contentType.includes('gif')) return 'image/gif';
+  if (contentType.includes('webp')) return 'image/webp';
+  // Default to jpeg for jpg, jpeg, or unknown
+  return 'image/jpeg';
+};
+
+const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string; mediaType: ImageMediaType }> => {
   console.log('Downloading image:', imageUrl);
   
   try {
-    const response = await axios.get(imageUrl, {
+    const response = await axios.get<ArrayBuffer>(imageUrl, {
       responseType: 'arraybuffer',
       timeout: 10000,
       headers: {
@@ -52,23 +64,11 @@ const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string
       }
     });
     
-    const buffer = Buffer.from(response.data, 'binary');
+    const buffer = Buffer.from(response.data);
     const base64 = buffer.toString('base64');
     
-    // Determine media type from content-type header or URL
-    let mediaType = response.headers['content-type'] || 'image/jpeg';
-    
-    // Map content types to Anthropic-supported formats
-    if (mediaType.includes('png')) {
-      mediaType = 'image/png';
-    } else if (mediaType.includes('gif')) {
-      mediaType = 'image/gif';
-    } else if (mediaType.includes('webp')) {
-      mediaType = 'image/webp';
-    } else {
-      // Default to jpeg for jpg, jpeg, or unknown
-      mediaType = 'image/jpeg';
-    }
+    // Map the content-type header to a format Claude accepts
+    const mediaType = imageMediaType(String(response.headers['content-type'] ?? ''));
     
     console.log('Image downloaded, size:', buffer.length, 'bytes, type:', mediaType);
     
@@ -79,14 +79,46 @@ const downloadImageAsBase64 = async (imageUrl: string): Promise<{ base64: string
   }
 };
 
-const asText = (value: unknown): string =>
+/** A field as Claude writes it in its JSON: usually text, sometimes a number */
+type CoverField = string | number | null | undefined;
+
+const asText = (value: CoverField): string =>
   value === undefined || value === null ? '' : String(value).trim();
+
+/** The first of two fields that has text; issue 0 counts as text */
+const firstText = (value: CoverField, fallback: CoverField): string => asText(value) || asText(fallback);
+
+/** Any field of the wrong kind is read as missing rather than failing the whole scan */
+const coverField = z.union([z.string(), z.number()]).nullish().catch(undefined);
+
+/** The JSON Claude returns for a cover; it sometimes uses the app's field names instead */
+const coverJsonSchema = z.object({
+  title: coverField,
+  comicBookTitle: coverField,
+  issue: coverField,
+  comicIssue: coverField,
+  volume: coverField,
+  comicBookVolume: coverField,
+  year: coverField,
+  comicBookYear: coverField,
+  publisher: coverField,
+  comicBookPublisher: coverField,
+  author: coverField,
+  writer: coverField,
+  penciler: coverField,
+  artist: coverField,
+  inker: coverField,
+  coverartist: coverField,
+  coverArtist: coverField,
+  type: coverField,
+  confidence: z.number().nullish().catch(undefined),
+});
 
 /**
  * Normalize a year read from a cover date to 4 digits: "1993" stays,
  * "93" or "'93" becomes "1993", "05" becomes "2005". Anything else is blank.
  */
-export const normalizeYear = (value: unknown): string => {
+export const normalizeYear = (value: CoverField): string => {
   const text = asText(value).replace(/^'/, '');
   if (/^\d{4}$/.test(text)) return text;
   if (/^\d{2}$/.test(text)) {
@@ -102,20 +134,22 @@ export const parseComicMetadata = (text: string): ComicMetadata | null => {
     // Try to find JSON in the response
     const jsonMatch = text.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
+      const result = coverJsonSchema.safeParse(JSON.parse(jsonMatch[0]));
+      if (!result.success) return null;
+      const parsed = result.data;
       
-      // Validate and normalize the data
+      // Normalize the data
       return {
-        comicBookTitle: (parsed.title || parsed.comicBookTitle || '').trim(),
-        comicIssue: (parsed.issue?.toString() || parsed.comicIssue?.toString() || '').trim(),
-        comicBookVolume: (parsed.volume?.toString() || parsed.comicBookVolume?.toString() || '').trim(),
+        comicBookTitle: firstText(parsed.title, parsed.comicBookTitle),
+        comicIssue: firstText(parsed.issue, parsed.comicIssue),
+        comicBookVolume: firstText(parsed.volume, parsed.comicBookVolume),
         comicBookYear: normalizeYear(parsed.year || parsed.comicBookYear),
-        comicBookPublisher: (parsed.publisher || parsed.comicBookPublisher || '').trim(),
-        author: asText(parsed.author || parsed.writer),
-        penciler: asText(parsed.penciler || parsed.artist),
+        comicBookPublisher: firstText(parsed.publisher, parsed.comicBookPublisher),
+        author: firstText(parsed.author, parsed.writer),
+        penciler: firstText(parsed.penciler, parsed.artist),
         inker: asText(parsed.inker),
-        coverartist: asText(parsed.coverartist || parsed.coverArtist),
-        type: parsed.type?.toLowerCase() === 'variant' ? 'variant' : 'regular',
+        coverartist: firstText(parsed.coverartist, parsed.coverArtist),
+        type: asText(parsed.type).toLowerCase() === 'variant' ? 'variant' : 'regular',
         confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.7
       };
     }
@@ -130,9 +164,9 @@ export const parseComicMetadata = (text: string): ComicMetadata | null => {
 
 // CONTROLLER
 export const scanComicCover = async (
-  req: Request<{}, ScanResponse, ScanRequest>,
+  req: Request<Record<string, string>, ScanResponse, ScanRequest>,
   res: Response<ScanResponse>
-): Promise<Response> => {
+): Promise<Response<ScanResponse>> => {
   const { imageUrl } = req.body;
   
   console.log('Scanning comic cover:', imageUrl);
@@ -175,7 +209,7 @@ export const scanComicCover = async (
               type: 'image',
               source: {
                 type: 'base64',
-                media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+                media_type: mediaType,
                 data: base64
               }
             },
@@ -264,8 +298,8 @@ export const scanComicCover = async (
     
     // Extract text from response
     const responseText = message.content
-      .filter(block => block.type === 'text')
-      .map(block => (block as any).text)
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map(block => block.text)
       .join('\n');
     
     console.log('Claude response:', responseText);

@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import { buildCollectionFacts, ComicRecord } from '../collectionFacts';
-import { AnalysisStore, factsFingerprint, getSavedAnalysis, saveAnalysis } from '../analysisCache';
+import { AnalysisStore, factsFingerprint, getSavedAnalysis, SavedAnalysis, saveAnalysis } from '../analysisCache';
 import { CollectionAnalysis } from '../collectionAnalysis';
 
 const comic = (title: string, comicIssue: string, type = 'regular'): ComicRecord => ({ title, comicIssue, type });
@@ -16,7 +16,7 @@ const analysis: CollectionAnalysis = {
 
 /** An in-memory stand-in for the CollectionAnalyses model. */
 const memoryStore = () => {
-  const rows = new Map<string, any>();
+  const rows = new Map<string, SavedAnalysis>();
   const store: AnalysisStore = {
     findOne: jest.fn(async ({ where }) => rows.get(where.analysisUsersId) ?? null),
     upsert: jest.fn(async values => {
@@ -64,8 +64,8 @@ describe('getSavedAnalysis and saveAnalysis', () => {
     await expect(getSavedAnalysis(store, 'user-1', 'hash-b')).resolves.toMatchObject({ summary: 'Updated.' });
   });
 
-  it('reads Sequelize rows through get({ plain: true })', async () => {
-    const row = { get: () => ({ factsHash: 'hash-a', analysis }) };
+  it("reads a saved row's fields (Sequelize rows have them as properties)", async () => {
+    const row: SavedAnalysis = { analysisUsersId: 'user-1', factsHash: 'hash-a', analysis };
     const store: AnalysisStore = { findOne: async () => row, upsert: async () => undefined };
     await expect(getSavedAnalysis(store, 'user-1', 'hash-a')).resolves.toEqual(analysis);
   });

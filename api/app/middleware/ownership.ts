@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { QueryTypes } from 'sequelize';
 import db from '../models';
 import type { AuthRequest } from './auth';
+import type { ApiResult } from '../types/api';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -49,14 +50,14 @@ export const messageRecipient: OwnerLookup = ownerQuery(
   `SELECT "messageUsersId" AS owner FROM "Messagings" WHERE id = :id`
 );
 
-const notFound = (res: Response) => res.status(404).json({ success: false, error: 'Not found' });
+const notFound = (res: Response<ApiResult>) => res.status(404).json({ success: false, error: 'Not found' });
 
-const sameId = (a: unknown, b: unknown) =>
+const sameId = (a: string | null | undefined, b: string | null | undefined) =>
   typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
 
 /** The route's :param must be the requester's own id (e.g. /api/insights/:userId). */
 export const ownsParam = (param: string) =>
-  (req: AuthRequest, res: Response, next: NextFunction): void => {
+  (req: AuthRequest, res: Response<ApiResult>, next: NextFunction): void => {
     if (!sameId(req.params[param], req.user?.id)) {
       notFound(res);
       return;
@@ -66,7 +67,7 @@ export const ownsParam = (param: string) =>
 
 /** The record named by :param must belong to the requester. */
 export const ownsRecord = (lookup: OwnerLookup, param = 'id') =>
-  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response<ApiResult>, next: NextFunction): Promise<void> => {
     try {
       const owner = await lookup(req.params[param]);
       if (!sameId(owner, req.user?.id)) {
@@ -86,7 +87,7 @@ export const ownsRecord = (lookup: OwnerLookup, param = 'id') =>
  * required: the field must be present (creating); otherwise only checked if sent (updating).
  */
 export const ownsBodyField = (field: string, lookup?: OwnerLookup, required = true) =>
-  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  async (req: AuthRequest, res: Response<ApiResult>, next: NextFunction): Promise<void> => {
     const value = req.body?.[field];
 
     if (value === undefined || value === null || value === '') {

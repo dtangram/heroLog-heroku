@@ -1,82 +1,28 @@
 import { Request, Response } from 'express';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { WhereOptions } from 'sequelize';
 import db from '../models';
+import { PasswordResetToken, verifyPasswordResetToken } from '../utils/tokens';
 import { sendPasswordResetEmail } from '../services/emailService';
 
-// Properly typed model interface
-interface UserModel {
-  findOne: (options: { where: WhereOptions<UserAttributes> }) => Promise<UserInstance | null>;
-  findByPk: (id: string) => Promise<UserInstance | null>;
-}
-
-// Model instance interface
-interface UserInstance {
-  id: string;
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  accesstoken: string | null;
-  password: string | null;
-  profilePic: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  update: (data: Partial<UserAttributes>) => Promise<UserInstance>;
-}
-
-// User attributes interface (matching actual model structure)
-interface UserAttributes {
-  id: string;
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  accesstoken: string | null;
-  password: string | null;
-  profilePic: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // Request body interfaces
-interface PasswordResetRequestBody {
+type PasswordResetRequestBody = {
   email: string;
-}
+};
 
-interface VerifyTokenRequestBody {
+type VerifyTokenRequestBody = {
   token: string;
-}
+};
 
-interface ResetPasswordRequestBody {
+type ResetPasswordRequestBody = {
   token: string;
   newPassword: string;
-}
+};
 
-interface ChangePasswordRequestBody {
+type ChangePasswordRequestBody = {
   currentPassword: string;
   newPassword: string;
-}
-
-// JWT payload interface with proper UUID typing
-interface PasswordResetTokenPayload {
-  id: string;
-  email: string;
-  purpose: string;
-  iat?: number;
-  exp?: number;
-}
-
-// API response interface
-interface ApiResponse<T = Record<string, string | number>> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  userId?: string;
-  token?: string;
-}
+};
 
 // Validation result interface
 interface ValidationResult {
@@ -84,16 +30,26 @@ interface ValidationResult {
   message?: string;
 }
 
-// Extended Request type for authenticated users
-type AuthenticatedRequest<P = {}, ResBody = {}, ReqBody = {}> = Request<P, ResBody, ReqBody> & {
+/** What every password reset reply can hold */
+interface ResetReply {
+  success: boolean;
+  data?: { userId?: string; email?: string };
+  message?: string;
+  error?: string;
+  userId?: string;
+  token?: string;
+}
+
+/** Changing a password needs the signed-in user (set by the auth middleware) */
+type ChangePasswordRequest = Request<Record<string, string>, ResetReply, ChangePasswordRequestBody> & {
   user?: {
     id: string;
-    email: string;
+    email?: string;
   };
 };
 
 // Models
-const Users = (db as any).Users as UserModel;
+const Users = db.Users;
 
 // Email validation
 const isValidEmail = (email: string): boolean => {
@@ -171,9 +127,9 @@ const validateString = (value: string, fieldName: string): ValidationResult => {
 
 // Request password reset token
 export const emailPasswordReset = async (
-  req: Request<{}, ApiResponse<{ userId: string; email: string }>, PasswordResetRequestBody>,
-  res: Response<ApiResponse<{ userId: string; email: string }>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, ResetReply, PasswordResetRequestBody>,
+  res: Response<ResetReply>
+): Promise<Response<ResetReply>> => {
   const { email } = req.body;
 
   try {
@@ -227,7 +183,7 @@ export const emailPasswordReset = async (
     }
 
     // Generate password reset token (expires in 1 hour)
-    const tokenPayload: PasswordResetTokenPayload = { 
+    const tokenPayload: PasswordResetToken = { 
       id: user.id, 
       email: user.email,
       purpose: 'password-reset' 
@@ -270,9 +226,9 @@ export const emailPasswordReset = async (
 
 // Verify password reset token validity
 export const verifyResetToken = async (
-  req: Request<{}, ApiResponse<{ email: string }>, VerifyTokenRequestBody>,
-  res: Response<ApiResponse<{ email: string }>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, ResetReply, VerifyTokenRequestBody>,
+  res: Response<ResetReply>
+): Promise<Response<ResetReply>> => {
   const { token } = req.body;
 
   try {
@@ -299,10 +255,10 @@ export const verifyResetToken = async (
       });
     }
 
-    let decoded: PasswordResetTokenPayload;
+    let decoded: PasswordResetToken;
     
     try {
-      decoded = jwt.verify(token, secret) as PasswordResetTokenPayload;
+      decoded = verifyPasswordResetToken(token, secret);
     } catch (jwtError) {
       if (jwtError instanceof jwt.TokenExpiredError) {
         return res.status(401).json({ 
@@ -362,9 +318,9 @@ export const verifyResetToken = async (
 
 // Reset password using valid token
 export const resetPassword = async (
-  req: Request<{}, ApiResponse<never>, ResetPasswordRequestBody>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, ResetReply, ResetPasswordRequestBody>,
+  res: Response<ResetReply>
+): Promise<Response<ResetReply>> => {
   const { token, newPassword } = req.body;
 
   try {
@@ -407,10 +363,10 @@ export const resetPassword = async (
       });
     }
 
-    let decoded: PasswordResetTokenPayload;
+    let decoded: PasswordResetToken;
     
     try {
-      decoded = jwt.verify(token, secret) as PasswordResetTokenPayload;
+      decoded = verifyPasswordResetToken(token, secret);
     } catch (jwtError) {
       if (jwtError instanceof jwt.TokenExpiredError) {
         return res.status(401).json({ 
@@ -481,9 +437,9 @@ export const resetPassword = async (
 
 // Change password for authenticated users
 export const changePassword = async (
-  req: AuthenticatedRequest<{}, ApiResponse<never>, ChangePasswordRequestBody>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  req: ChangePasswordRequest,
+  res: Response<ResetReply>
+): Promise<Response<ResetReply>> => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.user?.id;
 

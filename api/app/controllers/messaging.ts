@@ -1,66 +1,22 @@
 import { Request, Response } from 'express';
 import { WhereOptions } from 'sequelize';
 import db from '../models';
+import type { MessagingAttributes, MessagingInstance } from '../models/messagings';
+import type { ApiResult, IdResult, MessageResult, MessagesResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 import { clientId } from '../utils/clientId';
 
-// Properly typed model interface
-interface MessagingModel {
-  findAll: (options: { where: WhereOptions<MessagingAttributes> }) => Promise<MessagingInstance[]>;
-  findByPk: (id: string) => Promise<MessagingInstance | null>;
-  create: (data: MessagingCreationAttributes) => Promise<MessagingInstance>;
-  update: (
-    data: Partial<MessagingAttributes>, 
-    options: { where: WhereOptions<MessagingAttributes>; returning: boolean }
-  ) => Promise<[number, MessagingInstance[]]>;
-  destroy: (options: { where: WhereOptions<MessagingAttributes> }) => Promise<number>;
-}
-
-// Model instance interface
-interface MessagingInstance {
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  messageUsersId: string | null;
-  userSent: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => MessagingAttributes;
-}
-
-// Fixed interface to match actual model structure (UUIDs, not numbers)
-interface MessagingAttributes {
-  id: string;  // UUID string
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  messageUsersId: string | null;  // UUID string
-  userSent: number | null;  // This might be an integer field for tracking
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Creation interface
-interface MessagingCreationAttributes {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  messageUsersId: string;
-  userSent?: number | null;  // Allow null to match the model
-}
-
-// API response interface
-interface ApiResponse<T = MessagingAttributes | MessagingAttributes[]> {
-  success: boolean;
-  data?: T;
-  count?: number;
+/** What the message forms send; on an update, fields left out stay as they are */
+type MessageBody = {
+  /** The ID the app chose for a new message (see utils/clientId.ts) */
+  id?: string;
+  name?: string;
+  email?: string;
+  subject?: string;
   message?: string;
-  error?: string;
-  errors?: string[];
-}
+  messageUsersId?: string;
+  userSent?: number;
+};
 
 // Validation result interface
 interface ValidationResult {
@@ -68,20 +24,7 @@ interface ValidationResult {
   message?: string;
 }
 
-// Sequelize error interface
-interface SequelizeError {
-  errors: Array<{ message: string }>;
-}
-
-// Import models with proper typing
-// models/index.ts uses `export default`, so require('../models') returned
-// { default: db } and Messagings was undefined (every message request failed)
-const Messagings = (db as any).Messagings as MessagingModel;
-
-// Type guard for Sequelize errors
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
+const Messagings = db.Messagings;
 
 // UUID validation
 const isValidUUID = (value: string): boolean => {
@@ -95,32 +38,15 @@ const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-// Centralized error handler
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
+// Centralized error reply. A catch can receive anything, so it's turned into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 // Parameter validation
 const validateParams = (
-  params: Record<string, string>,
+  params: Partial<Record<string, string | number | boolean | Date | null>>,
   requiredFields: string[]
 ): ValidationResult => {
   const missing = requiredFields.filter(field => !params[field]);
@@ -204,8 +130,8 @@ const findMessagings = async (
 // Get all received messagings for a specific user
 export const getMessagings = async (
   req: Request<{ userId: string }>,
-  res: Response<ApiResponse<MessagingAttributes[]>>
-): Promise<Response> => {
+  res: Response<MessagesResult>
+): Promise<Response<MessagesResult>> => {
   const { userId } = req.params;
   
   // Validate required parameters
@@ -239,15 +165,15 @@ export const getMessagings = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getMessagings');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getMessagings'));
   }
 };
 
 // Get all sent messagings for a specific user (using userSent number)
 export const getSentMessagings = async (
   req: Request<{ userId: string }>,
-  res: Response<ApiResponse<MessagingAttributes[]>>
-): Promise<Response> => {
+  res: Response<MessagesResult>
+): Promise<Response<MessagesResult>> => {
   const { userId } = req.params;
   
   // Validate required parameters
@@ -281,15 +207,15 @@ export const getSentMessagings = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getSentMessagings');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getSentMessagings'));
   }
 };
 
 // Find one messaging by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<MessagingAttributes>>
-): Promise<Response> => {
+  res: Response<MessageResult>
+): Promise<Response<MessageResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -325,19 +251,19 @@ export const getOneById = async (
       data: messaging.toJSON()
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getOneById');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getOneById'));
   }
 };
 
 // Create a new messaging
 export const createMessaging = async (
-  req: Request<{}, {}, Partial<MessagingCreationAttributes>>,
-  res: Response<ApiResponse<Pick<MessagingAttributes, 'id'>>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, IdResult, MessageBody>,
+  res: Response<IdResult>
+): Promise<Response<IdResult>> => {
   const { name, email, subject, message, messageUsersId, userSent } = req.body;
   
   // Validate required fields
-  const validation = validateParams(req.body as Record<string, string>, [
+  const validation = validateParams(req.body, [
     'name',
     'email', 
     'subject',
@@ -400,7 +326,7 @@ export const createMessaging = async (
   
   // Validate userSent as number if provided
   if (userSent !== undefined) {
-    const userSentValidation = validateNumber(userSent as number, 'User Sent');
+    const userSentValidation = validateNumber(userSent, 'User Sent');
     if (!userSentValidation.isValid) {
       return res.status(400).json({ success: false, error: userSentValidation.message });
     }
@@ -408,7 +334,7 @@ export const createMessaging = async (
   
   try {
     const newMessaging = await Messagings.create({
-      ...clientId((req.body as { id?: unknown })?.id),
+      ...clientId(req.body.id),
       name: name.trim(),
       email: email.trim().toLowerCase(),
       subject: subject.trim(),
@@ -423,15 +349,15 @@ export const createMessaging = async (
       message: 'Messaging created successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'createMessaging');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'createMessaging'));
   }
 };
 
 // Update an existing messaging
 export const updateMessaging = async (
-  req: Request<{ id: string }, {}, Partial<MessagingAttributes>>,
-  res: Response<ApiResponse<MessagingAttributes>>
-): Promise<Response> => {
+  req: Request<{ id: string }, MessageResult, MessageBody>,
+  res: Response<MessageResult>
+): Promise<Response<MessageResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -461,7 +387,7 @@ export const updateMessaging = async (
   }
   
   // Sanitize and validate fields if present
-  const updateData: Partial<MessagingAttributes> = { ...req.body };
+  const updateData: MessageBody = { ...req.body };
   
   // Validate string fields if provided
   if (updateData.name !== undefined) {
@@ -576,15 +502,15 @@ export const updateMessaging = async (
       message: 'Messaging updated successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'updateMessaging');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'updateMessaging'));
   }
 };
 
 // Delete a messaging
 export const removeMessaging = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  res: Response<ApiResult>
+): Promise<Response<ApiResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -632,6 +558,6 @@ export const removeMessaging = async (
       message: 'Messaging deleted successfully' 
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'removeMessaging');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'removeMessaging'));
   }
 };

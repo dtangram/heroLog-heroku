@@ -7,10 +7,6 @@ import * as validationCtrl from '../controllers/validation';
 console.log('🔵 COLLECTION PUBLISHERS ROUTES FILE LOADED');
 console.log('🔵 Current time:', new Date().toISOString());
 
-// ============================================================================
-// ROUTER CONFIGURATION
-// ============================================================================
-
 const router = Router();
 
 // Apply auth middleware to all routes
@@ -28,7 +24,7 @@ router.get(
 // Create a new publisher for authenticated user
 router.post(
   '/create',
-  (req: AuthRequest , res: Response, next: NextFunction) => {
+  (req: AuthRequest, res: Response<{ error: string }>, next: NextFunction) => {
     try {
       console.log('🚀 CREATE ROUTE HIT');
       console.log('User from token:', req.user);  // ✅ Log authenticated user
@@ -73,9 +69,5 @@ router.delete(
 
 console.log('🔵 COLLECTION PUBLISHERS ROUTER CONFIGURED');
 console.log('🔵 Router has', router.stack.length, 'routes');
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default router;

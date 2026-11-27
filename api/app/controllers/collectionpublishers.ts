@@ -1,56 +1,17 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { WhereOptions } from 'sequelize';
 import db from '../models';
+import type { CollectionPublisherAttributes } from '../models/collectionpublishers';
+import type { ApiResult, PublisherCreatedResult, PublisherResult, PublishersResult } from '../types/api';
+import { errorMessages } from '../utils/errors';
 import { loadPublisherSummaries } from '../services/collectionSummary';
-import { findDuplicatePublisher, sendDuplicate } from '../services/duplicates';
+import { findDuplicatePublisher, duplicateResult } from '../services/duplicates';
 
-// Properly typed model interface
-interface CollectionPublisherModel {
-  findAll: (options?: { where?: WhereOptions<CollectionPublisherAttributes> }) => Promise<CollectionPublisherInstance[]>;
-  findByPk: (id: string) => Promise<CollectionPublisherInstance | null>;
-  create: (data: CollectionPublisherCreationAttributes) => Promise<CollectionPublisherInstance>;
-  update: (
-    data: Partial<CollectionPublisherAttributes>, 
-    options: { where: WhereOptions<CollectionPublisherAttributes>; returning: boolean }
-  ) => Promise<[number, CollectionPublisherInstance[]]>;
-  destroy: (options: { where: WhereOptions<CollectionPublisherAttributes> }) => Promise<number>;
-}
-
-// Model instance interface
-interface CollectionPublisherInstance {
-  id: string;
-  publisherName: string;
-  collectpubUsersId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  toJSON: () => CollectionPublisherAttributes;
-}
-
-// Fixed interface to match actual model structure
-interface CollectionPublisherAttributes {
-  id: string;  // UUID string, not number
-  publisherName: string;
-  collectpubUsersId: string | null;  // UUID string, not number
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Creation interface
-interface CollectionPublisherCreationAttributes {
-  publisherName: string;
-  collectpubUsersId: string;
-}
-
-// API response interface
-interface ApiResponse<T = CollectionPublisherAttributes | CollectionPublisherAttributes[]> {
-  success: boolean;
-  data?: T;
-  count?: number;
-  message?: string;
-  error?: string;
-  errors?: string[];
-}
+// What the publisher form sends; on an update, fields left out stay as they are
+type PublisherBody = {
+  publisherName?: string;
+  collectpubUsersId?: string;
+};
 
 // Validation result interface
 interface ValidationResult {
@@ -58,17 +19,7 @@ interface ValidationResult {
   message?: string;
 }
 
-// Sequelize error interface
-interface SequelizeError {
-  errors: Array<{ message: string }>;
-}
-
-const CollectionPublishers = db.CollectionPublishers as CollectionPublisherModel;
-
-// Type guard for Sequelize errors
-const isSequelizeError = (error: Error | SequelizeError): error is SequelizeError => {
-  return 'errors' in error && Array.isArray((error as SequelizeError).errors);
-};
+const CollectionPublishers = db.CollectionPublishers;
 
 // UUID validation
 const isValidUUID = (value: string): boolean => {
@@ -77,32 +28,15 @@ const isValidUUID = (value: string): boolean => {
   return uuidRegex.test(value);
 };
 
-// Centralized error handler
-const handleError = (
-  res: Response,
-  error: Error | SequelizeError,
-  statusCode: number = 500,
-  context: string = ''
-): Response<ApiResponse<never>> => {
-  console.error(`Error in ${context}:`, error);
-  
-  let errors: string[];
-  
-  if (isSequelizeError(error)) {
-    errors = error.errors.map(err => err.message);
-  } else {
-    errors = [error.message];
-  }
-  
-  return res.status(statusCode).json({ 
-    success: false,
-    errors 
-  });
+// Centralized error reply. A catch can receive anything, so it's turned into an Error first.
+const errorResult = (thrown: Error, context: string): ApiResult => {
+  console.error(`Error in ${context}:`, thrown);
+  return { success: false, errors: errorMessages(thrown) };
 };
 
 // Parameter validation
 const validateParams = (
-  params: Record<string, string>,
+  params: Partial<Record<string, string | number | boolean | Date | null>>,
   requiredFields: string[]
 ): ValidationResult => {
   const missing = requiredFields.filter(field => !params[field]);
@@ -151,8 +85,8 @@ const validateUUID = (value: string, fieldName: string): ValidationResult => {
 // Get all collection publishers by user ID (from params or token)
 export const getCollectionPublishers = async (
   req: AuthRequest,
-  res: Response<ApiResponse<CollectionPublisherAttributes[]>>
-): Promise<Response> => {
+  res: Response<PublishersResult>
+): Promise<Response<PublishersResult>> => {
   // Get from JWT token OR query param
   const userId = req.user?.id || req.query.userId as string;
   
@@ -189,15 +123,15 @@ export const getCollectionPublishers = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getCollectionPublishers');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getCollectionPublishers'));
   }
 };
 
 // Find one collection publisher by ID
 export const getOneById = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<CollectionPublisherAttributes>>
-): Promise<Response> => {
+  res: Response<PublisherResult>
+): Promise<Response<PublisherResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -233,15 +167,15 @@ export const getOneById = async (
       data: collectpublisher.toJSON()
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getOneById');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getOneById'));
   }
 };
 
 // Create a new collection publisher
 export const createCollectionPublisher = async (
-  req: Request<{}, {}, Partial<CollectionPublisherCreationAttributes>>,
-  res: Response<ApiResponse<Pick<CollectionPublisherAttributes, 'id' | 'publisherName' | 'collectpubUsersId'>>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, PublisherCreatedResult, PublisherBody>,
+  res: Response<PublisherCreatedResult>
+): Promise<Response<PublisherCreatedResult>> => {
   const { publisherName, collectpubUsersId } = req.body;
   
   // ADD DETAILED LOGGING
@@ -252,7 +186,7 @@ export const createCollectionPublisher = async (
   console.log('collectpubUsersId type:', typeof collectpubUsersId);
   
   // Validate required fields
-  const validation = validateParams(req.body as Record<string, string>, ['publisherName', 'collectpubUsersId']);
+  const validation = validateParams(req.body, ['publisherName', 'collectpubUsersId']);
   if (!validation.isValid) {
     console.log('Validation failed:', validation.message);
     return res.status(400).json({ 
@@ -303,7 +237,7 @@ export const createCollectionPublisher = async (
   try {
     // One publisher per name: "DC" and "DC Comics" count as the same one
     const duplicate = await findDuplicatePublisher(collectpubUsersId, publisherName);
-    if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+    if (duplicate) return res.status(409).json(duplicateResult(duplicate));
 
     const newCollectionPublisher = await CollectionPublishers.create({
       publisherName: publisherName.trim(),
@@ -328,15 +262,15 @@ export const createCollectionPublisher = async (
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
     console.error('Full error:', error);
     
-    return handleError(res, error as Error, 400, 'createCollectionPublisher');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'createCollectionPublisher'));
   }
 };
 
 // Update an existing collection publisher
 export const updateCollectionPublisher = async (
-  req: Request<{ id: string }, {}, Partial<CollectionPublisherAttributes>>,
-  res: Response<ApiResponse<CollectionPublisherAttributes>>
-): Promise<Response> => {
+  req: Request<{ id: string }, PublisherResult, PublisherBody>,
+  res: Response<PublisherResult>
+): Promise<Response<PublisherResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -396,7 +330,7 @@ export const updateCollectionPublisher = async (
       const current = await CollectionPublishers.findByPk(id);
       const ownerId = current?.toJSON().collectpubUsersId;
       const duplicate = ownerId ? await findDuplicatePublisher(ownerId, updateData.publisherName, id) : null;
-      if (duplicate) return sendDuplicate(res as unknown as Response, duplicate);
+      if (duplicate) return res.status(409).json(duplicateResult(duplicate));
     }
 
     const [rowsUpdated, updatedRecords] = await CollectionPublishers.update(
@@ -436,15 +370,15 @@ export const updateCollectionPublisher = async (
       message: 'Collection publisher updated successfully'
     });
   } catch (error) {
-    return handleError(res, error as Error, 400, 'updateCollectionPublisher');
+    return res.status(400).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'updateCollectionPublisher'));
   }
 };
 
 // Delete a collection publisher
 export const removeCollectionPublisher = async (
   req: Request<{ id: string }>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  res: Response<ApiResult>
+): Promise<Response<ApiResult>> => {
   const { id } = req.params;
   
   // Validate required parameters
@@ -492,15 +426,15 @@ export const removeCollectionPublisher = async (
       message: 'Collection publisher deleted successfully' 
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'removeCollectionPublisher');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'removeCollectionPublisher'));
   }
 };
 
 // Get ALL collection publishers (no user filtering)
 export const getAllCollectionPublishers = async (
   _req: Request,
-  res: Response<ApiResponse<CollectionPublisherAttributes[]>>
-): Promise<Response> => {
+  res: Response<PublishersResult>
+): Promise<Response<PublishersResult>> => {
   try {
     const collectPublishers = await CollectionPublishers.findAll();
     
@@ -512,6 +446,6 @@ export const getAllCollectionPublishers = async (
       count: data.length
     });
   } catch (error) {
-    return handleError(res, error as Error, 500, 'getAllCollectionPublishers');
+    return res.status(500).json(errorResult(error instanceof Error ? error : new Error(String(error)), 'getAllCollectionPublishers'));
   }
 };

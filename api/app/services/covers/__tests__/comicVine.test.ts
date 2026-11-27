@@ -5,7 +5,10 @@ import comicVine, { normalizeSeries, pickCover } from '../comicVine';
 const findCover = comicVine.find;
 
 jest.mock('axios');
-const mockGet = axios.get as jest.Mock;
+const mockGet = jest.mocked(axios.get);
+// Telling Axios's own errors apart still works; only requests are faked
+const actualAxios = jest.requireActual<typeof import('axios')>('axios');
+jest.mocked(axios.isAxiosError).mockImplementation(actualAxios.isAxiosError);
 
 const issue = (series: string, coverDate: string, url = `https://comicvine.gamespot.com/a/uploads/${series}-${coverDate}.jpg`) => ({
   issue_number: '497',
@@ -66,16 +69,18 @@ describe('Comic Vine lookup', () => {
     const cover = await findCover({ series: 'Batman', issue: 497, year: 1993 });
 
     expect(cover).toContain('Batman-1993');
-    expect(mockGet.mock.calls[0][1].params.filter).toBe('issue_number:497,cover_date:1993-01-01|1993-12-31');
-    expect(mockGet.mock.calls[0][1].headers['User-Agent']).toMatch(/Hero-Log/);
+    expect(mockGet.mock.calls[0][1]?.params.filter).toBe('issue_number:497,cover_date:1993-01-01|1993-12-31');
+    expect(mockGet.mock.calls[0][1]?.headers?.['User-Agent']).toMatch(/Hero-Log/);
   });
 
   it('treats a failed lookup as no cover, without logging the API key', async () => {
     process.env.COMIC_VINE_API_KEY = 'secret-key';
-    mockGet.mockRejectedValue(Object.assign(new Error('Request failed'), {
-      response: { status: 429 },
-      config: { url: 'https://comicvine.gamespot.com/api/issues/?api_key=secret-key' },
-    }));
+    const config = { url: 'https://comicvine.gamespot.com/api/issues/?api_key=secret-key', headers: new actualAxios.AxiosHeaders() };
+    mockGet.mockRejectedValue(
+      new actualAxios.AxiosError('Request failed', 'ERR_BAD_REQUEST', config, undefined, {
+        data: {}, status: 429, statusText: 'Too Many Requests', headers: {}, config,
+      })
+    );
 
     expect(await findCover({ series: 'Batman', issue: 497 })).toBeNull();
     const logged = (console.warn as jest.Mock).mock.calls.flat().join(' ');

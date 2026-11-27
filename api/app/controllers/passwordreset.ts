@@ -1,55 +1,18 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { WhereOptions } from 'sequelize';
 import db from '../models';
+import { verifyPasswordResetToken } from '../utils/tokens';
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-interface UserModel {
-  findOne: (options: { where: WhereOptions<UserAttributes> }) => Promise<UserInstance | null>;
-  findByPk: (id: string) => Promise<UserInstance | null>;
-}
-
-interface UserInstance {
-  id: string;
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  accesstoken: string | null;
-  password: string | null;
-  profilePic: string | null;
-  type: 'regular' | 'fixer';
-  createdAt: Date;
-  updatedAt: Date;
-  update: (data: Partial<UserAttributes>) => Promise<UserInstance>;
-}
-
-interface UserAttributes {
-  id: string;
-  username: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  accesstoken: string | null;
-  password: string | null;
-  profilePic: string | null;
-  type: 'regular' | 'fixer';
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface PasswordResetUpdateBody {
+type PasswordResetUpdateBody = {
   username: string;
   password: string;
-}
+};
 
-interface ApiResponse<T = Record<string, string>> {
+/** What the reset page's replies can hold */
+interface ResetReply {
   success: boolean;
-  data?: T;
+  data?: { username: string; email: string };
   message?: string;
   error?: string;
   errors?: string[];
@@ -60,23 +23,7 @@ interface ValidationResult {
   message?: string;
 }
 
-interface JwtPayload {
-  id: string;
-  email: string;
-  purpose: string;
-  iat?: number;
-  exp?: number;
-}
-
-// ============================================================================
-// MODELS
-// ============================================================================
-
-const Users = (db as any).Users as UserModel;
-
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
+const Users = db.Users;
 
 const validatePassword = (password: string): ValidationResult => {
   if (password.length < 8) {
@@ -100,8 +47,8 @@ const validatePassword = (password: string): ValidationResult => {
 
 export const passwordReset = async (
   req: Request<{ token: string }>,
-  res: Response<ApiResponse<{ username: string; email: string }>>
-): Promise<Response> => {
+  res: Response<ResetReply>
+): Promise<Response<ResetReply>> => {
   const { token } = req.params;
 
   console.log('🔑 Password reset token verification requested');
@@ -124,7 +71,7 @@ export const passwordReset = async (
 
   try {
     // Verify the JWT token
-    const decoded = jwt.verify(token, secret) as JwtPayload;
+    const decoded = verifyPasswordResetToken(token, secret);
 
     console.log('🔑 Token decoded:', { id: decoded.id, email: decoded.email, purpose: decoded.purpose });
 
@@ -192,9 +139,9 @@ export const passwordReset = async (
 // ============================================================================
 
 export const passwordResetUpdate = async (
-  req: Request<{}, {}, PasswordResetUpdateBody>,
-  res: Response<ApiResponse<never>>
-): Promise<Response> => {
+  req: Request<Record<string, string>, ResetReply, PasswordResetUpdateBody>,
+  res: Response<ResetReply>
+): Promise<Response<ResetReply>> => {
   const { username, password } = req.body;
 
   console.log('🔑 Password update requested for:', username);

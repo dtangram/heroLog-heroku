@@ -1,28 +1,24 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import debug from 'debug';
-import { Model, ModelStatic } from 'sequelize';
 import jwt from 'jsonwebtoken';
 import db from '../models';
+import type { UserInstance, UsersModel } from '../models/users';
 import * as authCtrl from '../controllers/auth';
 import * as validationCtrl from '../controllers/validation';
 import { requireAccount, AuthRequest } from '../middleware/auth';
-import { startGuestSession, claimGuestCollection } from '../services/guestSession';
+import { startGuestSession, claimGuestCollection, GuestSession } from '../services/guestSession';
 import { moveSearchData } from './search';
 
-interface UserAttributes {
-  id: string;
-  username: string;
-  email: string;
-  password: string | null;
-  firstname: string;
-  lastname: string;
-  type: 'regular' | 'fixer';
+interface GuestSessionResponse {
+  success: true;
+  data: GuestSession;
 }
 
-interface UserInstance extends Model<UserAttributes>, UserAttributes {}
-
-type UserModel = ModelStatic<UserInstance>;
+interface ClaimGuestResponse {
+  success: true;
+  data: { publishersMoved: number; publishersMerged: number };
+}
 
 interface LoginRequestBody {
   username: string;
@@ -77,17 +73,13 @@ const ENV = {
 };
 
 // Access model when needed (or destructure safely)
-const getUsersModel = (): UserModel => {
-  const Users = db.Users as UserModel;
+const getUsersModel = (): UsersModel => {
+  const Users = db.Users;
   if (!Users) {
     throw new Error('Users model not loaded');
   }
   return Users;
 };
-
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
 
 const validateJwtSecret = (): StringValidationResult => {
   if (!ENV.jwtSecret) {
@@ -136,10 +128,6 @@ const validateLoginCredentials = (
     }
   };
 };
-
-// ============================================================================
-// AUTHENTICATION FUNCTIONS
-// ============================================================================
 
 const findUserByLogin = async (
   username: string
@@ -193,7 +181,7 @@ const buildErrorResponse = (
 // ============================================================================
 
 const sendSuccess = (
-  res: Response,
+  res: Response<LoginSuccessResponse | ErrorResponse>,
   message: string,
   data: LoginResponseData
 ): void => {
@@ -201,17 +189,13 @@ const sendSuccess = (
 };
 
 const sendError = (
-  res: Response,
+  res: Response<ErrorResponse>,
   statusCode: number,
   message: string,
   stack?: string
 ): void => {
   res.status(statusCode).json(buildErrorResponse(message, statusCode, stack));
 };
-
-// ============================================================================
-// ERROR HANDLING
-// ============================================================================
 
 const handleError = (error: Error): { message: string; stack?: string } => ({
   message: error.message || 'An unexpected error occurred',
@@ -221,10 +205,6 @@ const handleError = (error: Error): { message: string; stack?: string } => ({
 const logError = (context: string, error: Error): void => {
   log(`${context} error:`, error.message);
 };
-
-// ============================================================================
-// ROUTE HANDLERS
-// ============================================================================
 
 const loginHandler = async (
   req: Request<Record<string, never>, LoginSuccessResponse | ErrorResponse, LoginRequestBody>,
@@ -315,30 +295,26 @@ router.post('/googleLogin', authCtrl.googleLogin);
 
 // POST /auth/guest — a session for someone without an account.
 // Body: { anonymousId } from an older guest's browser, to keep their collection.
-router.post('/guest', async (req: Request, res: Response) => {
+router.post('/guest', async (req: AuthRequest, res: Response<GuestSessionResponse | ErrorResponse>) => {
   try {
     const session = await startGuestSession(req.body?.anonymousId);
     res.status(200).json({ success: true, data: session });
   } catch (error) {
-    logError('Guest session', error as Error);
+    logError('Guest session', error instanceof Error ? error : new Error(String(error)));
     sendError(res, 500, 'Could not start a guest session');
   }
 });
 
 // POST /auth/claim-guest — after signing in, move the guest collection
 // built in this browser to the account. Body: { guestToken }
-router.post('/claim-guest', requireAccount, async (req: AuthRequest, res: Response) => {
+router.post('/claim-guest', requireAccount, async (req: AuthRequest, res: Response<ClaimGuestResponse | ErrorResponse>) => {
   try {
     const result = await claimGuestCollection(req.user!.id, req.body?.guestToken, moveSearchData);
     res.status(200).json({ success: true, data: { publishersMoved: result?.publishersMoved ?? 0, publishersMerged: result?.publishersMerged ?? 0 } });
   } catch (error) {
-    logError('Claim guest collection', error as Error);
+    logError('Claim guest collection', error instanceof Error ? error : new Error(String(error)));
     sendError(res, 500, 'Could not move your guest collection to your account');
   }
 });
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default router;
