@@ -8,7 +8,7 @@ import { ScanResult } from '../../../hooks/useComicScanner';
 import { useFormFields } from '../../../hooks/useFormFields';
 import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
-import { useCoverScan, ScanField } from '../../../hooks/useCoverScan';
+import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import CoverPicker from '../../coverPicker/CoverPicker';
@@ -17,13 +17,12 @@ import styles from './styles.module.css';
 import Breadcrumbs from '../../breadcrumbs';
 import CoverTypeField from '../coverType';
 import { usePageTitle } from '../../documentTitle';
+import { WISH_SCAN_FIELDS } from '../../../constants/covers';
+import { MAX_YEAR_LENGTH, MIN_WISH_TITLE_LENGTH } from '../../../constants/forms';
+import { WISH_LIST_TITLE } from '../../../constants/pageTitles';
 import { usePublisherNames } from '../../../hooks/usePublisherNames';
 import { matchPublisherName } from '../../../utils/collection';
 
-const LIST_LABEL = 'Your Wish List';
-
-/** The fields a cover scan can fill on this form, so the scan message can name any it couldn't read */
-const WISH_SCAN_FIELDS: ScanField[] = ['title', 'issue', 'volume', 'year', 'publisher'];
 
 interface RouteParams extends Record<string, string | undefined> {
   id?: string;
@@ -61,8 +60,6 @@ const INITIAL_FORM_STATE: FormState = {
   type: '',
 };
 
-const MIN_TITLE_LENGTH = 1;
-const MAX_YEAR_LENGTH = 4;
 
 const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWishList }: WishListFormProps) => {
   const navigate = useNavigate();
@@ -139,7 +136,7 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
   const validateFields = (): boolean => {
     const errors: FormErrorsState = {};
 
-    if (!comicBookTitle.trim() || comicBookTitle.trim().length < MIN_TITLE_LENGTH) {
+    if (!comicBookTitle.trim() || comicBookTitle.trim().length < MIN_WISH_TITLE_LENGTH) {
       errors.comicBookTitle = 'Comic book title is required';
     }
     // The same required fields as the Sale form
@@ -190,7 +187,7 @@ const WishListForm = ({ wishlistsById, fetchWishList, createWishList, updateWish
 
   return (
     <article id="cbComicForm" className={styles.cbWrapper}>
-      <Breadcrumbs items={[{ label: LIST_LABEL, to: cancelUrl }, { label: pageTitle }]} />
+      <Breadcrumbs items={[{ label: WISH_LIST_TITLE, to: cancelUrl }, { label: pageTitle }]} />
 
       <h1>
         {pageTitle}

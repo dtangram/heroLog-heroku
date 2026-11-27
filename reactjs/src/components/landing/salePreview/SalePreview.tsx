@@ -7,6 +7,7 @@ import ComicCard, { ComicCardGrid, CardActionLink } from '../../comicCard';
 import { formatPrice } from '../../../utils/sale';
 import logo from '../../../img/logo.png';
 import styles from './styles.module.css';
+import { SALE_PREVIEW_SIZE } from '../../../constants/sale';
 
 /** A listing as the public preview sends it: the comic, never the seller */
 export interface PreviewListing {
@@ -22,8 +23,6 @@ export interface PreviewListing {
   comicCondition?: string | null;
 }
 
-export const PREVIEW_SIZE = 8;
-
 type Status = 'loading' | 'ready' | 'error';
 
 /**
@@ -32,7 +31,7 @@ type Status = 'loading' | 'ready' | 'error';
  */
 export const fetchSalePreview = async (): Promise<PreviewListing[]> => {
   const response = await axios.get(`${API.defaults.baseURL ?? ''}/salelistALL/preview`, {
-    params: { limit: PREVIEW_SIZE },
+    params: { limit: SALE_PREVIEW_SIZE },
     timeout: 15000,
   });
   const listings = response?.data?.data;

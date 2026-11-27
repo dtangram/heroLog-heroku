@@ -17,8 +17,8 @@ import {
   DELETE_SALE_COMIC_SUCCESS,
   DELETE_SALE_COMIC_ERROR,
 } from '../actionTypes';
+import { STORE_CACHE_MS } from '../../constants/store';
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 export interface SaleComic {
   id: string;
@@ -68,7 +68,7 @@ const getUserId = (): string => {
 };
 
 const isCached = (loadedAt: number): boolean => {
-  return loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
+  return loadedAt > 0 && Date.now() - loadedAt < STORE_CACHE_MS;
 };
 
 const shouldFetchUserSales = (state: RootState, userId: string): boolean => {

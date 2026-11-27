@@ -2,7 +2,8 @@ import React from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import axios from 'axios';
-import SalePreview, { PREVIEW_SIZE } from './SalePreview';
+import SalePreview from './SalePreview';
+import { SALE_PREVIEW_SIZE } from '../../../constants/sale';
 
 const listing = (id: string, overrides = {}) => ({
   id,
@@ -47,7 +48,7 @@ describe('Landing: Comics for Sale', () => {
 
     await screen.findByText(/no comics are listed for sale yet/i);
     expect(get).toHaveBeenCalledWith(expect.stringMatching(/\/salelistALL\/preview$/), expect.objectContaining({
-      params: { limit: PREVIEW_SIZE },
+      params: { limit: SALE_PREVIEW_SIZE },
     }));
   });
 

@@ -9,7 +9,7 @@ import { ScanResult } from '../../../hooks/useComicScanner';
 import { useFormFields } from '../../../hooks/useFormFields';
 import { useEditRecord } from '../../../hooks/useEditRecord';
 import { useCoverUpload } from '../../../hooks/useCoverUpload';
-import { useCoverScan, ScanField } from '../../../hooks/useCoverScan';
+import { useCoverScan } from '../../../hooks/useCoverScan';
 import { useFormSubmit } from '../../../hooks/useFormSubmit';
 import { getSubmitLabel, toCoverType, toFormText } from '../../../utils/forms';
 import CoverPicker from '../../coverPicker/CoverPicker';
@@ -18,9 +18,8 @@ import { saveUnlessDuplicate } from '../../../utils/duplicates';
 import Breadcrumbs from '../../breadcrumbs';
 import CoverTypeField from '../coverType';
 import { usePageTitle } from '../../documentTitle';
-
-/** The fields a cover scan can fill on this form, so the scan message can name any it couldn't read */
-const COMIC_SCAN_FIELDS: ScanField[] = ['title', 'issue', 'volume', 'year', 'writer', 'penciler', 'inker', 'coverArtist'];
+import { COMIC_SCAN_FIELDS } from '../../../constants/covers';
+import { MAX_YEAR_LENGTH, MIN_YEAR } from '../../../constants/forms';
 
 interface RouteParams extends Record<string, string | undefined> {
   id?: string;
@@ -65,9 +64,6 @@ const INITIAL_FORM_STATE: FormState = {
   type: '',
 };
 
-const MAX_YEAR_LENGTH = 4;
-// Same range the API accepts (isValidYear in api/app/controllers/comicbook.ts)
-const MIN_YEAR = 1900;
 const getMaxYear = () => new Date().getFullYear() + 1;
 
 const ComicBookComponent = ({

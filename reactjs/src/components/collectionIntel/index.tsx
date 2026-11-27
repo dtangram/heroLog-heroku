@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BeatLoader } from 'react-spinners';
 import API from '../../API';
+import { INSIGHTS_TIMEOUT, SLOW_INSIGHTS_MS } from '../../constants/insights';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import styles from './styles.module.css';
 
@@ -44,11 +45,6 @@ interface CollectionProps {
   analysisSource: 'ai' | 'fallback';
 }
 
-/** A first analysis can take two AI calls; the site's default 15s timeout is too short. */
-const INSIGHTS_TIMEOUT = 30000;
-
-/** After this long, the loading line explains why it's taking a while. */
-export const SLOW_AFTER = 8000;
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -158,7 +154,7 @@ const CollectionIntel: React.FC = () => {
       setIsSlow(false);
       return undefined;
     }
-    const timer = setTimeout(() => setIsSlow(true), SLOW_AFTER);
+    const timer = setTimeout(() => setIsSlow(true), SLOW_INSIGHTS_MS);
     return () => clearTimeout(timer);
   }, [isLoading]);
 

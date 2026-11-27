@@ -2,22 +2,14 @@ import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { getAnonymousUserId } from '../../utils/anonymousUser';
 import { BeatLoader } from 'react-spinners';
-import { useSearch, SearchMode } from '../../hooks/useSearch';
+import { useSearch } from '../../hooks/useSearch';
 import SearchIcon from '@mui/icons-material/Search';
 import clsx from 'clsx';
 import { fetchWishlists } from '../../store/wishlist/actions';
 import { ClaudeResultList, CollectionResultCard } from './ResultCards';
 import { useEnrichment } from '../../hooks/useEnrichment';
 import styles from './styles.module.css';
-
-/** Results each search returns: 5 from your collection, 10 from Claude (show a screenful). */
-const SKELETON_COUNT: Record<SearchMode, number> = { collection: 5, all: 6, missing: 6 };
-
-const SLOW_MESSAGE: Record<SearchMode, string> = {
-  collection: 'Still searching your collection…',
-  all: 'Still searching every comic. This can take up to 30 seconds.',
-  missing: "Still finding the comics you're missing. This can take up to 30 seconds.",
-};
+import { SKELETON_COUNT, SLOW_MESSAGE } from '../../constants/search';
 
 /** Placeholder cards shaped like real results while a search runs. */
 const ResultSkeletons: React.FC<{ count: number }> = ({ count }) => (

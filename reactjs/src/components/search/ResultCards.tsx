@@ -6,6 +6,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { ClaudeResult, CollectionResult, OwnedCounts, ResultGroup } from '../../hooks/useSearch';
 import logo from '../../img/logo.png';
 import styles from './styles.module.css';
+import { OWNED_NOUN, RESULT_GROUPS } from '../../constants/search';
 
 const Description: React.FC<{ text: string }> = ({ text }) => {
   const ref = useRef<HTMLParagraphElement>(null);
@@ -88,16 +89,9 @@ export const CollectionResultCard: React.FC<{
   );
 };
 
-/** Group order and headings on the page */
-const GROUPS: Array<{ group: ResultGroup; heading: string }> = [
-  { group: 'Main story', heading: 'Main story' },
-  { group: 'Tie-in', heading: 'Tie-ins' },
-  { group: 'Related', heading: 'Related' },
-];
-
 /** Results sorted into groups, in page order, leaving out empty groups */
 export const groupResults = (results: ClaudeResult[]) =>
-  GROUPS
+  RESULT_GROUPS
     .map(({ group, heading }) => ({
       group,
       heading,
@@ -124,13 +118,6 @@ const ClaudeResultCard: React.FC<{
   </article>
 );
 
-/** "main story issues", "tie-ins", "related comics", for the owned notes */
-const OWNED_NOUN: Record<ResultGroup, [string, string]> = {
-  'Main story': ['main story issue', 'main story issues'],
-  'Tie-in': ['tie-in', 'tie-ins'],
-  Related: ['related comic', 'related comics'],
-};
-
 const ownedPhrase = (group: ResultGroup, count: number) =>
   `${count} ${OWNED_NOUN[group][count === 1 ? 0 : 1]}`;
 
@@ -139,7 +126,7 @@ const ownedPhrase = (group: ResultGroup, count: number) =>
  * complete doesn't just disappear: "You own all 10 main story issues ✓".
  */
 export const OwnedNotes: React.FC<{ results: ClaudeResult[]; ownedCounts: OwnedCounts }> = ({ results, ownedCounts }) => {
-  const complete = GROUPS.filter(({ group }) => {
+  const complete = RESULT_GROUPS.filter(({ group }) => {
     const owned = ownedCounts[group] ?? 0;
     return owned > 0 && !results.some(result => (result.group ?? 'Related') === group);
   });

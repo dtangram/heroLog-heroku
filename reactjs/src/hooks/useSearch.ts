@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API_URL, sessionHeaders } from '../API';
+import { SEARCH_CACHE_MS, SLOW_SEARCH_MS } from '../constants/search';
 
 export interface CollectionResult {
   comic_id: string;
@@ -34,9 +35,6 @@ export type SearchMode = 'collection' | 'all' | 'missing';
 /** Find Missing: how many issues of each group the collector already owns */
 export type OwnedCounts = Partial<Record<ResultGroup, number>>;
 
-/** How long a tab remembers its results for the same search */
-export const SEARCH_CACHE_MS = 10 * 60 * 1000;
-
 interface CachedSearch {
   at: number;
   collectionResults: CollectionResult[];
@@ -46,9 +44,6 @@ interface CachedSearch {
 
 const cacheKey = (mode: SearchMode, query: string) => `${mode}|${query.trim().toLowerCase()}`;
 
-
-/** After this long, tell the user the search is still running and why. */
-export const SLOW_SEARCH_MS = 8000;
 
 export const useSearch = (userId: string | undefined) => {
   const [query, setQuery] = useState<string>('');

@@ -1,11 +1,7 @@
-import API, { GUEST_TOKEN_KEY } from '../API';
+import API from '../API';
+import { GUEST_TOKEN_KEY } from '../constants/storage';
 import { clearAnonymousId } from './anonymousUser';
 
-/**
- * After signing in: move the collection built as a guest in this browser
- * (publishers, titles, comics) to the account, then end the guest session.
- * Needs the account's token to be saved first. Never blocks signing in.
- */
 export const claimGuestCollection = async (): Promise<number> => {
   const guestToken = localStorage.getItem(GUEST_TOKEN_KEY);
   let moved = 0;

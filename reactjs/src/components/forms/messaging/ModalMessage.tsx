@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
+import { MAX_MESSAGE_LENGTH, MIN_MESSAGE_LENGTH } from '../../../constants/forms';
 import Link from '../../../link';
 import SuccessDisplay from '../success';
 import styles from './styles.module.css';
@@ -10,8 +11,6 @@ interface FormErrorsState {
   message: string;
 }
 
-const MIN_MESSAGE_LENGTH = 10;
-const MAX_MESSAGE_LENGTH = 500;
 
 const ModalMessage = ({
   messaging,

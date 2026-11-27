@@ -3,7 +3,8 @@ import { thunk } from 'redux-thunk';
 import callAPI from '../helpers/callAPIMiddleware';
 import wishlists from './reducer';
 import API from '../../API';
-import { addToWishlist, COVER_CHECKS_MS } from './actions';
+import { addToWishlist } from './actions';
+import { COVER_CHECKS_MS } from '../../constants/covers';
 
 jest.mock('../../API');
 // The tests' global uuid stand-in returns nothing; give each added comic a real ID

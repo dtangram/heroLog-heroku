@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
+import { EMAIL_REGEX } from '../../../constants/forms';
 import SuccessDisplay from '../success';
 import styles from './styles.module.css';
 import { ContainerProps } from './container';
@@ -10,7 +11,6 @@ interface FormErrorsState {
   validToken?: string;
 }
 
-const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
 
 const EmailPasswordReset = ({
   emailpasswordreset,

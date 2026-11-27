@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '../../test-utils';
-import CollectionInsights, { SLOW_AFTER } from '.';
+import CollectionInsights from '.';
+import { SLOW_INSIGHTS_MS } from '../../constants/insights';
 import API from '../../API';
 import * as anonymousUserModule from '../../utils/anonymousUser';
 
@@ -37,7 +38,7 @@ describe('CollectionInsights', () => {
 
     render(<CollectionInsights />);
     act(() => {
-      jest.advanceTimersByTime(SLOW_AFTER);
+      jest.advanceTimersByTime(SLOW_INSIGHTS_MS);
     });
 
     expect(screen.getByRole('status')).toHaveTextContent(/after that, it loads right away/i);

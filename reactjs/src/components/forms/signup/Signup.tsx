@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback, ChangeEvent, FormEvent } from 
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
 import styles from './styles.module.css';
-import { PASSWORD_RULE, passwordProblem } from '../../../utils/password';
-import { TERMS_URL } from '../../../siteLinks';
+import { passwordProblem } from '../../../utils/password';
+import { EMAIL_REGEX, MIN_NAME_LENGTH, PASSWORD_RULE } from '../../../constants/forms';
+import { DEFAULT_PROFILE_PIC } from '../../../constants/user';
+import { TERMS_URL } from '../../../constants/links';
 
 interface FormErrorsType {
   firstname: string;
@@ -38,9 +40,6 @@ interface SignupProps {
   }) => void;
 }
 
-const EMAIL_REGEX = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i;
-const MIN_NAME_LENGTH = 2;
-const DEFAULT_PROFILE_PIC = 'https://dothanthorntonbucket.s3.amazonaws.com/material-design-account-icon.png';
 
 const Signup = ({
   signup,

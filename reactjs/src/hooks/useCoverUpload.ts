@@ -1,9 +1,7 @@
 import { ChangeEvent, useCallback, useState } from 'react';
 import API from '../API';
 import { showAlert } from '../components/dialog';
-
-export const VALID_IMAGE_EXTENSIONS = ['jpg', 'png', 'jpeg'];
-export const MAX_COVER_SIZE = 1e6; // 1MB
+import { MAX_IMAGE_SIZE, VALID_IMAGE_EXTENSIONS } from '../constants/uploads';
 
 /**
  * Uploads a cover image to S3: checks the type and size, gets a signed URL
@@ -23,7 +21,7 @@ export const useCoverUpload = (onUploaded: (url: string) => void) => {
         showAlert('Please choose a JPG or PNG image.', { title: "That file type won't work" });
         return;
       }
-      if (file.size > MAX_COVER_SIZE) {
+      if (file.size > MAX_IMAGE_SIZE) {
         event.target.value = '';
         showAlert('Please choose an image smaller than 1MB.', { title: 'That image is too large' });
         return;
