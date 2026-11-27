@@ -1,3 +1,5 @@
+import { TOAST_DURATION } from '../../constants/dialog';
+
 export type ConfirmTone = 'default' | 'danger';
 export type ToastTone = 'success' | 'info';
 
@@ -34,9 +36,6 @@ export interface DialogState {
   dialogs: DialogItem[];
   toasts: ToastItem[];
 }
-
-/** How long a toast stays up before it closes itself */
-export const TOAST_DURATION = 6000;
 
 let state: DialogState = { dialogs: [], toasts: [] };
 let nextId = 1;

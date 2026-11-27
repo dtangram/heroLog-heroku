@@ -1,7 +1,5 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-
-/** How long the success message shows before leaving the form. */
-export const REDIRECT_DELAY = 1500;
+import { REDIRECT_DELAY } from '../constants/forms';
 
 interface UseFormSubmitOptions {
   /** Checks the fields and sets any errors; returns false to stop */

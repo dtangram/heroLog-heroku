@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import API from '../../API';
 import type { APICallResult } from '../helpers/callAPIMiddleware';
+import { COVER_CHECKS_MS } from '../../constants/covers';
 import {
   REQ_WISHLIST_COMICS_PENDING,
   REQ_WISHLIST_COMICS_SUCCESS,
@@ -18,8 +19,8 @@ import {
   DELETE_WISHLIST_COMIC_SUCCESS,
   DELETE_WISHLIST_COMIC_ERROR,
 } from '../actionTypes';
+import { STORE_CACHE_MS } from '../../constants/store';
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 export interface WishlistComic {
   id: string;
@@ -65,7 +66,7 @@ const getUserId = (): string => {
 };
 
 const isCached = (loadedAt: number): boolean => 
-  loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
+  loadedAt > 0 && Date.now() - loadedAt < STORE_CACHE_MS;
 
 const getUserWishlists = (state: RootState, userId: string): WishlistsState | null =>
   state?.wishlists?.[userId] || null;
@@ -190,12 +191,6 @@ export const refreshWishlist = (id: string): APIAction => ({
   callAPI: () => API.get(`/wishlist/${id}`),
   payload: { id },
 });
-
-/**
- * When to check back for a cover after adding a comic without one. The API
- * looks the cover up after replying (usually 2–5 seconds, at most about 8).
- */
-export const COVER_CHECKS_MS = [4000, 10000];
 
 /**
  * Checks back with the API for a cover found after the add, so it appears on

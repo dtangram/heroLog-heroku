@@ -4,7 +4,8 @@ import API from '../../../API';
 import FormErrors from '../../../formErrors';
 import styles from './styles.module.css';
 import { ContainerProps } from './container';
-import { PASSWORD_RULE, passwordProblem } from '../../../utils/password';
+import { passwordProblem } from '../../../utils/password';
+import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '../../../constants/forms';
 
 interface FormErrorsState {
   password: string;
@@ -20,7 +21,6 @@ interface TokenValidationResponse {
   email: string;
 }
 
-const MIN_PASSWORD_LENGTH = 8;
 
 const PasswordReset: React.FC<ContainerProps> = () => {
   const navigate = useNavigate();

@@ -1,6 +1,5 @@
 import { ChangeEvent, useCallback, useState } from 'react';
-
-const DIGITS_ONLY = /^[0-9]*$/;
+import { DIGITS_ONLY } from '../constants/forms';
 
 export const useFormFields = <
   TState extends Record<string, string>,

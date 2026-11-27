@@ -3,12 +3,11 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import API from '../../../API';
 import { claimGuestCollection } from '../../../utils/session';
 import FormErrors from '../../../formErrors';
+import { MIN_PASSWORD_LENGTH, MIN_USERNAME_LENGTH } from '../../../constants/forms';
 import type { ConnectorProps } from './container';
 import styles from './styles.module.css';
 
 // Constants
-const MIN_USERNAME_LENGTH = 2;
-const MIN_PASSWORD_LENGTH = 8;
 
 // Types
 interface FormErrorsType {

@@ -1,14 +1,6 @@
 import React from 'react';
 import styles from './styles.module.css';
-
-/**
- * Where covers can come from. Each source's terms ask pages that show its
- * covers to link back to it. To add a source, list it here and add its lookup
- * to COVER_SOURCES in the API (api/app/services/covers/index.ts).
- */
-export const COVER_SOURCES = [
-  { name: 'Comic Vine', url: 'https://comicvine.gamespot.com/', host: 'comicvine.gamespot.com' },
-];
+import { COVER_SOURCES } from '../../constants/covers';
 
 type CoverSourceInfo = typeof COVER_SOURCES[number];
 

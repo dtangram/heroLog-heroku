@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { ANONYMOUS_ID_KEY, GUEST_TOKEN_KEY } from './constants/storage';
 
 /**
  * Where the server is, based on environment
@@ -49,8 +50,6 @@ const API: AxiosInstance = axios.create({
 // SESSIONS: every request says who's asking
 // ============================================================================
 
-export const GUEST_TOKEN_KEY = 'guestToken';
-const ANONYMOUS_ID_KEY = 'anonymousUserId';
 
 let guestSessionRequest: Promise<string | null> | null = null;
 

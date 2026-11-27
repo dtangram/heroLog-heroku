@@ -1,5 +1,6 @@
 import axios from 'axios';
-import API, { ensureGuestSession, GUEST_TOKEN_KEY, sessionHeaders } from '../../API';
+import API, { ensureGuestSession, sessionHeaders } from '../../API';
+import { GUEST_TOKEN_KEY } from '../../constants/storage';
 import { claimGuestCollection, clearSession } from '../session';
 
 const OLD_GUEST = '11111111-2222-4333-8444-555555555555';

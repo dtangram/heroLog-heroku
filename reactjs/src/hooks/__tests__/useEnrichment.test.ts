@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import axios from 'axios';
-import { useEnrichment, POLL_INTERVAL } from '../useEnrichment';
+import { useEnrichment } from '../useEnrichment';
+import { ENRICHMENT_POLL_MS } from '../../constants/search';
 import { API_URL, sessionHeaders } from '../../API';
 
 jest.mock('axios');
@@ -38,7 +39,7 @@ describe('useEnrichment', () => {
     expect(result.current.isCatchingUp).toBe(true);
 
     await act(async () => {
-      jest.advanceTimersByTime(POLL_INTERVAL);
+      jest.advanceTimersByTime(ENRICHMENT_POLL_MS);
     });
     await waitFor(() => expect(result.current.isCatchingUp).toBe(false));
     expect(mocked.get).toHaveBeenCalledTimes(2);
@@ -73,7 +74,7 @@ describe('useEnrichment', () => {
 
     unmount();
     await act(async () => {
-      jest.advanceTimersByTime(POLL_INTERVAL * 5);
+      jest.advanceTimersByTime(ENRICHMENT_POLL_MS * 5);
     });
     expect(mocked.get).toHaveBeenCalledTimes(1);
   });

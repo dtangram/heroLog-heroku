@@ -1,5 +1,6 @@
 import { ChangeEvent } from 'react';
 import styles from './styles.module.css';
+import { COVER_TYPE_OPTIONS } from '../../../constants/covers';
 
 interface CoverTypeFieldProps {
   /** 'Regular' or 'Variant' */
@@ -7,11 +8,6 @@ interface CoverTypeFieldProps {
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
 }
-
-const OPTIONS = [
-  { value: 'Regular', id: 'regularcover', label: 'Regular cover' },
-  { value: 'Variant', id: 'variantcover', label: 'Variant cover' },
-];
 
 /**
  * "Cover type: Regular cover / Variant cover", the same on every comic form.
@@ -21,7 +17,7 @@ const OPTIONS = [
 const CoverTypeField = ({ value, onChange, disabled = false }: CoverTypeFieldProps) => (
   <fieldset className={styles.coverType}>
     <legend className={styles.legend}>Cover type</legend>
-    {OPTIONS.map(option => (
+    {COVER_TYPE_OPTIONS.map(option => (
       <label key={option.value} className={styles.option} htmlFor={option.id}>
         <input
           id={option.id}

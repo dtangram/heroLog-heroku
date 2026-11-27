@@ -5,8 +5,8 @@ import {
   REQ_LOGIN_SUCCESS,
   REQ_LOGIN_ERROR,
 } from '../actionTypes';
+import { STORE_CACHE_MS } from '../../constants/store';
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 interface SignInCredentials {
   username: string;
@@ -58,7 +58,7 @@ const isValidPassword = (password: string): boolean => {
 };
 
 const isCached = (loadedAt: number): boolean => {
-  return loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
+  return loadedAt > 0 && Date.now() - loadedAt < STORE_CACHE_MS;
 };
 
 const storeAuthData = (response: LoginResponse): void => {

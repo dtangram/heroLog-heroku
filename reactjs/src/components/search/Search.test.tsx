@@ -9,7 +9,7 @@ import callAPI from '../../store/helpers/callAPIMiddleware';
 import wishlists from '../../store/wishlist/reducer';
 import API from '../../API';
 import Search from './Search';
-import { SLOW_SEARCH_MS } from '../../hooks/useSearch';
+import { SLOW_SEARCH_MS } from '../../constants/search';
 
 jest.mock('axios');
 // The wish list store talks to the site API, not the search service

@@ -1,7 +1,8 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import DialogHost from './DialogHost';
-import { notify, resetDialogs, showAlert, showConfirm, TOAST_DURATION } from './dialogQueue';
+import { notify, resetDialogs, showAlert, showConfirm } from './dialogQueue';
+import { TOAST_DURATION } from '../../constants/dialog';
 
 afterEach(() => {
   act(() => resetDialogs());

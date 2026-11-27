@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-
-const ANONYMOUS_ID_KEY = 'anonymousUserId';
+import { ANONYMOUS_ID_KEY } from '../constants/storage';
 
 /**
  * Get or create anonymous user ID

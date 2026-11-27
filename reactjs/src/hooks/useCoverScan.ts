@@ -1,11 +1,21 @@
 import { useCallback } from 'react';
 import { ScanResult, useComicScanner } from './useComicScanner';
 import { notify, showAlert } from '../components/dialog';
+import { DEFAULT_SCAN_FIELDS } from '../constants/covers';
 
 /** Fields a scan can fill in, named the way the forms label them */
 export type ScanField = 'title' | 'issue' | 'volume' | 'year' | 'publisher' | 'writer' | 'penciler' | 'inker' | 'coverArtist';
 
-const SCAN_FIELDS: Record<ScanField, { label: string; read: (result: ScanResult) => unknown }> = {
+/** How to name a field to the user, and where to find its value in a scan */
+interface ScanFieldReader {
+  label: string;
+  read: (result: ScanResult) => string | undefined;
+}
+
+/** One reader for every ScanField: leaving one out is a compile error */
+type ScanFieldReaders = { [field in ScanField]: ScanFieldReader };
+
+const SCAN_FIELDS: ScanFieldReaders = {
   title: { label: 'title', read: r => r.title || r.comicBookTitle },
   issue: { label: 'issue number', read: r => r.comicIssue },
   volume: { label: 'volume', read: r => r.volume || r.comicBookVolume },
@@ -23,7 +33,7 @@ const joinOr = (items: string[]) =>
 
 /** The labels of the fields this scan left blank */
 export const unreadFields = (result: ScanResult, fields: ScanField[]): string[] =>
-  fields.filter(field => !String(SCAN_FIELDS[field].read(result) ?? '').trim()).map(field => SCAN_FIELDS[field].label);
+  fields.filter(field => !(SCAN_FIELDS[field].read(result) ?? '').trim()).map(field => SCAN_FIELDS[field].label);
 
 /** What to tell the user after a scan, naming anything it couldn't read */
 export const scanMessage = (result: ScanResult, fields: ScanField[]): string => {
@@ -33,8 +43,6 @@ export const scanMessage = (result: ScanResult, fields: ScanField[]): string => 
     ? `${confidence} Please check the filled-in fields.`
     : `${confidence} It couldn't read the ${joinOr(missing)}, so please fill ${missing.length === 1 ? 'that' : 'those'} in and check the rest.`;
 };
-
-const DEFAULT_FIELDS: ScanField[] = ['title', 'issue', 'volume', 'year'];
 
 /**
  * "Scan Cover with AI": reads the uploaded cover and hands the result to
@@ -46,7 +54,7 @@ const DEFAULT_FIELDS: ScanField[] = ['title', 'issue', 'volume', 'year'];
 export const useCoverScan = (
   cover: string,
   applyResult: (result: ScanResult) => void,
-  fields: ScanField[] = DEFAULT_FIELDS
+  fields: ScanField[] = DEFAULT_SCAN_FIELDS
 ) => {
   const { scanCover, isScanning, scanError } = useComicScanner();
 

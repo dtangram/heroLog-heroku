@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Signup from './Signup';
-import { TERMS_URL } from '../../../siteLinks';
+import { TERMS_URL } from '../../../constants/links';
 
 const show = () => {
   const createUser = jest.fn();

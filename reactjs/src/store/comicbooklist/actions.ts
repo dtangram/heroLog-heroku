@@ -16,8 +16,8 @@ import {
   DELETE_COMIC_BOOK_TITLE_SUCCESS,
   DELETE_COMIC_BOOK_TITLE_ERROR,
 } from '../actionTypes';
+import { STORE_CACHE_MS } from '../../constants/store';
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 interface ComicBookTitle {
   id: string
@@ -58,7 +58,7 @@ interface APIAction {
 }
 
 const isCached = (loadedAt: number): boolean => 
-  loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
+  loadedAt > 0 && Date.now() - loadedAt < STORE_CACHE_MS;
 
 const getPublisherState = (state: RootState, collectpubId: string): ComicBookTitlesState | null =>
   state?.comicbooklists?.[collectpubId] || null;

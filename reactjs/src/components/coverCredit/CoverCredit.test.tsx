@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import CoverCredit, { COVER_SOURCES, sourceOf } from './CoverCredit';
+import CoverCredit, { sourceOf } from './CoverCredit';
+import { COVER_SOURCES } from '../../constants/covers';
 
 const comicVine = 'https://comicvine.gamespot.com/a/uploads/scale_medium/6/batman-497.jpg';
 const ownCover = 'https://my-bucket.example/superman-75.jpg';

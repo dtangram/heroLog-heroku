@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_URL, sessionHeaders } from '../API';
+import { ENRICHMENT_POLL_MS } from '../constants/search';
 
 export interface EnrichmentJob {
   id: number;
@@ -12,9 +13,6 @@ export interface EnrichmentJob {
   completed_at?: string | null;
 }
 
-
-/** How often to check a running catch-up */
-export const POLL_INTERVAL = 3000;
 
 /**
  * Makes sure every comic in your collection can be found by My Collection
@@ -43,7 +41,7 @@ export const useEnrichment = (userId: string | undefined) => {
         const job: EnrichmentJob | undefined = response.data?.job;
         if (job) setEnrichmentJob(job);
         if (!job || job.status === 'running') {
-          timer = setTimeout(() => poll(jobId), POLL_INTERVAL);
+          timer = setTimeout(() => poll(jobId), ENRICHMENT_POLL_MS);
         }
       } catch (err) {
         // Progress is a nice-to-have; search still works without it

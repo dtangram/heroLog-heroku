@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import FormErrors from '../../../formErrors';
+import { REDIRECT_DELAY } from '../../../constants/forms';
 import Link from '../../../link';
 import SuccessDisplay from '../success';
 import { ContainerProps } from './container';
@@ -15,7 +16,6 @@ interface FormErrorsState {
 }
 
 /** How long the success message shows before going back to the dashboard. */
-const REDIRECT_DELAY_MS = 1500;
 
 const CreatePublisher = ({
   publishersById,
@@ -106,7 +106,7 @@ const CreatePublisher = ({
 
     setTimeout(() => {
       navigate(`/dashboard/${userId}`);
-    }, REDIRECT_DELAY_MS);
+    }, REDIRECT_DELAY);
   };
 
   const showSuccess = !formErrors.publisherName && Boolean(successMessage);

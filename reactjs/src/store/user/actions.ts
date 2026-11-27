@@ -5,8 +5,8 @@ import {
   REQ_USER_PROFILE_ERROR,
   REQ_USER_LOGOUT,
 } from '../actionTypes';
+import { STORE_CACHE_MS } from '../../constants/store';
 
-const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 interface UserProfile {
   id: string;
@@ -51,7 +51,7 @@ const getUserId = (): string | null => {
 };
 
 const isCached = (loadedAt: number): boolean => {
-  return loadedAt > 0 && Date.now() - loadedAt < CACHE_TIME;
+  return loadedAt > 0 && Date.now() - loadedAt < STORE_CACHE_MS;
 };
 
 const shouldFetchUserProfile = (state: RootState, userId: string): boolean => {
